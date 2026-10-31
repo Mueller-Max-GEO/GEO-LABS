@@ -1,0 +1,22 @@
+const fs=require('fs'), zlib=require('zlib');
+const html=fs.readFileSync(__dirname+'/../index.html','utf8');
+const sim=/<script id="simsrc">([\s\S]*?)<\/script>/.exec(html)[1];
+const D=JSON.parse(/const DATA = ([\s\S]*?);\n<\/script>/.exec(html)[1]);
+const app=fs.readFileSync(__dirname+'/../src/app.js','utf8');
+const W=app.slice(app.indexOf('const WORKER = `')+16, app.indexOf('`;\nconst workerSrc'));
+const f32=b=>{const u=zlib.gunzipSync(Buffer.from(b,'base64'));return new Float32Array(u.buffer.slice(u.byteOffset,u.byteOffset+u.length));};
+const u8=b=>new Uint8Array(zlib.gunzipSync(Buffer.from(b,'base64')));
+const i32=b=>{const u=zlib.gunzipSync(Buffer.from(b,'base64'));return new Int32Array(u.buffer.slice(u.byteOffset,u.byteOffset+u.length));};
+const out=[]; const self={};
+const ctx=new Function('self','postMessage','performance','setTimeout', sim+'\nvar GlacierSim=self.GlacierSim;\n'+W+'\nreturn onmessage;');
+const onmsg=ctx(self, m=>out.push(m), performance, ()=>{});
+const T=new Float32Array(D.T), P=new Float32Array(D.Pr);
+function clim(a,b){const t=new Float64Array(12),p=new Float64Array(12);let n=0;for(let y=a;y<=b;y++){const o=(y-D.hy0)*12;for(let m=0;m<12;m++){t[m]+=T[o+m];p[m]+=P[o+m];}n++;}for(let m=0;m<12;m++){t[m]/=n;p[m]/=n;}return{T:t,P:p};}
+onmsg({data:{type:'init',nx:D.nx,ny:D.ny,dx:D.dx,zref:D.zref,B:f32(D.B),rad:f32(D.rad),slope:f32(D.slope),aval:i32(D.aval),tbx:f32(D.tbx),P0:D.par,T,P,hy0:D.hy0,cref:clim(1961,1990),clate:clim(1974,2003),seed:D.seed[1]*D.nx+D.seed[0],hef:u8(D.hef)}});
+const st={};for(const k of ['H','M','D','firn','tfree'])st[k]=f32(D.s2003[k]);
+onmsg({data:{type:'state',st,year:2003}});
+onmsg({data:{type:'params',vari:false}});
+let t0=Date.now(); onmsg({data:{type:'yearSeq'}}); console.log('yearSeq ms',Date.now()-t0);
+const ys=out.find(m=>m.type==='yearSeq');
+console.log('year',ys.year,'frames',ys.frames.length,'src',ys.src);
+ys.prof.forEach((p,i)=>{ if(i%2===0) console.log(i, 'line',p.line,p.full?'(full)':'','swe',p.swe.map(v=>v.toFixed(2)).join(' ')); });

@@ -1,0 +1,320 @@
+<title>Gletscherlabor Hintereisferner</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&family=Barlow:wght@400;500&display=swap">
+<style>
+/* Layout: full-bleed 3D block model; instrument panel floats left (desktop) or as a bottom sheet (phone). Deliberately single dark theme, like a lab instrument. */
+:root{
+  color-scheme: dark;
+  --ink:#e8eef1; --ink-2:#a9b8c0; --ink-3:#71838d;
+  --panel:rgba(16,24,31,.86); --panel-2:rgba(28,40,50,.9); --line:rgba(168,196,210,.16);
+  --ice:#8fd0e3; --ela:#ff5a4f; --snow:#f4f7fa; --firn:#e2dccb; --glacier:#9fb6c1; --debris:#7a6f63; --moraine:#a39a8c; --forefield:#b9b2a2;
+  --cold:#5fa8ff; --warm:#ff7a59;
+  --f-ui:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  background:#0b1117;
+}
+html,body{height:100%;}
+body{margin:0;background:#0b1117;color:var(--ink);font-family:var(--f-body);overflow:hidden;}
+#sky{position:fixed;inset:0;background:linear-gradient(180deg,#5d86ab 0%,#93b4cc 42%,#c9d6dc 70%,#dfe4e2 100%);transition:background 1.2s;}
+#gl{position:fixed;inset:0;display:block;width:100%;height:100%;touch-action:none;}
+#labels{position:fixed;inset:0;pointer-events:none;overflow:hidden;}
+.lbl{position:absolute;transform:translate(-50%,-100%);white-space:nowrap;font:600 13px/1 var(--f-ui);letter-spacing:.02em;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.7),0 0 8px rgba(0,0,0,.35);padding-bottom:6px;}
+.lbl::after{content:"";position:absolute;left:50%;bottom:0;width:1px;height:6px;background:rgba(255,255,255,.75);}
+.lbl.peak{font-weight:500;font-size:12px;color:#f3f0e8;}
+.lbl.peak small{font-weight:400;opacity:.8;margin-left:3px;}
+.lbl.glacier{font-style:italic;color:#e6f6fb;}
+.lbl.place{color:#f4ead5;}
+/* panel */
+#panel{position:fixed;left:max(16px,env(safe-area-inset-left,0px));top:calc(16px + env(safe-area-inset-top,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));width:332px;display:flex;flex-direction:column;background:var(--panel);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.35);overflow:hidden;z-index:5;}
+#panelHead{padding:14px 16px 10px;border-bottom:1px solid var(--line);}
+.eyebrow{font:600 11px/1 var(--f-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);}
+h1{margin:6px 0 0;font:700 24px/1.05 var(--f-ui);letter-spacing:.005em;text-wrap:balance;}
+h1 span{color:var(--ice);}
+#scroll{overflow-y:auto;padding:4px 16px 16px;flex:1;min-height:0;}
+section{padding:12px 0;border-bottom:1px solid var(--line);}
+section:last-child{border-bottom:0;}
+h2{margin:0 0 10px;font:600 12px/1 var(--f-ui);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);display:flex;align-items:center;justify-content:space-between;gap:8px;}
+h2 .hint{font:400 12px/1.2 var(--f-body);letter-spacing:0;text-transform:none;color:var(--ink-3);}
+/* clock */
+#clock{display:flex;align-items:baseline;gap:10px;}
+#year{font:700 44px/1 var(--f-ui);font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
+#month{font:500 18px/1.1 var(--f-ui);color:var(--ink-2);}
+#season{margin-left:auto;font:600 12px/1 var(--f-ui);letter-spacing:.08em;text-transform:uppercase;padding:5px 8px;border-radius:999px;background:var(--panel-2);border:1px solid var(--line);}
+#seasonbar{position:relative;height:6px;margin:12px 0 4px;border-radius:3px;background:linear-gradient(90deg,#c9d9e6 0%,#c9d9e6 50%,#7fb069 62%,#d9b44a 80%,#c98b4a 92%,#c9d9e6 100%);opacity:.85;}
+#seasonbar i{position:absolute;top:-4px;width:3px;height:14px;border-radius:2px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.4);transform:translateX(-50%);}
+.ticks{display:flex;justify-content:space-between;font:500 10px/1 var(--f-ui);color:var(--ink-3);letter-spacing:.06em;}
+.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+button{font:600 13px/1 var(--f-ui);letter-spacing:.03em;color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:9px 11px;cursor:pointer;transition:background .15s,border-color .15s;}
+button:hover{border-color:rgba(168,196,210,.4);}
+button:focus-visible,input:focus-visible{outline:2px solid var(--ice);outline-offset:2px;}
+button.on{background:#d9eef5;color:#0e1a21;border-color:#d9eef5;}
+#play{min-width:96px;background:var(--ice);color:#0b1720;border-color:var(--ice);font-size:14px;}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex:1;}
+.seg button{border:0;border-radius:0;flex:1;padding:9px 4px;background:transparent;}
+.seg button+button{border-left:1px solid var(--line);}
+.seg button.on{background:#d9eef5;color:#0e1a21;}
+/* sliders */
+.slider{margin:6px 0 12px;}
+.slider label{display:flex;justify-content:space-between;align-items:baseline;font:500 14px/1.2 var(--f-ui);color:var(--ink-2);}
+.slider output{font:700 20px/1 var(--f-ui);font-variant-numeric:tabular-nums;color:var(--ink);}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;margin:4px 0 0;}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:var(--trk);}
+input[type=range]::-moz-range-track{height:6px;border-radius:3px;background:var(--trk);}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;margin-top:-8px;border-radius:50%;background:#fff;border:3px solid #0d161c;box-shadow:0 0 0 1px rgba(255,255,255,.5);}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid #0d161c;}
+#dT{--trk:linear-gradient(90deg,var(--cold),#9ab 50%,var(--warm));}
+#dP{--trk:linear-gradient(90deg,#c8a36a,#9ab 50%,#4f8fd8);}
+#exag{--trk:linear-gradient(90deg,#4a5a63,#9ab);}
+#cutpos{--trk:linear-gradient(90deg,#4a5a63,#9ab);}
+#ypos{--trk:linear-gradient(90deg,#c9d9e6 0%,#c9d9e6 50%,#7fb069 62%,#d9b44a 80%,#c98b4a 92%,#c9d9e6 100%);margin-top:10px;}
+button.wide{width:100%;margin-top:10px;}
+#yclock{display:flex;align-items:baseline;gap:10px;}
+#yDate{font:700 30px/1 var(--f-ui);font-variant-numeric:tabular-nums;white-space:nowrap;}
+#yYear{font:500 18px/1.1 var(--f-ui);color:var(--ink-2);}
+.phase{margin:12px 0 10px;padding:10px 12px;border-radius:10px;background:var(--panel-2);border:1px solid var(--line);}
+.phase b{display:block;font:600 15px/1.2 var(--f-ui);margin-bottom:4px;}
+.phase span{font:400 13px/1.45 var(--f-body);color:var(--ink-2);}
+button:disabled{opacity:.55;cursor:progress;}
+#lift{--trk:linear-gradient(90deg,#4a5a63,#8fd0e3);}
+.thick{height:10px;border-radius:3px;background:linear-gradient(90deg,#dbf2fc,#73bdea 33%,#216bc2 66%,#0a296b);border:1px solid var(--line);margin-bottom:4px;}
+.scale{display:flex;justify-content:space-between;font:500 10px/1 var(--f-ui);color:var(--ink-3);letter-spacing:.04em;margin-top:-2px;}
+/* ELA readout */
+#elaBox{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:baseline;padding:10px 12px;border-radius:10px;background:rgba(255,90,79,.09);border:1px solid rgba(255,90,79,.35);}
+#elaBox .k{font:600 11px/1.2 var(--f-ui);letter-spacing:.1em;text-transform:uppercase;color:#ffb3ad;}
+#elaVal{font:700 30px/1 var(--f-ui);font-variant-numeric:tabular-nums;color:#fff;}
+#elaDelta{font:600 15px/1.2 var(--f-ui);font-variant-numeric:tabular-nums;}
+#elaNote{grid-column:1/-1;font:400 12.5px/1.4 var(--f-body);color:var(--ink-2);}
+canvas.chart{width:100%;display:block;border-radius:8px;background:rgba(0,0,0,.18);border:1px solid var(--line);}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.stat{padding:8px 10px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line);}
+.stat b{display:block;font:700 19px/1.1 var(--f-ui);font-variant-numeric:tabular-nums;}
+.stat span{font:500 11px/1.2 var(--f-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);}
+.check{display:flex;align-items:center;gap:10px;padding:6px 0;font:500 14px/1.2 var(--f-ui);color:var(--ink);cursor:pointer;}
+.check input{width:18px;height:18px;accent-color:var(--ice);}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;font:500 13px/1.2 var(--f-ui);color:var(--ink-2);}
+.legend i{display:inline-block;width:14px;height:10px;border-radius:2px;margin-right:7px;vertical-align:-1px;border:1px solid rgba(0,0,0,.35);}
+p.small{font:400 12.5px/1.5 var(--f-body);color:var(--ink-2);margin:6px 0 0;}
+p.small a{color:var(--ice);}
+details summary{cursor:pointer;font:600 12px/1 var(--f-ui);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);list-style:none;display:flex;justify-content:space-between;}
+details summary::after{content:"+";font-size:16px;color:var(--ink-3);}
+details[open] summary::after{content:"−";}
+details summary::-webkit-details-marker{display:none;}
+/* HUD */
+#hud{position:fixed;right:max(16px,env(safe-area-inset-right,0px));top:calc(16px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;align-items:flex-end;gap:8px;z-index:4;}
+.chip{font:600 12px/1 var(--f-ui);letter-spacing:.06em;padding:7px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+#views{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+#views button{background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+#compass{width:44px;height:44px;border-radius:50%;background:var(--panel);border:1px solid var(--line);display:grid;place-items:center;}
+#loader{position:fixed;inset:0;display:grid;place-items:center;z-index:20;background:#0b1117;transition:opacity .6s;}
+#loader div{text-align:center;max-width:320px;padding:0 16px;}
+#loader b{display:block;font:700 26px/1.1 var(--f-ui);margin-bottom:8px;}
+#loader small{font:400 14px/1.4 var(--f-body);color:var(--ink-2);}
+#loadbar{height:3px;background:var(--line);border-radius:2px;margin-top:14px;overflow:hidden;}
+#loadbar i{display:block;height:100%;width:0;background:var(--ice);transition:width .3s;}
+#toggle{display:none;}
+@media (max-width:760px){
+  #panel{left:0;right:0;top:auto;bottom:0;width:auto;max-height:58%;border-radius:16px 16px 0 0;border-bottom:0;padding-bottom:env(safe-area-inset-bottom,0px);transition:max-height .3s;}
+  #panel.min{max-height:calc(132px + env(safe-area-inset-bottom,0px));}
+  #panelHead{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;align-items:center;gap:10px;}
+  #panelHead h1{font-size:19px;}
+  #toggle{display:block;margin-left:auto;padding:7px 10px;}
+  #scroll{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));}
+  #hud{top:calc(10px + env(safe-area-inset-top,0px));}
+  #views button{padding:7px 8px;font-size:12px;}
+  #year{font-size:36px;}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+</style>
+
+<div id="sky"></div>
+<canvas id="gl" aria-label="3D-Modell des Hintereisferners"></canvas>
+<div id="labels"></div>
+
+<div id="loader"><div><b>Gletscherlabor</b><small id="loadmsg">Höhenmodell und Luftbild werden entpackt …</small><div id="loadbar"><i></i></div></div></div>
+
+<div id="hud">
+  <div id="views">
+    <button data-view="east" title="Blick vom Rofental talaufwärts">Von Osten</button>
+    <button data-view="tongue" title="Nahe an der Gletscherzunge">Zunge</button>
+    <button data-view="top" title="Senkrecht von oben">Von oben</button>
+    <button data-view="body" title="Den Eiskörper anheben und von der Seite zeigen">Eiskörper</button>
+    <button data-view="side" title="Längsschnitt von Süden">Längsschnitt</button>
+  </div>
+  <div class="chip" id="fps">–</div>
+</div>
+
+<aside id="panel">
+  <div id="panelHead">
+    <div>
+      <div class="eyebrow">Ötztaler Alpen · 46,80° N 10,77° O</div>
+      <h1><span>Hintereisferner</span> im Zeitraffer</h1>
+    </div>
+    <button id="toggle" aria-expanded="true">Regler</button>
+  </div>
+  <div id="scroll">
+    <section id="yearSec" hidden>
+      <h2>Jahreslauf <span class="hint" id="ySrc"></span></h2>
+      <div id="yclock"><div id="yDate">1. Oktober</div><div id="yYear">2003</div></div>
+      <input id="ypos" type="range" min="0" max="24" step="0.01" value="0" aria-label="Zeitpunkt im Jahr">
+      <div class="ticks"><span>1. OKT</span><span>JAN</span><span>APR</span><span>JUL</span><span>30. SEP</span></div>
+      <div class="row" style="margin-top:12px">
+        <button id="yPlay">❚❚ Pause</button>
+        <div class="seg" id="ySpeed" role="group" aria-label="Tempo">
+          <button data-d="60" class="on" title="Ein Jahr in 60 Sekunden">Langsam</button>
+          <button data-d="30" title="Ein Jahr in 30 Sekunden">Mittel</button>
+          <button data-d="12" title="Ein Jahr in 12 Sekunden">Schnell</button>
+        </div>
+      </div>
+      <div class="phase"><b id="yPhaseT"></b><span id="yPhaseX"></span></div>
+      <div class="stats">
+        <div class="stat"><b id="yLine">–</b><span>Schneegrenze</span></div>
+        <div class="stat"><b id="ySwe">–</b><span>Schneehöhe in 3000 m</span></div>
+      </div>
+      <canvas class="chart" id="ySnowChart" height="150" style="margin-top:10px" aria-label="Schneedecke im Jahreslauf"></canvas>
+      <canvas class="chart" id="yLineChart" height="120" style="margin-top:8px" aria-label="Schneegrenze im Jahreslauf"></canvas>
+      <p class="small">Schneehöhe aus dem Wassergehalt mit einer mittleren Dichte von 350 kg/m³. Die Regler unter „Klima“ rechnen das Jahr sofort neu.</p>
+      <div class="row" style="margin-top:8px">
+        <button id="yNext">Nächstes Jahr ▸</button>
+        <button id="yExit">Zurück zum Zeitraffer</button>
+      </div>
+      <p class="small" id="yState"></p>
+    </section>
+
+    <section id="clockSec">
+      <div id="clock"><div id="year">1850</div><div id="month">Oktober</div><div id="season">Herbst</div></div>
+      <div id="seasonbar"><i id="seasonmark"></i></div>
+      <div class="ticks"><span>OKT</span><span>JAN</span><span>APR</span><span>JUL</span><span>SEP</span></div>
+      <div class="row" style="margin-top:12px">
+        <button id="play">▶ Abspielen</button>
+        <div class="seg" id="speed" role="group" aria-label="Geschwindigkeit">
+          <button data-s="0.25" title="1 Jahr in 4 Sekunden – Jahreszeiten sichtbar">¼ a/s</button>
+          <button data-s="1" class="on">1 a/s</button>
+          <button data-s="4">4 a/s</button>
+          <button data-s="100" title="So schnell der Rechner kann">Max</button>
+        </div>
+      </div>
+      <p class="small" id="speedNote">a/s = Modelljahre pro Sekunde. Bei ¼ a/s siehst du Winterschnee kommen und gehen.</p>
+      <button id="yearBtn" class="wide" title="Ein Haushaltsjahr Schritt für Schritt">Jahreslauf ansehen</button>
+    </section>
+
+    <section>
+      <h2>Klima <span class="hint" id="modeHint">Referenz 1961–1990</span></h2>
+      <div class="seg" id="mode" role="group" aria-label="Klimamodus" style="margin-bottom:12px">
+        <button data-m="scen" class="on">Regler</button>
+        <button data-m="hist" title="Gemessenes Klima HISTALP 1850–2003, danach Mittel 1974–2003">Gemessen</button>
+      </div>
+      <div class="slider">
+        <label for="dT">Mittlere Jahrestemperatur <output id="dTv">±0,0 °C</output></label>
+        <input id="dT" type="range" min="-5" max="5" step="0.1" value="0">
+        <div class="scale"><span>−5 °C</span><span>0</span><span>+5 °C</span></div>
+      </div>
+      <div class="slider">
+        <label for="dP">Jahresniederschlag <output id="dPv">±0 %</output></label>
+        <input id="dP" type="range" min="-50" max="50" step="5" value="0">
+        <div class="scale"><span>−50 %</span><span id="pBase">Basis 1091 mm</span><span>+50 %</span></div>
+      </div>
+      <div id="elaBox">
+        <span class="k">Gleichgewichts­linie</span><span></span>
+        <span id="elaVal">{{ELAREF}} m</span><span id="elaDelta">±0 m</span>
+        <span id="elaNote">Oberhalb bleibt im Jahresmittel Schnee liegen (Nährgebiet), unterhalb schmilzt mehr ab, als fällt (Zehrgebiet).</span>
+      </div>
+      <canvas class="chart" id="mbChart" height="180" style="margin-top:10px" aria-label="Massenbilanz nach Höhe"></canvas>
+      <label class="check"><input type="checkbox" id="vari" checked> Wetter schwankt von Jahr zu Jahr</label>
+      <div class="row"><button id="resetClim">Klima zurücksetzen</button></div>
+    </section>
+
+    <section>
+      <h2>Hintereisferner <span class="hint" id="statYear">–</span></h2>
+      <div class="stats">
+        <div class="stat"><b id="sArea">–</b><span>Fläche km²</span></div>
+        <div class="stat"><b id="sVol">–</b><span>Volumen km³</span></div>
+        <div class="stat"><b id="sTerm">–</b><span>Zungenende m ü. M.</span></div>
+        <div class="stat"><b id="sBal">–</b><span>Bilanz m w.e./Jahr</span></div>
+      </div>
+      <canvas class="chart" id="tsChart" height="130" style="margin-top:10px" aria-label="Verlauf von Fläche und Zungenhöhe"></canvas>
+    </section>
+
+    <section>
+      <h2>Ausgangszustand</h2>
+      <div class="row">
+        <button id="st1850" title="Hochstand der Kleinen Eiszeit">1850 · Hochstand</button>
+        <button id="st2003" title="Ende der HISTALP-Messreihe">2003 · Ende Messreihe</button>
+      </div>
+      <p class="small">Beide Zustände sind vorgerechnet: 1850 nach einer Kleinen-Eiszeit-Phase ab 1600, 2003 nach dem gemessenen Klima 1850–2003. Die Moränen stammen aus diesen Vorstössen.</p>
+    </section>
+
+    <section>
+      <h2>Gletscher als Körper</h2>
+      <div class="seg" id="iceMode" role="group" aria-label="Darstellung des Eises" style="margin-bottom:10px">
+        <button data-i="1" class="on">Eisdicke</button><button data-i="0">Natürlich</button>
+      </div>
+      <div id="thickLegend">
+        <div class="thick"></div>
+        <div class="scale"><span>0 m</span><span>100</span><span>200</span><span>≥ 320 m Eis</span></div>
+      </div>
+      <div class="slider">
+        <label for="lift">Eiskörper anheben <output id="liftv">0 m</output></label>
+        <input id="lift" type="range" min="0" max="900" step="10" value="0">
+        <div class="scale"><span>an Ort</span><span>schwebend</span></div>
+      </div>
+      <p class="small">Angehoben zeigt sich der Gletscher als eigener Körper mit Unterseite, darunter das leere, vom Eis ausgeschliffene Felsbett.</p>
+    </section>
+
+    <section>
+      <h2>Ansicht</h2>
+      <label class="check"><input type="checkbox" id="oEla" checked> Gleichgewichtslinie (ELA)</label>
+      <label class="check"><input type="checkbox" id="oFlow" checked> Fliessbewegung des Eises</label>
+      <label class="check"><input type="checkbox" id="oMb"> Massenbilanz einfärben</label>
+      <label class="check"><input type="checkbox" id="oOut"> Gletscherumriss 2003 (Inventar)</label>
+      <label class="check"><input type="checkbox" id="oLbl" checked> Namen</label>
+      <label class="check"><input type="checkbox" id="oCut"> Schnitt durch den Gletscher</label>
+      <div class="slider" id="cutBox" hidden>
+        <div class="seg" id="cutDir" style="margin-bottom:6px"><button data-c="long" class="on">Längsschnitt</button><button data-c="cross">Querschnitt</button></div>
+        <label for="cutpos">Lage des Schnitts <output id="cutv"></output></label>
+        <input id="cutpos" type="range" min="0" max="1" step="0.002" value="0.5">
+      </div>
+      <div class="slider">
+        <label for="exag">Überhöhung <output id="exagv">1,0×</output></label>
+        <input id="exag" type="range" min="1" max="2.5" step="0.1" value="1">
+      </div>
+      <div class="seg" id="quality" role="group" aria-label="Netzauflösung"><button data-q="1" class="on">25 m Netz</button><button data-q="2">50 m Netz</button></div>
+    </section>
+
+    <section>
+      <h2>Legende</h2>
+      <div class="legend">
+        <span><i style="background:var(--snow)"></i>Neuschnee</span>
+        <span><i style="background:var(--firn)"></i>Firn (Altschnee)</span>
+        <span><i style="background:var(--glacier)"></i>Gletschereis (natürlich)</span>
+        <span><i style="background:#0b1d2c"></i>Gletscherspalten</span>
+        <span><i style="background:#3f6377"></i>Spalten</span>
+        <span><i style="background:var(--debris)"></i>Schutt auf Eis</span>
+        <span><i style="background:var(--moraine)"></i>Moräne</span>
+        <span><i style="background:var(--forefield)"></i>Gletschervorfeld</span>
+        <span><i style="background:var(--ela)"></i>ELA</span>
+      </div>
+    </section>
+
+    <section>
+      <details>
+        <summary>Wie das Modell rechnet</summary>
+        <p class="small"><b>Gelände:</b> SRTM-Höhenmodell (3″) des Rofentals, auf 25 m verfeinert. Unter dem Eis wurde das Felsbett mit dem GlabTop-Ansatz (Eisdicke aus Neigung und Schubspannung) geschätzt. Die Oberfläche ist ein aus Höhe, Neigung, Exposition und Abfluss berechnetes Luftbild, kein echtes Foto.</p>
+        <p class="small"><b>Massenbilanz:</b> alle zwei Wochen Temperatur und Niederschlag nach Höhe (−0,65 °C/100 m, +4 %/100 m). Unter etwa +1 °C fällt Schnee. Schmelze über Grad-Tage: 3 mm (Schnee), 4,5 mm (Firn), 6,1 mm (Eis) Wasser pro °C und Tag, abgeschwächt in schattigen Nordlagen. Schnee, der den Sommer übersteht, wird Firn und verdichtet in einigen Jahren zu Eis.</p>
+        <p class="small"><b>Eisfluss:</b> 2D-Flachschicht-Näherung (Glen-Fliessgesetz, n = 3) auf 125-m-Gitter. Gletscherspalten entstehen, wo die Dehnungsrate des modellierten Fliessfelds etwa 0,01–0,06 pro Jahr übersteigt, quer zur Richtung der stärksten Dehnung: Querspalten in Eisbrüchen, schräge Randspalten durch Scherung an den Flanken, Längsspalten an der sich ausbreitenden Zunge. Mitgeführter Schutt wird abgelagert, wo das Eis verschwindet – so entstehen Moränen.</p>
+        <p class="small"><b>Kalibrierung:</b> Die Temperaturkorrektur ist so gewählt, dass das Modell mit dem gemessenen Klima 1850–2003 die Gletscherfläche von 2003 trifft. Daraus folgt eine ELA von {{ELAREF}} m für das Klima 1961–1990 (gemessene Werte im Ötztal: Hintereisferner 2933 m, Vernagtferner 3076 m, Kesselwandferner 3106 m). Empfindlichkeit {{SENS}} m pro °C, Literatur +137/−125 m (Zemp et al. 2007).</p>
+        <p class="small"><b>Daten &amp; Quellen:</b> SRTM (NASA), HISTALP-Klima (ZAMG/GeoSphere Austria), Gletscherumriss RGI 5.0, über die OGGM-Beispieldaten. Zemp et al. 2007 (Global Planet. Change), Six &amp; Vincent 2014 (J. Glaciol.), Linsbauer et al. 2012, Cuffey &amp; Paterson 2010.</p>
+      </details>
+    </section>
+  </div>
+</aside>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script id="simsrc">/*SIM*/</script>
+<script>
+const DATA = /*DATA*/;
+</script>
+<script>
+/*APP*/
+</script>

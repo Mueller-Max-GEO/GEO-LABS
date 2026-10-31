@@ -1,0 +1,8 @@
+src/data/
+src/*.npy
+src/*.npz
+src/*.jpg
+src/*.png
+src/*.log
+src/__pycache__/
+tests/t_*
