@@ -6,12 +6,14 @@ und läuft direkt im Browser.
 | Übung | Thema | Ordner |
 |---|---|---|
 | Gletscherlabor Hintereisferner | 3D-Gletschermodell: Massenbilanz, Gleichgewichtslinie, Eisfluss, Gletscherspalten, Moränen, Klimaregler | [`gletscherlabor/`](gletscherlabor/) |
+| Tsunami-Labor | 3D-Modell einer Subduktionszone: Spannungsaufbau, Seebeben, Wasserverdrängung, Ausbreitung, Überflutung und Rückstrom, mit Vorhersage-Modus | [`tsunamilabor/`](tsunamilabor/) |
 
 ## Online ansehen (GitHub Pages)
 
 Unter *Settings → Pages* als Quelle *Deploy from a branch*, Branch `main`, Ordner `/ (root)` wählen.
 Danach ist die Übersicht unter `https://mueller-max-geo.github.io/GEO-LABS/` erreichbar,
-das Gletschermodell unter `https://mueller-max-geo.github.io/GEO-LABS/gletscherlabor/`.
+das Gletschermodell unter `https://mueller-max-geo.github.io/GEO-LABS/gletscherlabor/`,
+das Tsunami-Modell unter `https://mueller-max-geo.github.io/GEO-LABS/tsunamilabor/`.
 
 ## Neue Übung hinzufügen
 
