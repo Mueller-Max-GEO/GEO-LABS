@@ -95,6 +95,9 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .evdots button::after{content:"";position:absolute;left:4px;top:4px;width:8px;height:8px;border-radius:50%;background:var(--c,var(--ink));box-shadow:0 0 0 2px rgba(4,6,10,.9)}
 .evdots button.ev-a::after{left:4.5px;top:4.5px;width:7px;height:7px;border-radius:1px;transform:rotate(45deg);box-shadow:0 0 0 1.5px rgba(4,6,10,.95)}
 .evdots button.ev-a::before{content:attr(data-s);position:absolute;left:0;right:0;top:-11px;text-align:center;font-size:9.5px;font-weight:700;color:var(--c);text-shadow:0 0 3px #000}
+.lb-dn{font-weight:700;font-size:20px;letter-spacing:.04em;text-transform:capitalize;padding:3px 12px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.45)}
+.lb-dn-day{color:#3a2a00;background:rgba(255,214,110,.94)}
+.lb-dn-night{color:#dfe8ff;background:rgba(24,34,70,.9);border:1px solid rgba(160,180,255,.45)}
 .lb-ang{color:#fff;font-weight:700;font-size:20px;letter-spacing:.02em;background:rgba(200,52,44,.92);padding:3px 10px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.45)}
 .lb-luxlat{color:#FFC46B;font-weight:700;font-size:13px;text-shadow:0 0 8px rgba(255,196,107,.6),0 0 2px #000}
 .lb-lat.glow{font-weight:700;font-size:14px;text-shadow:0 0 10px currentColor,0 0 2px #000}
@@ -1843,7 +1846,7 @@ function updateScene(tSec,dt){
       rayArr[i*6]=end.x+rd.x*len;rayArr[i*6+1]=end.y+rd.y*len;rayArr[i*6+2]=end.z+rd.z*len;rayArr[i*6+3]=end.x;rayArr[i*6+4]=end.y;rayArr[i*6+5]=end.z}
     setSegs(rays,rayArr,NR);
   }
-  updateDayCircle(a); updateGhosts(); updateMoon(dEff,a); updateZen(); updateLatGlow(dt,tSec); updateGrid(dt,tSec); updateFlash(dt); updateAng(dt);
+  updateDayCircle(a); updateGhosts(); updateMoon(dEff,a); updateZen(); updateLatGlow(dt,tSec); updateGrid(dt,tSec); updateFlash(dt); updateAng(dt); updateTerm(dt,tSec);
 }
 function vis(){
   orbitGroup.visible=state.show.orbit&&!cH('orbit');tickGroup.visible=state.show.months&&!cH('months');eventGroup.visible=state.show.events&&!cH('events');
@@ -2444,6 +2447,24 @@ const zenOn=()=>cine.on&&!cine.free&&SHOTS[cine.i]&&SHOTS[cine.i].id==='tropics'
 addLabel('lb-zen',()=>L().zenLbl,o=>o.copy(earthPos).addScaledVector(sunDir,R_E*earthS*1.02),{occl:false,anchor:'l',show:zenOn});
 function updateZen(){zenMark.visible=zenOn();if(zenMark.visible){zenMark.position.copy(earthPos).addScaledVector(sunDir,R_E*earthS*1.004);zenMark.scale.setScalar(earthS)}}
 
+/* ---------- day-night boundary (chapter 3): drawn in as a glowing ring when the voice names it ---------- */
+const TN=128,termMat=lmat({color:lin(0xFFE7A8,2.2),linewidth:3.4,transparent:true,opacity:0,depthWrite:false});
+const termLine=dynSegs(TN,termMat);termLine.renderOrder=5;termLine.visible=false;scene.add(termLine);
+const termArr=new Float32Array(TN*6),_tU=new V3(),_tW=new V3(),_tX=new V3(),_tC=new V3();let termS=0,termLbl=[0,0];
+function termAt(a,out){const R=R_E*earthS*1.006;return out.copy(earthPos).addScaledVector(_tU,Math.cos(a)*R).addScaledVector(_tW,Math.sin(a)*R)}
+function updateTerm(dt,t){const sh=cine.on&&!cine.free?SHOTS[cine.i]:null;const r=sh&&sh.term?sh.term(Math.min(1,cine.t/sh.dur)):[0,1,0,0];
+  termS+=(r[0]-termS)*Math.min(1,dt*4);termLbl[0]+=(r[2]-termLbl[0])*Math.min(1,dt*4);termLbl[1]+=(r[3]-termLbl[1])*Math.min(1,dt*4);
+  const vis=termS>0.01&&nearEarth(FAR_D);termLine.visible=vis;if(!vis)return;
+  // ring perpendicular to the sunlight, starting at the north side and running first over the side facing the camera
+  _tU.copy(axisDir).addScaledVector(sunDir,-axisDir.dot(sunDir)).normalize();_tW.crossVectors(sunDir,_tU).normalize();
+  if(_tW.dot(_tC.copy(camera.position).sub(earthPos))<0)_tW.negate();
+  const n=Math.max(1,Math.round(TN*Math.min(1,r[1])));let q=0;
+  for(let i=0;i<n;i++)for(const f of [i,i+1]){termAt(f/TN*TAU,_tX);termArr[q++]=_tX.x;termArr[q++]=_tX.y;termArr[q++]=_tX.z}
+  setSegs(termLine,termArr,n);termMat.opacity=termS*(0.85+0.15*Math.sin(t*4.5));termMat.linewidth=3.4*(1+0.35*termS)}
+const termPos=(sg,out)=>{_tC.copy(camera.position).sub(earthPos).normalize();return out.copy(earthPos).addScaledVector(sunDir,sg*R_E*earthS*0.5).addScaledVector(_tC,R_E*earthS*0.86)};
+addLabel('lb-dn lb-dn-day',()=>L().dayW,o=>termPos(1,o),{occl:false,show:()=>termLbl[0]>0.5&&cine.on});
+addLabel('lb-dn lb-dn-night',()=>L().nightW,o=>termPos(-1,o),{occl:false,show:()=>termLbl[1]>0.5&&cine.on});
+
 /* ---------- angle between the sunlight and the ground at the place (chapter 7) ---------- */
 // close side view: the ground as a straight line, the middle ray of the beam, and the angle between them
 // (a right-angle square when the Sun is overhead, otherwise an arc with the value in degrees)
@@ -2595,7 +2616,8 @@ const ERKL=[
  // 2: the tilted axis; then the four positions on the orbit (in "Mehr": the axis upright for a moment)
  {id:'axis',cut:true,rel:true,bigFix:true,allow:['axis','tiltAngle','ghosts','big'],show:{axis:true,tiltAngle:true},
   start(){setPl('lux');state.mode='year';state.hour=12;state.d=EVENTS[1]-3},
-  time(u){if(!cine.mehr){state.d=EVENTS[1]-3+u*8;state.show.ghosts=u>=cu(2,0)-0.01}
+  time(u){state.hour=mod(12+cine.t*1.2,24); // slow rotation: one turn in 20 s
+    if(!cine.mehr){state.d=EVENTS[1]-3+u*8;state.show.ghosts=u>=cu(2,0)-0.01}
     else{state.show.ghosts=true;state.d=seqD(u,[[0,EVENTS[3]+12],[0.004,EVENTS[1]-20,cu(1,0)-0.01],[cu(1,0),EVENTS[1]],[cu(1,2),EVENTS[3]],[cu(2,0),EVENTS[0]],[cu(2,1),EVENTS[2]],[cu(3,0),EVENTS[2]+120,1-cu(3,0)]]);
       const flat=u>=cu(3,0)-0.01;if(state.tilt0!==flat)setTilt0(flat)}},
   cam(u,o){const side=q=>{const k=fitK(),s=sunDir,sd=sideV(),a=-0.35+0.5*ease(Math.min(1,u/Math.max(0.05,cu(2,0)))),G=GHOST_S,r=4.4*k*G;q.p.copy(earthPos).addScaledVector(sd,Math.cos(a)*r).addScaledVector(s,Math.sin(a)*r).add(_cn.set(0,0.45*k*G,0));q.t.copy(earthPos).add(_cn.set(0,0.22*G,0))};
@@ -2605,6 +2627,10 @@ const ERKL=[
  // 3: day and night while the Earth turns (December: long nights in the north, city lights)
  {id:'term',cut:true,rel:true,allow:['borders','place'],show:{borders:true},
   start(){setPl('lux');state.mode='day';state.d=EVENTS[3];this.h0=13;state.show.place=cine.mehr},
+  // day and night labels with the sentences, then the boundary is drawn in (about 1.6 s) and glows
+  term(u){const D=this.dur,dr=c=>Math.min(1,Math.max(0,(u-c)*D/1.6));
+    if(cine.mehr){const on=u>=cu(1,0)-0.004&&u<cu(2,0);return [on?1:0,dr(cu(1,0)-0.004),0,0]}
+    const c=cu(1,3)-0.004,on=u>=c;return [on?(u<cu(2,0)?1:0.5):0,dr(c),u>=cu(1,1)-0.004&&u<cu(2,0)?1:0,u>=cu(1,2)-0.004&&u<cu(2,0)?1:0]},
   time(u){state.hour=mod(this.h0+u*(cine.mehr?20:16),24)},
   cam(u,o){const k=fitK(),sd=sideV(),r=(2.95-0.4*ease(u))*k;o.p.copy(earthPos).addScaledVector(sd,-r).add(_cn.set(0,0.75*k,0)).addScaledVector(sunDir,-0.15*k);o.t.copy(earthPos)},
   data(){return cine.mehr?`${L().placeShort.lux} · ${fmtHM(state.hour)}`:''}},
