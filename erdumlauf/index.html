@@ -112,7 +112,8 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
   background:var(--glass);border:1px solid var(--line);border-radius:14px;backdrop-filter:blur(16px) saturate(1.15);-webkit-backdrop-filter:blur(16px) saturate(1.15);overflow:hidden}
 .app.panel-hidden .panel{display:none}
 .panel,.dock,.tools>*{transition:opacity .6s}
-.app.cine .dock,.app.cine .tools>*:not(#cineBtn):not(#erklBtn){opacity:0;pointer-events:none}
+.app.cine .dock,.app.cine .tools>*:not(#cineBtn):not(#erklBtn):not(#fsBtn){opacity:0;pointer-events:none}
+.cinenav .cn-fs{border-left:1px solid var(--line);border-radius:0;margin-left:2px;font-size:15px}
 .app.cine:not(.film-erkl) #erklBtn,.app.cine.film-erkl #cineBtn{opacity:0;pointer-events:none}
 .tabs{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line);flex:none}
 .tabs button{border:0;background:transparent;padding:11px 8px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:500;border-bottom:2px solid transparent}
@@ -1689,6 +1690,7 @@ function renderCineNav(){const el=$('cineNav');if(!el)return;const l=L();
     SHOTS.map((s,i)=>`<button type="button" class="cn-num" data-shot="${i}" aria-pressed="${i===cine.i}" title="${l.cine[s.id].k}">${i+1}</button>`).join('')+
     `<button type="button" class="cn-arrow" data-cnav="1" aria-label="${l.cineNext}">›</button>`+
     `<button type="button" class="cn-hold" data-chold aria-pressed="${!!cine.hold}">${cine.hold?'▶ '+l.cinePlay:'❚❚ '+l.cineHold}</button>`+
+    `<button type="button" class="cn-fs" data-cfs title="${l.fullscreen}" aria-label="${l.fullscreen}">⛶</button>`+
     `<button type="button" class="cn-exit" data-cexit>✕ ${l.cineExit}</button>`}
 function filmBtn(){return $(cine.film==='erkl'?'erklBtn':'cineBtn')}
 function startCine(film){ film=film==='erkl'?'erkl':'kino'; if(cine.on){if(cine.film===film)return;stopCine()}
@@ -2059,6 +2061,7 @@ document.addEventListener('click',e=>{
   else if('cmehr' in t.dataset){cine.mehr=!cine.mehr;goShot(cine.i)}
   else if('cvoice' in t.dataset){setVoice(!NARR.voice)}
   else if('cexit' in t.dataset){stopCine()}
+  else if('cfs' in t.dataset){toggleFull()}
   else if(t.dataset.topic){applyTopic(t.dataset.topic)}
   else if(t.dataset.emode){state.emode=t.dataset.emode;sumDone=false;renderLesson()}
   else if('estart' in t.dataset){startSum()}
@@ -2372,6 +2375,7 @@ function erklNavHTML(){const l=L(),last=cine.i===SHOTS.length-1,end=cine.atEnd;
      `<button type="button" class="cn-hold" data-chold aria-pressed="${!!cine.hold}">${cine.hold||end?'▶ '+(end?l.replay:l.cinePlay):'❚❚ '+l.cineHold}</button>`)+
     `<button type="button" class="cn-voice" data-cvoice aria-pressed="${v}" ${can?'':'disabled'} title="${can?(v?l.voiceOn:l.voiceOff):l.voiceNA}">${v?IC_VOICE:IC_MUTE}<span>${v?l.voiceOn:l.voiceOff}</span></button>`+
     `<button type="button" class="cn-mehr${end&&!cine.mehr?' cn-go2':''}" data-cmehr aria-pressed="${cine.mehr}">${cine.mehr?'← '+l.mehrBack:'＋ '+l.mehr}</button>`+
+    `<button type="button" class="cn-fs" data-cfs title="${l.fullscreen}" aria-label="${l.fullscreen}">⛶</button>`+
     `<button type="button" class="cn-exit" data-cexit>✕ ${l.cineExit}</button>`}
 document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t||!isErkl())return;
   if('cagain' in t.dataset){cine.mehr=false;goShot(0)}});
