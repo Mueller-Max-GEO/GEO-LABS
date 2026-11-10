@@ -280,6 +280,9 @@ button.big{font-size:15px;border-radius:8px;padding:10px 12px}
 .cinenav .cn-voice{display:flex;align-items:center;gap:6px;border-left:1px solid var(--line);border-radius:0;margin-left:2px}
 .cinenav .cn-voice svg{width:17px;height:17px}
 .cinenav .cn-voice[aria-pressed="false"]{color:#8C97A5}
+.cinenav .cn-auto{display:flex;align-items:center;gap:6px;border-left:1px solid var(--line);border-radius:0;margin-left:2px}
+.cinenav .cn-auto svg{width:16px;height:16px}
+.cinenav .cn-auto[aria-pressed="false"]{color:#8C97A5}.cinenav .cn-auto[aria-pressed="true"]{color:var(--accent)}
 .cinenav .cn-mehr{border-left:1px solid var(--line);border-radius:0;margin-left:2px;color:var(--ink);font-weight:600}
 .cinenav .cn-mehr[aria-pressed="true"]{color:var(--accent)}
 .cinenav .cn-go{background:var(--accent);color:var(--accent-ink);font-weight:700;animation:pulse 1.6s ease-in-out infinite}
@@ -329,7 +332,7 @@ button.big{font-size:15px;border-radius:8px;padding:10px 12px}
   .seg button{padding:7px 9px}
 }
 @media (min-width:821px){.app.cine .panel{opacity:0;pointer-events:none}}
-@media (max-width:820px){.app.film-erkl .cinenav .cn-num{display:none}.cinenav .cn-voice span{display:none}.cinenav button{padding:7px 8px}}
+@media (max-width:820px){.app.film-erkl .cinenav .cn-num{display:none}.cinenav .cn-voice span,.cinenav .cn-auto span{display:none}.cinenav button{padding:7px 8px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
@@ -1641,7 +1644,7 @@ function stopDate(sh,u){const n=sh.stops.length,t=u*sh.dur,D=sh.dur/n,i=Math.min
   if(i===0)return to;const from=EVENTS[sh.stops[i-1]];let span=mod(to-from,365);return mod(from+span*ease(Math.min(1,loc/1.6)),365)}
 const KINO=[
  // 1: one year as a fast time-lapse, seen from far above
- {id:'year',dur:12,cut:false,rel:false,allow:['big','months'],show:{months:true},start(){this.d0=state.d;state.mode='year';state.hour=12},
+ {id:'year',dur:12,cut:false,rel:false,bigFix:true,allow:['big','months'],show:{months:true},start(){this.d0=state.d;state.mode='year';state.hour=12},
   time(u){state.d=mod(this.d0+ease(u)*365,365)},
   cam(u,o){const k=viewScale(),az=0.25+u*0.85,r=26*k;o.p.set(Math.sin(az)*r,(14.5-3.5*u)*k,Math.cos(az)*r);o.t.set(0,-0.8,0)}},
  // 2: the tilted axis, seen from the side at the June solstice
@@ -1671,14 +1674,14 @@ const KINO=[
   time(u){const a=0.07,b=0.70;if(u<b){sumDone=false;state.d=Math.min(364.99,Math.max(0,(u-a)/(b-a))*365)}else{state.d=364.99;sumDone=true}},
   cam(u,o){energyPose(u,o,0.35)}},
  // 8: back to the whole picture
- {id:'end',dur:12,cut:true,rel:false,allow:['big','months'],show:{months:true},start(){state.mode='year';state.hour=12;this.d0=state.d},
+ {id:'end',dur:12,cut:true,rel:false,bigFix:true,allow:['big','months'],show:{months:true},start(){state.mode='year';state.hour=12;this.d0=state.d},
   time(u){state.d=mod(this.d0+u*30,365)},
-  cam(u,o){const k=viewScale(),s=sunDir,e=ease(u);const a=_t1.copy(earthPos).addScaledVector(s,-3.2).add(_cn.set(0,1.2,0));
+  cam(u,o){const k=viewScale(),s=sunDir,e=ease(u);const a=_t1.copy(earthPos).addScaledVector(s,-3.2*GHOST_S).add(_cn.set(0,1.2*GHOST_S,0));
     o.p.lerpVectors(a,_t2.set(-6*k,30*k,14*k),e);o.t.lerpVectors(earthPos,_t2.set(0,-0.5,0),e)}}
 ];
 let SHOTS=KINO;
 const isErkl=()=>cine.on&&cine.film==='erkl';
-function enterShot(sh){
+function enterShot(sh){cine.snapS=true;cine.autoT=0;
   if(cine.film==='erkl'){state.emode='day';sumDone=false;if(state.tilt0)setTilt0(false);erklPrep(sh)}
   Object.assign(state.show,CINE_SHOW,sh.show||{});cine.allow=new Set(['orbit'].concat(sh.allow||[]));if(sh.start)sh.start();vis();syncToggles();cine.capKey='';cine.capT=0;legKey='';
   if(cine.film==='erkl')erklSpeak()}
@@ -1686,7 +1689,8 @@ function enterShot(sh){
 function goShot(i){if(!cine.on)return;cine.i=mod(i,SHOTS.length);cine.t=0;cine.bt=0;cine.blend=null;cine.jump=true;cine.ended=false;
   if(cine.free)endFree(true);if(cine.film==='erkl')cine.hold=false;enterShot(SHOTS[cine.i]);renderCineNav()}
 function setHold(v){if(!cine.on)return;
-  if(!v&&cine.atEnd){goShot(cine.i);return}
+  // at the end of a chapter: hold = stay here, continue = next chapter
+  if(cine.atEnd){if(v){cine.autoT=0;cine.hold=true;renderCineNav();return}cine.hold=false;cine.mehr=false;goShot(cine.i+1);return}
   cine.hold=v;if(cine.film==='erkl'){if(v)narrPause();else{if(cine.free)endFree();narrResume()}}renderCineNav()}
 function renderCineNav(){const el=$('cineNav');if(!el)return;const l=L();
   if(cine.film==='erkl'){el.innerHTML=erklNavHTML();return}
@@ -1739,6 +1743,7 @@ function cineStep(dt){
     else{cine.jump=false;const prev=sh;cine.mehr=false;cine.i=(cine.i+1)%SHOTS.length;sh=SHOTS[cine.i];cine.t=0;cine.bt=0;
       const rel=prev.rel&&sh.rel;cine.blend=sh.cut?null:{rel,p:rel?camera.position.clone().sub(earthPos):camera.position.clone(),t:rel?controls.target.clone().sub(earthPos):controls.target.clone()};
       enterShot(sh);renderCineNav()}}
+  if(erkl&&cine.atEnd&&cine.autoT&&!cine.hold&&performance.now()>=cine.autoT){cine.autoT=0;cine.mehr=false;goShot(cine.i+1);sh=SHOTS[cine.i]}
   const u=Math.min(1,cine.t/sh.dur);
   if(cine.free){controls.update();finalMat.uniforms.uFade.value=1}
   else{
@@ -1805,7 +1810,9 @@ function updateScene(tSec,dt){
   orbitPos(a.nu,a.lam,earthPos); earthPivot.position.copy(earthPos);
   sunDir.copy(earthPos).negate().normalize();
   // in the overview the Earth is drawn larger so that it stays readable
-  {const ts=cH('big')?1:1+(GHOST_S-1)*sstep(15,22,camera.position.distanceTo(earthPos)); earthS+=(ts-earthS)*Math.min(1,dt*5); earthPivot.scale.setScalar(earthS);
+  {const fsh=cine.on?SHOTS[cine.i]:null,ts=fsh&&fsh.bigFix?GHOST_S:cH('big')?1:1+(GHOST_S-1)*sstep(15,22,camera.position.distanceTo(earthPos));
+   // in the films the Earth keeps one size per scene (the same as the four positions), it does not grow while the camera moves
+   if(cine.snapS){earthS=ts;cine.snapS=false}else earthS+=(ts-earthS)*Math.min(1,dt*5); earthPivot.scale.setScalar(earthS);
    atmMat.uniforms.uR.value=R_E*earthS; atmMat.uniforms.uRa.value=R_ATM*earthS;}
   const p=PLACES[state.place];
   spin.rotation.y=a.ra-(p.lon*DEG-15*(state.hour-12)*DEG);
@@ -2370,15 +2377,22 @@ function erklAdvance(sh,dt){if(cine.hold||cine.atEnd)return cine.t;
   const d=target-cine.t,r=Math.max(0,Math.min(3,1+d*0.9));return Math.min(sh.dur,cine.t+dt*r)}
 function erklMayEnd(){return !NARR.voice||!voiceActive()||NARR.done}
 // end of a chapter: the film waits for the next click
-function erklAtEnd(){if(cine.atEnd)return;cine.atEnd=true;narrStop();renderCineNav()}
+const AUTO_WAIT=3.5;
+function erklAtEnd(){if(cine.atEnd)return;cine.atEnd=true;narrStop();
+  cine.autoT=cine.auto&&cine.i<SHOTS.length-1&&!cine.hold?performance.now()+AUTO_WAIT*1000:0;renderCineNav()}
+cine.auto=lsGet('geogym-orbit-auto')!=='off';
+function setAuto(v){cine.auto=v;lsSet('geogym-orbit-auto',v?'on':'off');
+  if(cine.atEnd){cine.autoT=v&&cine.i<SHOTS.length-1&&!cine.hold?performance.now()+AUTO_WAIT*1000:0}renderCineNav()}
 
 /* ---------- captions and controls ---------- */
 function erklSub(){if(!NARR.items.length)return '';let k=NARR.voice&&voiceActive()&&!NARR.rec&&NARR.i>=0?NARR.i:curItem();
   if(k<0)return '';return NARR.items[k].text}
 function erklCap(sh){const l=L(),c=erklText(sh),n=SHOTS.indexOf(sh)+1,d=sh.data?sh.data():'';
-  const sub=cine.atEnd?`<span class="cap-next">${n<SHOTS.length?l.nextHint:l.endHint}</span>`:erklSub();
+  const sec=cine.autoT?Math.max(1,Math.ceil((cine.autoT-performance.now())/1000)):0;
+  const sub=cine.atEnd?`<span class="cap-next">${n>=SHOTS.length?l.endHint:sec?l.autoHint.replace('{s}',sec):l.nextHint}</span>`:erklSub();
   return `<div class="cap-k">${l.chapter} ${n} / ${SHOTS.length}${cine.mehr?' · '+l.mehr:''}</div><div class="cap-t">${c.title}</div><div class="cap-s">${sub}</div>${d?`<div class="cap-d">${d}</div>`:''}`}
 const IC_VOICE='<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 8h3l4-3.5v11L6 12H3z" fill="currentColor"/><path d="M13 7.2a4 4 0 0 1 0 5.6M15.2 5a7 7 0 0 1 0 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+const IC_AUTO='<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10a6 6 0 0 1 10.2-4.3M16 10a6 6 0 0 1-10.2 4.3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M14.6 2.8v3.4h-3.4M5.4 17.2v-3.4h3.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const IC_MUTE='<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 8h3l4-3.5v11L6 12H3z" fill="currentColor"/><path d="M13.5 8l4 4M17.5 8l-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
 function erklNavHTML(){const l=L(),last=cine.i===SHOTS.length-1,end=cine.atEnd;
   const can=synthOK()||NARR.rec,v=NARR.voice&&can;
@@ -2387,13 +2401,15 @@ function erklNavHTML(){const l=L(),last=cine.i===SHOTS.length-1,end=cine.atEnd;
     SHOTS.map((s,i)=>`<button type="button" class="cn-num" data-shot="${i}" aria-pressed="${i===cine.i}" title="${erklText(s).title}">${i+1}</button>`).join('')+
     `<button type="button" class="cn-arrow${end&&!last?' cn-go':''}" data-cnav="1" aria-label="${l.cineNext}">›</button>`+
     (end&&last?`<button type="button" class="cn-hold" data-cagain>↻ ${l.again}</button>`:
-     `<button type="button" class="cn-hold" data-chold aria-pressed="${!!cine.hold}">${cine.hold||end?'▶ '+(end?l.replay:l.cinePlay):'❚❚ '+l.cineHold}</button>`)+
+     `<button type="button" class="cn-hold" data-chold aria-pressed="${!!cine.hold}">${end?(cine.autoT?'❚❚ '+l.cineHold:'▶ '+l.cinePlay):cine.hold?'▶ '+l.cinePlay:'❚❚ '+l.cineHold}</button>`)+
+    `<button type="button" class="cn-auto" data-cauto aria-pressed="${!!cine.auto}" title="${l.autoTitle}">${IC_AUTO}<span>${l.autoLbl}</span></button>`+
     `<button type="button" class="cn-voice" data-cvoice aria-pressed="${v}" ${can?'':'disabled'} title="${can?(v?l.voiceOn:l.voiceOff):l.voiceNA}">${v?IC_VOICE:IC_MUTE}<span>${v?l.voiceOn:l.voiceOff}</span></button>`+
     `<button type="button" class="cn-mehr${end&&!cine.mehr?' cn-go2':''}" data-cmehr aria-pressed="${cine.mehr}">${cine.mehr?'← '+l.mehrBack:'＋ '+l.mehr}</button>`+
     `<button type="button" class="cn-fs" data-cfs title="${l.fullscreen}" aria-label="${l.fullscreen}">⛶</button>`+
     `<button type="button" class="cn-exit" data-cexit>✕ ${l.cineExit}</button>`}
 document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t||!isErkl())return;
-  if('cagain' in t.dataset){cine.mehr=false;goShot(0)}});
+  if('cagain' in t.dataset){cine.mehr=false;goShot(0)}
+  else if('cauto' in t.dataset){setAuto(!cine.auto)}});
 
 /* ---------- small helpers for the pictures ---------- */
 const PA={p:new V3(),t:new V3(),up:new V3()},PB={p:new V3(),t:new V3(),up:new V3()};
@@ -2435,21 +2451,21 @@ function updateLatGlow(dt,t){let tg=NOG;
 /* ---------- the chapters ---------- */
 const ERKL=[
  // 1: the orbit; perihelion in January, aphelion in July
- {id:'orbit',cut:true,rel:false,allow:['big','months','events'],show:{months:true,events:true},
+ {id:'orbit',cut:true,rel:false,bigFix:true,allow:['big','months','events'],show:{months:true,events:true},
   start(){setPl('lux');state.mode='year';state.hour=12},
   time(u){state.d=cine.mehr?seqD(u,[[0,EVENTS[3]-15],[cu(1,0),EVENTS[4]],[cu(1,3),EVENTS[5]],[cu(2,0),EVENTS[5]+75,0.5]]):mod(EVENTS[4]-6+(u-cu(2,0))*330,365)},
   // film: "Das ist die Erde" – first the Earth alone and close, then a long pull back until the Sun is in the picture
   cam(u,o){const over=q=>poseOver(q,0.25+u*(cine.mehr?0.55:0.9),14.5-2.5*u);if(cine.mehr){over(o);return}
-    const near=q=>{const k=fitK(),sd=sideV();q.p.copy(earthPos).addScaledVector(sd,2.0*k).addScaledVector(sunDir,1.25*k).add(_cn.set(0,0.5*k,0));q.t.copy(earthPos);q.up.set(0,1,0)};
+    const near=q=>{const k=fitK(),sd=sideV();const G=GHOST_S;q.p.copy(earthPos).addScaledVector(sd,2.0*k*G).addScaledVector(sunDir,1.25*k*G).add(_cn.set(0,0.5*k*G,0));q.t.copy(earthPos);q.up.set(0,1,0)};
     mixPose(o,near,over,kAt(u,cu(0,1)-0.012,7.5))},
   data(){const a=astro(state.d),l=L();return `${l.distW} ${nf(a.r/1e6,1)} ${l.mkm} · ${l.speedW} ${nf(a.v,1)} km/s`}},
  // 2: the tilted axis; then the four positions on the orbit (in "Mehr": the axis upright for a moment)
- {id:'axis',cut:true,rel:true,allow:['axis','tiltAngle','ghosts','big'],show:{axis:true,tiltAngle:true},
+ {id:'axis',cut:true,rel:true,bigFix:true,allow:['axis','tiltAngle','ghosts','big'],show:{axis:true,tiltAngle:true},
   start(){setPl('lux');state.mode='year';state.hour=12;state.d=EVENTS[1]-3},
   time(u){if(!cine.mehr){state.d=EVENTS[1]-3+u*8;state.show.ghosts=u>=cu(2,0)-0.01}
     else{state.show.ghosts=true;state.d=seqD(u,[[0,EVENTS[3]+12],[0.004,EVENTS[1]-20,cu(1,0)-0.01],[cu(1,0),EVENTS[1]],[cu(1,2),EVENTS[3]],[cu(2,0),EVENTS[0]],[cu(2,1),EVENTS[2]],[cu(3,0),EVENTS[2]+120,1-cu(3,0)]]);
       const flat=u>=cu(3,0)-0.01;if(state.tilt0!==flat)setTilt0(flat)}},
-  cam(u,o){const side=q=>{const k=fitK(),s=sunDir,sd=sideV(),a=-0.35+0.5*ease(Math.min(1,u/Math.max(0.05,cu(2,0)))),r=4.4*k;q.p.copy(earthPos).addScaledVector(sd,Math.cos(a)*r).addScaledVector(s,Math.sin(a)*r).add(_cn.set(0,0.45*k,0));q.t.copy(earthPos).add(_cn.set(0,0.22,0))};
+  cam(u,o){const side=q=>{const k=fitK(),s=sunDir,sd=sideV(),a=-0.35+0.5*ease(Math.min(1,u/Math.max(0.05,cu(2,0)))),G=GHOST_S,r=4.4*k*G;q.p.copy(earthPos).addScaledVector(sd,Math.cos(a)*r).addScaledVector(s,Math.sin(a)*r).add(_cn.set(0,0.45*k*G,0));q.t.copy(earthPos).add(_cn.set(0,0.22*G,0))};
     const over=q=>poseOver(q,0.3+u*0.4,15);
     if(cine.mehr)over(o);else mixPose(o,side,over,kAt(u,cu(2,0),4))},
   data(){return `${L().tiltW} ${nf(epsCur/DEG,1)}°`}},
@@ -2531,13 +2547,13 @@ const ERKL=[
   cam(u,o){energyPose(u,o,0.35)},
   data(){return energyLine()}},
  // 11: summary: back to the whole picture with the four positions
- {id:'summary',cut:true,rel:false,allow:['big','months','ghosts','axis','events'],show:{months:true,ghosts:true,axis:true,events:true},
+ {id:'summary',cut:true,rel:false,bigFix:true,allow:['big','months','ghosts','axis','events'],show:{months:true,ghosts:true,axis:true,events:true},
   // one more year: the four positions appear only when the Earth has passed them; the Earth turns while it travels
   start(){setPl('lux');state.mode='year';state.hour=12;this.d0=EVENTS[0]-12},
   time(u){state.d=mod(this.d0+u*352,365);state.hour=mod(12+cine.t*6,24)},
   ghostVis(i){return mod(EVENTS[i]-this.d0,365)<=mod(state.d-this.d0,365)},
   cam(u,o){if(cine.mehr){poseOver(o,0.2+u*0.6,15);return}
-    const near=q=>{const k=fitK();q.p.copy(earthPos).addScaledVector(sunDir,-3.4*k).add(_cn.set(0,1.3*k,0));q.t.copy(earthPos)};
+    const near=q=>{const k=fitK();q.p.copy(earthPos).addScaledVector(sunDir,-3.4*k*GHOST_S).add(_cn.set(0,1.3*k*GHOST_S,0));q.t.copy(earthPos)};
     mixPose(o,near,q=>poseOver(q,0.25+u*0.5,15),ease(Math.min(1,u*this.dur/9)))}}
 ];
 
@@ -2553,7 +2569,7 @@ KINO.splice(KINO.findIndex(s=>s.id==='angle')+1,0,
 const TX11={
  de:{erklBtn:"Erklärfilm",chapter:"Kapitel",mehr:"Mehr dazu",mehrBack:"Zurück zum Film",voiceOn:"Stimme an",voiceOff:"Stimme aus",
    voiceNA:"Keine Sprachausgabe in diesem Browser – die Untertitel laufen trotzdem.",recNA:"Die Tonaufnahmen wurden nicht gefunden (Ordner „audio“ neben der Seite). Die Untertitel laufen trotzdem.",again:"Von vorn",replay:"Nochmal",
-   nextHint:"Weiter mit › – oder „Mehr dazu“ für eine genauere Erklärung.",endHint:"Ende des Films. „Von vorn“ startet ihn neu.",
+   nextHint:"Weiter mit › – oder „Mehr dazu“ für eine genauere Erklärung.",autoHint:"Weiter in {s} s – „Anhalten“ hält den Film hier, „Mehr dazu“ erklärt genauer.",autoLbl:"Automatisch",autoTitle:"Nach jedem Kapitel automatisch weiter",endHint:"Ende des Films. „Von vorn“ startet ihn neu.",
    freeLook:"Film angehalten: Die Erde lässt sich jetzt selbst drehen und zoomen. „Weiter“ setzt den Film fort.",
    sunNoon:"Sonnenhöhe mittags",dayW:"Tag",nightW:"Nacht",distW:"Abstand zur Sonne",speedW:"Tempo",mkm:"Mio. km",eqW:"Äquator",npW:"Nordpol",
    tiltW:"Neigung der Erdachse",zenLbl:"Sonne senkrecht",areaW:"Fläche",zenAt:"Sonne senkrecht über",E:"O",
@@ -2561,7 +2577,7 @@ const TX11={
      energy:{k:"Energie",t:"Ein Jahr Sonnenenergie",s:"Gesammelt ab dem 1. Januar: Rund um den Äquator kommt am meisten an, an den Polen am wenigsten. So entstehen die Beleuchtungszonen."}}},
  fr:{erklBtn:"Film expliqué",chapter:"Chapitre",mehr:"En savoir plus",mehrBack:"Retour au film",voiceOn:"Voix activée",voiceOff:"Voix coupée",
    voiceNA:"Pas de synthèse vocale dans ce navigateur – les sous-titres défilent quand même.",recNA:"Les enregistrements audio sont introuvables (dossier « audio » à côté de la page). Les sous-titres défilent quand même.",again:"Recommencer",replay:"Rejouer",
-   nextHint:"Suite avec › – ou « En savoir plus » pour une explication plus détaillée.",endHint:"Fin du film. « Recommencer » le relance.",
+   nextHint:"Suite avec › – ou « En savoir plus » pour une explication plus détaillée.",autoHint:"Suite dans {s} s – « Pause » arrête le film ici, « En savoir plus » explique en détail.",autoLbl:"Automatique",autoTitle:"Passer automatiquement au chapitre suivant",endHint:"Fin du film. « Recommencer » le relance.",
    freeLook:"Film en pause : la Terre peut maintenant être tournée et agrandie. « Continuer » relance le film.",
    sunNoon:"Hauteur du Soleil à midi",dayW:"jour",nightW:"nuit",distW:"Distance au Soleil",speedW:"Vitesse",mkm:"millions de km",eqW:"Équateur",npW:"Pôle Nord",
    tiltW:"Inclinaison de l'axe",zenLbl:"Soleil à la verticale",areaW:"Surface",zenAt:"Soleil à la verticale à",E:"E",
@@ -2569,7 +2585,7 @@ const TX11={
      energy:{k:"Énergie",t:"Une année d'énergie solaire",s:"Additionnée depuis le 1er janvier : autour de l'équateur, il en arrive le plus, aux pôles le moins. Ainsi naissent les zones d'éclairement."}}},
  en:{erklBtn:"Explainer film",chapter:"Chapter",mehr:"Learn more",mehrBack:"Back to the film",voiceOn:"Voice on",voiceOff:"Voice off",
    voiceNA:"No speech output in this browser – the subtitles still run.",recNA:"The audio recordings were not found (folder “audio” next to the page). The subtitles still run.",again:"Start again",replay:"Replay",
-   nextHint:"Continue with › – or “Learn more” for a closer explanation.",endHint:"End of the film. “Start again” plays it once more.",
+   nextHint:"Continue with › – or “Learn more” for a closer explanation.",autoHint:"Continuing in {s} s – “Hold” stops the film here, “Learn more” explains in detail.",autoLbl:"Auto",autoTitle:"Continue automatically after each chapter",endHint:"End of the film. “Start again” plays it once more.",
    freeLook:"Film paused: the Earth can now be turned and zoomed by hand. “Continue” resumes the film.",
    sunNoon:"Sun height at noon",dayW:"Day",nightW:"Night",distW:"Distance to the Sun",speedW:"Speed",mkm:"million km",eqW:"Equator",npW:"North Pole",
    tiltW:"Tilt of the axis",zenLbl:"Sun overhead",areaW:"Area",zenAt:"Sun overhead at",E:"E",
