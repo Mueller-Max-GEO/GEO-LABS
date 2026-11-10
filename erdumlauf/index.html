@@ -98,6 +98,19 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .lb-dn{font-weight:700;font-size:20px;letter-spacing:.04em;text-transform:capitalize;padding:3px 12px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.45)}
 .lb-dn-day{color:#3a2a00;background:rgba(255,214,110,.94)}
 .lb-dn-night{color:#dfe8ff;background:rgba(24,34,70,.9);border:1px solid rgba(160,180,255,.45)}
+.lb-eqang{color:#FFF0C8;font-weight:700;font-size:15px;text-shadow:0 0 8px rgba(255,240,200,.6),0 0 3px #000,0 0 2px #000}
+.lb-trop{color:#3a2200;font-weight:800;font-size:20px;letter-spacing:.06em;text-transform:uppercase;background:rgba(255,176,74,.94);padding:3px 12px;border-radius:8px;box-shadow:0 0 18px rgba(255,176,74,.55),0 2px 10px rgba(0,0,0,.45)}
+.lb-spd{font-size:15px;font-weight:600;padding:3px 10px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.45);white-space:nowrap}
+.lb-spd b{font-weight:800}
+.lb-spd small{display:block;font-size:12px;font-weight:600;opacity:.8}
+@media (max-width:600px){.lb-spd{font-size:12px;padding:2px 7px}.lb-spd small{font-size:10.5px}}
+.lb-spd-eq{color:#11161d;background:rgba(255,255,255,.94)}
+.lb-spd-lux{color:#2f1c00;background:rgba(255,181,71,.95)}
+.lb-pole{color:#fff;font-weight:700;font-size:15px;text-shadow:0 0 6px #000,0 0 2px #000}
+.top-inset{position:absolute;right:16px;top:64px;z-index:6;background:rgba(10,16,26,.82);border:1px solid rgba(168,196,210,.22);border-radius:12px;padding:8px 8px 2px;opacity:0;transition:opacity .4s;pointer-events:none}
+.top-inset.on{opacity:1}
+.ti-t{font:600 11px/1.2 "Barlow Semi Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#cfe0ea;max-width:170px;padding:0 2px 2px}
+@media (max-width:600px){.top-inset{top:92px;right:4px;transform:scale(.55);transform-origin:right top}}
 .lb-ang{color:#fff;font-weight:700;font-size:20px;letter-spacing:.02em;background:rgba(200,52,44,.92);padding:3px 10px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.45)}
 .lb-luxlat{color:#FFC46B;font-weight:700;font-size:13px;text-shadow:0 0 8px rgba(255,196,107,.6),0 0 2px #000}
 .lb-lat.glow{font-weight:700;font-size:14px;text-shadow:0 0 10px currentColor,0 0 2px #000}
@@ -974,12 +987,13 @@ function beamOff(i,j){const u=i/BN*2-1,v=j/BN*2-1;
   if(state.beamRound)return [u*Math.sqrt(1-v*v/2)*BW/2,v*Math.sqrt(1-u*u/2)*BW/2];
   return [u*BW/2,v*BW/2]}
 const BEAM_LOOP=(()=>{const a=[];for(let j=0;j<BN;j++)a.push([0,j]);for(let i=0;i<BN;i++)a.push([i,BN]);for(let j=BN;j>0;j--)a.push([BN,j]);for(let i=BN;i>0;i--)a.push([i,0]);return a})();
+let beamClean=false; // the close-up in chapter 7 draws its own clean beam
 function updateBeam(){
   const on=state.show.beam&&!cH('beam')&&nearEarth(FAR_D);
   const P=placeWorld(new V3(),1.0), C=earthPos, s=sunDir;
   const up=P.clone().sub(C).normalize();
   if(!on||up.dot(s)<0.01){beamPatch.visible=beamLines.visible=beamShaft.visible=false;return}
-  beamPatch.visible=beamLines.visible=beamShaft.visible=true;
+  beamPatch.visible=true;beamLines.visible=beamShaft.visible=!beamClean;
   const n=axisDir;
   let e2=n.clone().addScaledVector(s,-n.dot(s)); if(e2.lengthSq()<1e-6)e2.set(0,1,0); e2.normalize(); const e1=new V3().crossVectors(s,e2);
   const ds=s.clone().negate(), pa=beamGeo.attributes.position.array, ca=beamGeo.attributes.color.array, Lb=2.7;
@@ -1058,17 +1072,20 @@ function segHits(a,b,c,r){_t1.copy(b).sub(a);_t2.copy(c).sub(a);const l2=_t1.len
 function updateLabels(w,h){
   camera.updateMatrixWorld(); const earthSX=_lv.copy(earthPos).project(camera).x;
   for(const o of labels){
-    let vis=o.show();
+    let vis=o.show();const want=vis;
     if(vis){o.getPos(_lp);
       if(o.avoid&&_lp.distanceToSquared(earthPos)<o.avoid*o.avoid&&nearEarth(10))vis=false;
       _lv.copy(_lp).applyMatrix4(camera.matrixWorldInverse); if(_lv.z>-0.05)vis=false;
-      if(vis&&o.occl&&(segHits(camera.position,_lp,earthPos,R_E*earthS*0.995)||segHits(camera.position,_lp,ORIGIN,R_SUN*0.98)))vis=false;
+      if(vis&&o.occl&&(segHits(camera.position,_lp,earthPos,R_E*earthS*(o.on?0.982:1.004))||segHits(camera.position,_lp,ORIGIN,R_SUN*0.98)))vis=false;
       if(vis){_lv.copy(_lp).project(camera);const x=(_lv.x*0.5+0.5)*w,y=(-_lv.y*0.5+0.5)*h;
         if(x<-80||x>w+80||y<-40||y>h+40)vis=false;
         else{let tr='translate(-50%,-50%)';
           if(o.anchor==='l')tr='translate(10px,-50%)'; else if(o.anchor==='t')tr='translate(-50%,-135%)'; else if(o.anchor==='b')tr='translate(-50%,'+(o.off?o.off():20).toFixed(0)+'px)';
-          else if(o.anchor==='e')tr=_lv.x>=earthSX?'translate(8px,-50%)':'translate(calc(-100% - 8px),-50%)';
+          else if(o.anchor==='e'){if(o.side===undefined||Math.abs(_lv.x-earthSX)>0.03)o.side=_lv.x>=earthSX;tr=o.side?'translate(8px,-50%)':'translate(calc(-100% - 8px),-50%)'}
           o.el.style.transform=`translate(${x.toFixed(1)}px,${y.toFixed(1)}px) ${tr}`}}}
+    // labels near the edge of the globe must not flicker: a change of visibility caused by the view has to last 0.25 s
+    if(want&&o.init){const g=vis;if(g!==o.on){const now=performance.now();if(o.pv!==g){o.pv=g;o.pt=now}if(now-o.pt<250)vis=o.on}else o.pv=g}
+    o.init=1;
     if(vis!==o.on){o.on=vis;o.el.style.opacity=vis?'1':'0'}
   }
 }
@@ -1846,7 +1863,7 @@ function updateScene(tSec,dt){
       rayArr[i*6]=end.x+rd.x*len;rayArr[i*6+1]=end.y+rd.y*len;rayArr[i*6+2]=end.z+rd.z*len;rayArr[i*6+3]=end.x;rayArr[i*6+4]=end.y;rayArr[i*6+5]=end.z}
     setSegs(rays,rayArr,NR);
   }
-  updateDayCircle(a); updateGhosts(); updateMoon(dEff,a); updateZen(); updateLatGlow(dt,tSec); updateGrid(dt,tSec); updateFlash(dt); updateAng(dt); updateTerm(dt,tSec);
+  updateDayCircle(a); updateGhosts(); updateMoon(dEff,a); updateZen(); updateLatGlow(dt,tSec); updateGrid(dt,tSec); updateFlash(dt); updateAng(dt); updateTerm(dt,tSec); updateTrop(dt,tSec); updateSpd(dt); updatePole();
 }
 function vis(){
   orbitGroup.visible=state.show.orbit&&!cH('orbit');tickGroup.visible=state.show.months&&!cH('months');eventGroup.visible=state.show.events&&!cH('events');
@@ -2300,6 +2317,8 @@ function erklPrep(sh){const c=erklText(sh),txt=cine.mehr?c.mehr:c.film,lang=stat
 // start time (as a fraction of the chapter) of sentence s in paragraph p
 function cu(p,s){const it=NARR.items,sh=NARR.sh;if(!it.length||!sh)return 0;let best=it[it.length-1];
   for(const x of it){if(x.p>p||(x.p===p&&x.s>=(s||0))){best=x;break}}return best.t0/sh.dur}
+// start of the k-th sentence counted from the end of paragraph p (0 = last sentence)
+function cuEnd(p,k){const it=NARR.items.filter(x=>x.p===p);if(!it.length||!NARR.sh)return 1;return it[Math.max(0,it.length-1-(k||0))].t0/NARR.sh.dur}
 function kAt(u,c,sec){const D=SHOTS[cine.i].dur;return ease(Math.min(1,Math.max(0,(u-c)*D/sec)))}
 // dates in steps: [u start, date, travel as fraction of the chapter (optional)]
 function seqD(u,list){const D=SHOTS[cine.i].dur;let i=0;while(i<list.length-1&&u>=list[i+1][0])i++;
@@ -2447,6 +2466,75 @@ const zenOn=()=>cine.on&&!cine.free&&SHOTS[cine.i]&&SHOTS[cine.i].id==='tropics'
 addLabel('lb-zen',()=>L().zenLbl,o=>o.copy(earthPos).addScaledVector(sunDir,R_E*earthS*1.02),{occl:false,anchor:'l',show:zenOn});
 function updateZen(){zenMark.visible=zenOn();if(zenMark.visible){zenMark.position.copy(earthPos).addScaledVector(sunDir,R_E*earthS*1.004);zenMark.scale.setScalar(earthS)}}
 
+/* ---------- chapter 3 "Mehr dazu": sunrise and sunset close up, and how fast the ground moves ---------- */
+const _qT=new THREE.Quaternion(),_qI=new THREE.Quaternion(),_xs=new V3(),_xp=new V3(),_xq=new V3();
+// direction (world) to the point where the latitude circle of Luxembourg meets the day-night boundary
+function crossDir(morning,lat,out){tilt.getWorldQuaternion(_qT);_qI.copy(_qT).invert();const s=_xs.copy(sunDir).applyQuaternion(_qI),f=lat*DEG,c=Math.cos(f);
+  const A=c*s.x,B=-c*s.z,C=-Math.sin(f)*s.y,R0=Math.hypot(A,B)||1e-6,ph=Math.atan2(B,A),w=Math.acos(Math.max(-1,Math.min(1,C/R0)));
+  let a=ph+w;if((-A*Math.sin(a)+B*Math.cos(a)>0)!==morning)a=ph-w; // the Earth turns towards growing azimuth (east)
+  return out.set(c*Math.cos(a),Math.sin(f),-c*Math.sin(a)).applyQuaternion(_qT)}
+function poseCross(o,morning){const k=fitK(),d=crossDir(morning,PLACES.lux.lat,_xp);
+  o.p.copy(earthPos).addScaledVector(d,2.75*k*earthS);o.t.copy(earthPos).addScaledVector(d,R_E*earthS*0.75);o.up.copy(axisDir)}
+const SPD_H0=9.5,SPD_RATE=0.25; // in the speed scene: from 9:30, a quarter of an hour per second
+const spdDh=()=>Math.max(0,state.hour-SPD_H0);
+function poseSpd(o,u){const k=fitK(),sh=SHOTS[cine.i],tot=(1-cu(2,0))*sh.dur*SPD_RATE*15*DEG;
+  const lp=placeWorld(_xq,1.0).sub(earthPos);_xp.copy(lp).applyAxisAngle(axisDir,-spdDh()*15*DEG+tot/2).normalize(); // middle of the whole path
+  const eq=_xs.copy(_xp).addScaledVector(axisDir,-_xp.dot(axisDir)).normalize();
+  const dir=_xq.copy(eq).multiplyScalar(Math.cos(32*DEG)).addScaledVector(axisDir,Math.sin(32*DEG));
+  o.p.copy(earthPos).addScaledVector(dir,2.55*k*earthS);
+  o.t.copy(earthPos).addScaledVector(eq.multiplyScalar(Math.cos(24*DEG)).addScaledVector(axisDir,Math.sin(24*DEG)),R_E*earthS*0.62);o.up.copy(axisDir)}
+const SPD=[{lat:0,v:1670,c:0xFFFFFF,cls:'lb-spd lb-spd-eq'},{lat:PLACES.lux.lat,v:1080,c:0xFFB547,cls:'lb-spd lb-spd-lux'}];
+SPD.forEach(o=>{o.mat=lmat({color:lin(o.c,1.8),linewidth:4,transparent:true,opacity:0,depthWrite:false});o.line=dynSegs(64,o.mat);o.line.renderOrder=6;o.line.visible=false;scene.add(o.line);
+  o.dot=new THREE.Mesh(new THREE.SphereGeometry(0.018,18,12),new THREE.MeshBasicMaterial({color:lin(o.c,2.2),transparent:true,depthWrite:false}));o.dot.renderOrder=7;o.dot.visible=false;scene.add(o.dot);
+  o.arr=new Float32Array(64*6);o.pos=new V3();o.txt='';
+  o.lbl=addLabel(o.cls,()=>o.txt,out=>out.copy(o.pos),{occl:false,anchor:'l',show:()=>spdS>0.5&&o.dot.visible})});
+let spdS=0;
+function updateSpd(dt){const sh=cine.on&&!cine.free?SHOTS[cine.i]:null;const tg=sh&&sh.spd?sh.spd(Math.min(1,cine.t/sh.dur)):0;
+  spdS+=(tg-spdS)*Math.min(1,dt*4);const vis=spdS>0.01&&nearEarth(FAR_D);
+  SPD.forEach(o=>{o.line.visible=o.dot.visible=vis;if(!vis)return;const dh=spdDh(),ang=dh*15*DEG,l=L();
+    spin.localToWorld(o.pos.copy(placeLocal(o.lat,PLACES.lux.lon,R_E*1.006)));const r=_xs.copy(o.pos).sub(earthPos);let q=0;
+    for(let i=0;i<64;i++)for(const f of [i,i+1]){_xq.copy(r).applyAxisAngle(axisDir,-ang*(1-f/64)).add(earthPos);o.arr[q++]=_xq.x;o.arr[q++]=_xq.y;o.arr[q++]=_xq.z}
+    setSegs(o.line,o.arr,64);o.mat.opacity=spdS;o.dot.position.copy(o.pos);o.dot.scale.setScalar(earthS);o.dot.material.opacity=spdS;
+    const t=`${o.lat?l.placeShort.lux:l.eqW}: <b>${nf(Math.round(o.v*dh/10)*10,0)} km</b><small>${nf(o.v,0)} km/h</small>`;if(t!==o.txt){o.txt=t;o.lbl.el.innerHTML=t}})}
+
+/* ---------- North Pole: marker in the centre of the views from above (and in chapter 4) ---------- */
+const poleDot=new THREE.Mesh(new THREE.SphereGeometry(0.016,18,12),new THREE.MeshBasicMaterial({color:lin(0xFFFFFF,2.2),transparent:true,depthWrite:false}));
+poleDot.renderOrder=7;poleDot.visible=false;tilt.add(poleDot);poleDot.position.set(0,R_E*1.004,0);
+const poleOn=()=>{const sh=cine.on&&!cine.free?SHOTS[cine.i]:null;if(!sh||!isErkl())return false;
+  if(sh.pole)return sh.pole(Math.min(1,cine.t/sh.dur));return !!(sh.top&&(typeof sh.top==='function'?sh.top():true))};
+addLabel('lb-pole',()=>`${L().npW} · 90°`,o=>tilt.localToWorld(o.set(0,R_E*1.02,0)),{occl:false,anchor:'l',show:()=>poleDot.visible&&axisDir.dot(_lbP.copy(camera.position).sub(earthPos).normalize())>0.05});
+const _lbP=new V3();
+// small side view of the Earth: shows where the camera looks from (above the North Pole) and how the axis leans
+const inset=document.createElement('div');inset.className='top-inset';inset.setAttribute('aria-hidden','true');(document.getElementById('stage')||document.body).appendChild(inset);
+let insetKey='';
+function updatePole(){const on=poleOn();poleDot.visible=on&&nearEarth(FAR_D);poleDot.scale.setScalar(earthS);
+  const sh=on?SHOTS[cine.i]:null,top=sh&&sh.top&&(typeof sh.top==='function'?sh.top():true)&&PLACES[state.place].lat>-8;
+  inset.classList.toggle('on',!!top);if(!top)return;
+  const th=Math.atan(Math.tan(23.44*DEG)*Math.cos(TAU*(state.d-EVENTS[1])/365.24)),l=L(),key=th.toFixed(3)+l.insetT;if(key===insetKey)return;insetKey=key;
+  const cx=96,cy=92,r=30,dx=-Math.sin(th),dy=-Math.cos(th),n=(k)=>`${(cx+dx*k).toFixed(1)},${(cy+dy*k).toFixed(1)}`,s=(k)=>`${(cx-dx*k).toFixed(1)},${(cy-dy*k).toFixed(1)}`;
+  const ex=cx+dx*68,ey=cy+dy*68;
+  inset.innerHTML=`<div class="ti-t">${l.insetT}</div><svg viewBox="0 0 170 150" width="170" height="150">
+   <g stroke="#FFD27A" stroke-width="2" stroke-linecap="round">${[70,92,114].map(y=>`<line x1="10" y1="${y}" x2="44" y2="${y}"/><path d="M38 ${y-4}L44 ${y}L38 ${y+4}" fill="none"/>`).join('')}</g>
+   <text x="12" y="62" fill="#FFD27A" font-size="11" font-weight="700">${l.insetSun}</text>
+   <circle cx="${cx}" cy="${cy}" r="${r}" fill="#0f1d33"/><path d="M${cx} ${cy-r}A${r} ${r} 0 0 0 ${cx} ${cy+r}Z" fill="#4f8fd6"/>
+   <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1"/>
+   <polyline points="${s(r+10)} ${n(r+10)}" stroke="#fff" stroke-width="1.6" fill="none"/>
+   <circle cx="${(cx+dx*r).toFixed(1)}" cy="${(cy+dy*r).toFixed(1)}" r="3" fill="#fff"/>
+   <g transform="translate(${ex.toFixed(1)},${ey.toFixed(1)})"><path d="M-11 0Q0 -8 11 0Q0 8 -11 0Z" fill="#fff"/><circle r="3.6" fill="#1b2a44"/></g>
+   <line x1="${(cx+dx*58).toFixed(1)}" y1="${(cy+dy*58).toFixed(1)}" x2="${(cx+dx*(r+16)).toFixed(1)}" y2="${(cy+dy*(r+16)).toFixed(1)}" stroke="#FFB547" stroke-width="2.4"/>
+   <path d="M${(cx+dx*(r+12)).toFixed(1)} ${(cy+dy*(r+12)).toFixed(1)}l${(-dy*5-dx*-8).toFixed(1)} ${(dx*5-dy*-8).toFixed(1)}M${(cx+dx*(r+12)).toFixed(1)} ${(cy+dy*(r+12)).toFixed(1)}l${(dy*5-dx*-8).toFixed(1)} ${(-dx*5-dy*-8).toFixed(1)}" stroke="#FFB547" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+   <text x="${(cx+dx*r+8).toFixed(1)}" y="${(cy+dy*r+2).toFixed(1)}" fill="#fff" font-size="10.5" font-weight="700">${l.npW}</text></svg>`}
+
+/* ---------- the tropics as a glowing zone (chapter 8) ---------- */
+const TROP=23.44*DEG,tropMat=new THREE.MeshBasicMaterial({color:lin(0xFFB04A,1.6),transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending});
+const tropBand=new THREE.Mesh(new THREE.SphereGeometry(R_E*1.003,160,24,0,TAU,Math.PI/2-TROP,2*TROP),tropMat);tropBand.renderOrder=3;tropBand.visible=false;tilt.add(tropBand);
+let tropS=0,tropL=0;
+function updateTrop(dt,t){const sh=cine.on&&!cine.free?SHOTS[cine.i]:null;const r=sh&&sh.trop?sh.trop(Math.min(1,cine.t/sh.dur)):[0,0];
+  tropS+=(r[0]-tropS)*Math.min(1,dt*2.5);tropL+=(r[1]-tropL)*Math.min(1,dt*3);
+  tropBand.visible=tropS>0.01&&nearEarth(FAR_D);tropMat.opacity=tropS*(0.2+0.16*Math.sin(t*2.6))}
+addLabel('lb-trop',()=>L().tropLbl,out=>{const cl=tilt.worldToLocal(_t1.copy(camera.position));const az=Math.atan2(-cl.z,cl.x)-0.35,la=11*DEG,R=R_E*1.01;
+    return tilt.localToWorld(out.set(R*Math.cos(la)*Math.cos(az),R*Math.sin(la),-R*Math.cos(la)*Math.sin(az)))},{occl:false,show:()=>tropL>0.5&&tropBand.visible});
+
 /* ---------- day-night boundary (chapter 3): drawn in as a glowing ring when the voice names it ---------- */
 const TN=128,termMat=lmat({color:lin(0xFFE7A8,2.2),linewidth:3.4,transparent:true,opacity:0,depthWrite:false});
 const termLine=dynSegs(TN,termMat);termLine.renderOrder=5;termLine.visible=false;scene.add(termLine);
@@ -2471,20 +2559,28 @@ addLabel('lb-dn lb-dn-night',()=>L().nightW,o=>termPos(-1,o),{occl:false,show:()
 const angRayMat=lmat({color:lin(0xFFF4D6,2.0),linewidth:3.2,transparent:true,opacity:0,depthWrite:false});
 const angGndMat=lmat({color:lin(0xBFEFFF,1.5),linewidth:3.2,transparent:true,opacity:0,depthWrite:false});
 const angArcMat=lmat({color:lin(0xFF5A4E,1.6),linewidth:4,transparent:true,opacity:0,depthWrite:false});
-const ANG_N=36,angRay=dynSegs(1,angRayMat),angGnd=dynSegs(1,angGndMat),angArc=dynSegs(ANG_N,angArcMat);
-[angRay,angGnd,angArc].forEach(o=>{o.renderOrder=6;o.visible=false;scene.add(o)});
+const angEdgeMat=lmat({color:lin(0xFFE2A0,1.5),linewidth:1.6,transparent:true,opacity:0,depthWrite:false});
+const angEqMat=lmat({color:lin(0xFFF0C8,2.2),linewidth:3.2,transparent:true,opacity:0,depthWrite:false});
+const ANG_N=36,EQ_N=48,angRay=dynSegs(1,angRayMat),angGnd=dynSegs(1,angGndMat),angArc=dynSegs(ANG_N,angArcMat),angEdge=dynSegs(2,angEdgeMat),angEq=dynSegs(EQ_N,angEqMat);
+[angRay,angGnd,angArc,angEdge,angEq].forEach(o=>{o.renderOrder=6;o.visible=false;scene.add(o)});
+angEq.renderOrder=3;
+// clean light band: flat, evenly filled, seen exactly from the side
+const angBand=new THREE.Mesh(new THREE.BufferGeometry(),new THREE.MeshBasicMaterial({color:lin(0xFFD27A,1.0),transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false}));
+angBand.geometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array(18),3));angBand.frustumCulled=false;angBand.renderOrder=5;angBand.visible=false;scene.add(angBand);
+const _aH=new V3(),_aK=new V3(),_aL=new V3(),_aM=new V3();
 const _aP=new V3(),_aN=new V3(),_aE=new V3(),_aT=new V3(),_aG=new V3(),_aO=new V3(),_aD=new V3(),_aX=new V3();
-const angArr=new Float32Array(ANG_N*6);let angS=0,angSide=1,angDeg=90,angTxt='';
+const angArr=new Float32Array(Math.max(ANG_N,EQ_N)*6);let angS=0,angSide=1,angDeg=90,angTxt='';
 function angFrame(){const P=placeWorld(_aP,1.0);_aN.copy(P).sub(earthPos).normalize();
   _aE.crossVectors(axisDir,_aN).normalize();_aT.crossVectors(_aN,_aE).normalize();return P}
 // close view from the east: local vertical up, ground horizontal, the light comes from above
 function poseAng(o){const k=fitK(),P=angFrame(),es=earthS;
-  o.p.copy(P).addScaledVector(_aE,(W<600?1.6:1.3)*k*es).addScaledVector(_aN,0.30*es);o.t.copy(P).addScaledVector(_aN,(W<600?0.02:0.27)*es);o.up.copy(_aN)}
+  const D=(W<600?1.6:1.3)*k*es;o.p.copy(P).addScaledVector(_aE,D).addScaledVector(_aN,0.27*es+D*0.3);o.t.copy(P).addScaledVector(_aN,(W<600?0.02:0.27)*es);o.up.copy(_aN)}
 const angLbl=addLabel('lb-ang',()=>angTxt,out=>{const a=angDeg*DEG/2,r=(Math.abs(angDeg-90)<1.5?0.34:0.42)*earthS;
   return out.copy(_aO).addScaledVector(_aG,Math.cos(a)*r).addScaledVector(_aN,Math.sin(a)*r)},{occl:false,show:()=>angS>0.5&&angRay.visible});
+addLabel('lb-lat lb-eqang',()=>`${L().eqW} · 0°`,out=>spin.localToWorld(out.copy(placeLocal(0,PLACES[state.place].lon+15,R_E*1.012))),{occl:true,anchor:'e',show:()=>angS>0.5&&angEq.visible&&state.place==='quito'});
 function updateAng(dt){const sh=cine.on&&!cine.free?SHOTS[cine.i]:null;const tg=sh&&sh.ang?sh.ang(Math.min(1,cine.t/sh.dur)):0;
   angS+=(tg-angS)*Math.min(1,dt*3);
-  const vis=angS>0.01&&nearEarth(FAR_D);angRay.visible=angGnd.visible=angArc.visible=vis;if(!vis)return;
+  const vis=angS>0.01&&nearEarth(FAR_D);angRay.visible=angGnd.visible=angArc.visible=angEdge.visible=angBand.visible=angEq.visible=vis;beamClean=vis&&angS>0.3;if(!vis)return;
   const P=angFrame(),es=earthS,s=sunDir,sn=s.dot(_aN),st=s.dot(_aT);
   if(Math.abs(st)>1e-3)angSide=st>0?1:-1;_aG.copy(_aT).multiplyScalar(angSide); // ground direction towards the Sun
   const al=Math.atan2(Math.max(0,sn),Math.abs(st));angDeg=al/DEG;
@@ -2496,7 +2592,17 @@ function updateAng(dt){const sh=cine.on&&!cine.free?SHOTS[cine.i]:null;const tg=
   q=0;const right=Math.abs(angDeg-90)<1.5;
   if(right){const a=0.2*es;push(_aX.copy(_aO).addScaledVector(_aG,a));push(_aX.addScaledVector(_aN,a));push(_aX);push(_aX.copy(_aO).addScaledVector(_aN,a));setSegs(angArc,angArr,2)}
   else{const r=0.3*es;for(let i=0;i<ANG_N;i++)for(const f of [i,i+1]){const a=al*f/ANG_N;push(_aX.copy(_aO).addScaledVector(_aG,Math.cos(a)*r).addScaledVector(_aN,Math.sin(a)*r))}setSegs(angArc,angArr,ANG_N)}
-  angRayMat.opacity=angGndMat.opacity=angArcMat.opacity=angS;
+  // beam edges: parallel to the middle ray, BW wide, ending on the curved ground
+  const hw=BW/2*es,Lb=1.6*es;q=0;const bp=[];
+  for(const sg of [-1,1]){_aH.copy(_aG).multiplyScalar(Math.sin(al)).addScaledVector(_aN,-Math.cos(al)); // across the beam, in the drawing plane
+    _aK.copy(_aO).addScaledVector(_aH,sg*hw).addScaledVector(_aD,Lb);_aM.copy(_aD).negate();hitSphere(_aK,_aM,earthPos,R_E*es*1.004,_aL);
+    bp.push(_aK.clone(),_aL.clone());push(_aL);push(_aK)}
+  setSegs(angEdge,angArr,2);
+  {const a=angBand.geometry.attributes.position.array,v=[bp[0],bp[1],bp[3],bp[0],bp[3],bp[2]];v.forEach((p,i)=>{a[i*3]=p.x;a[i*3+1]=p.y;a[i*3+2]=p.z});angBand.geometry.attributes.position.needsUpdate=true}
+  // the Equator through Quito, running towards the viewer
+  q=0;const lon=PLACES[state.place].lon;for(let i=0;i<EQ_N;i++)for(const f of [i,i+1]){spin.localToWorld(_aX.copy(placeLocal(0,lon-25+f*50/EQ_N,R_E*1.004)));push(_aX)}setSegs(angEq,angArr,EQ_N);
+  angRayMat.opacity=angGndMat.opacity=angArcMat.opacity=angS;angEdgeMat.opacity=0.9*angS;angBand.material.opacity=0.2*angS;
+  angEqMat.opacity=angS*(state.place==='quito'?0.9:0);
   const t=(right?'∟ ':'')+nf(Math.round(angDeg),0)+'°';if(t!==angTxt){angTxt=t;angLbl.el.innerHTML=t}}
 
 /* ---------- glowing lines: equator, tropics and polar circles light up when the voice names them ---------- */
@@ -2568,7 +2674,11 @@ const coneGeo=new THREE.BufferGeometry();coneGeo.setAttribute('position',new THR
 const coneMat=new THREE.MeshBasicMaterial({color:lin(0xFFE7B8,0.55),transparent:true,opacity:0.22,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
 const cone=new THREE.Mesh(coneGeo,coneMat);cone.frustumCulled=false;cone.renderOrder=6;scene.add(cone);cone.visible=false;
 const spotGeo=new THREE.BufferGeometry();spotGeo.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(FL_N*9),3));
-const spotMat=new THREE.MeshBasicMaterial({color:lin(0xFFF0CF,1.6),transparent:true,opacity:1,blending:THREE.AdditiveBlending,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4});
+spotGeo.setAttribute('dUv',new THREE.Float32BufferAttribute(new Float32Array(FL_N*6),2));spotGeo.setAttribute('edge',new THREE.Float32BufferAttribute(new Float32Array(FL_N*3),1));
+// inside the spot the ground looks like daytime; tilted, the same light is spread out: dimmer and warmer, like evening
+const spotMat=new THREE.ShaderMaterial({uniforms:{tDay:{value:null},uK:{value:1},uO:{value:1}},transparent:true,side:THREE.DoubleSide,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4,
+  vertexShader:'attribute vec2 dUv;attribute float edge;varying vec2 vU;varying float vE;void main(){vU=dUv;vE=edge;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+  fragmentShader:'uniform sampler2D tDay;uniform float uK,uO;varying vec2 vU;varying float vE;void main(){vec3 a=pow(texture2D(tDay,vU).rgb,vec3(2.2));vec3 w=mix(vec3(1.0,0.5,0.25),vec3(1.0,0.96,0.88),uK);vec3 c=a*w*(0.1+2.3*pow(uK,1.3))+w*0.05*uK;gl_FragColor=vec4(c,uO*smoothstep(0.0,0.2,vE));}'});
 const spot=new THREE.Mesh(spotGeo,spotMat);spot.frustumCulled=false;spot.renderOrder=7;scene.add(spot);spot.visible=false;
 const _fA=new V3(),_fD=new V3(),_fN=new V3(),_fE=new V3(),_fT=new V3(),_fP=new V3(),_fq=new THREE.Quaternion(),_fu=new V3(),_fv=new V3(),_fr=new V3(),_fh=new V3();
 let flashOn=0,flashArea0=0;
@@ -2589,18 +2699,19 @@ function updateFlash(dt){let tg=0,tilt=0;
   flashLights[0].position.copy(_fA).addScaledVector(_fN,2).addScaledVector(_fE,2);flashLights[0].target.position.copy(_fA);flashLights[0].target.updateMatrixWorld();
   // edge rays of the cone
   _fu.crossVectors(_fD,_fE).normalize();_fv.crossVectors(_fD,_fu).normalize();
-  const cp=coneGeo.attributes.position.array,sp=spotGeo.attributes.position.array,pts=[],hit0=raySphere(_fA,_fD,C,Rs,new V3())||P.clone();
+  const su=spotGeo.attributes.dUv.array,se=spotGeo.attributes.edge.array,cp=coneGeo.attributes.position.array,sp=spotGeo.attributes.position.array,pts=[],hit0=raySphere(_fA,_fD,C,Rs,new V3())||P.clone();
   for(let i=0;i<FL_N;i++){const a=i/FL_N*TAU;_fr.copy(_fD).multiplyScalar(Math.cos(FL_ANG)).addScaledVector(_fu,Math.sin(FL_ANG)*Math.cos(a)).addScaledVector(_fv,Math.sin(FL_ANG)*Math.sin(a)).normalize();
     pts.push(raySphere(_fA,_fr,C,Rs,new V3())||_fA.clone().addScaledVector(_fr,h*3))}
   let area=0;
   for(let i=0;i<FL_N;i++){const p=pts[i],q=pts[(i+1)%FL_N];cp.set([_fA.x,_fA.y,_fA.z,p.x,p.y,p.z,q.x,q.y,q.z],i*9);
     const lift=(x)=>x.clone().sub(C).setLength(Rs*1.0015).add(C);const c0=lift(hit0),p1=lift(p),q1=lift(q);sp.set([c0.x,c0.y,c0.z,p1.x,p1.y,p1.z,q1.x,q1.y,q1.z],i*9);
+    [c0,p1,q1].forEach((v,j)=>{const l=spin.worldToLocal(_fh.copy(v)).normalize();su[(i*3+j)*2]=mod(Math.atan2(l.z,-l.x)/TAU,1);su[(i*3+j)*2+1]=0.5+Math.asin(Math.max(-1,Math.min(1,l.y)))/Math.PI;se[i*3+j]=j?0:1});
     area+=_fh.copy(p).sub(hit0).cross(_fr.copy(q).sub(hit0)).length()/2}
-  coneGeo.attributes.position.needsUpdate=true;spotGeo.attributes.position.needsUpdate=true;
+  coneGeo.attributes.position.needsUpdate=true;spotGeo.attributes.position.needsUpdate=true;spotGeo.attributes.dUv.needsUpdate=true;spotGeo.attributes.edge.needsUpdate=true;
   if(tilt<0.02||!flashArea0)flashArea0=area;
   // the same light on a larger area: each part of the spot gets less
   const k=Math.min(1,flashArea0/Math.max(1e-6,area));
-  spotMat.color.copy(lin(0xFFF0CF,1.6)).multiplyScalar(0.25+1.0*k);spotMat.opacity=flashOn;coneMat.opacity=0.22*flashOn}
+  spotMat.uniforms.tDay.value=earthMat.uniforms.tDay.value;spotMat.uniforms.uK.value=k;spotMat.uniforms.uO.value=flashOn;coneMat.opacity=0.22*flashOn}
 
 /* ---------- the chapters ---------- */
 const ERKL=[
@@ -2631,23 +2742,32 @@ const ERKL=[
   term(u){const D=this.dur,dr=c=>Math.min(1,Math.max(0,(u-c)*D/1.6));
     if(cine.mehr){const on=u>=cu(1,0)-0.004&&u<cu(2,0);return [on?1:0,dr(cu(1,0)-0.004),0,0]}
     const c=cu(1,3)-0.004,on=u>=c;return [on?(u<cu(2,0)?1:0.5):0,dr(c),u>=cu(1,1)-0.004&&u<cu(2,0)?1:0,u>=cu(1,2)-0.004&&u<cu(2,0)?1:0]},
-  time(u){state.hour=mod(this.h0+u*(cine.mehr?20:16),24)},
-  cam(u,o){const k=fitK(),sd=sideV(),r=(2.95-0.4*ease(u))*k;o.p.copy(earthPos).addScaledVector(sd,-r).add(_cn.set(0,0.75*k,0)).addScaledVector(sunDir,-0.15*k);o.t.copy(earthPos)},
-  data(){return cine.mehr?`${L().placeShort.lux} · ${fmtHM(state.hour)}`:''}},
+  time(u){if(!cine.mehr){state.hour=mod(this.h0+u*16,24);return}
+    const D=this.dur,Lh=dl(PLACES.lux.lat,state.d);state.show.place=u<cu(2,0);
+    if(u<cu(1,0))state.hour=mod(this.h0+u*D*0.9,24);
+    else if(u<cu(1,1))state.hour=12-Lh/2-1+(u-cu(1,0))*D*0.35; // Luxembourg crosses the boundary into the day: sunrise
+    else if(u<cu(2,0))state.hour=12+Lh/2-1+(u-cu(1,1))*D*0.35; // and into the night: sunset
+    else state.hour=SPD_H0+(u-cu(2,0))*D*SPD_RATE},
+  cuts(){return cine.mehr?[cu(1,0),cu(1,1),cu(2,0)]:[]},
+  spd(u){return cine.mehr&&u>=cu(2,0)?1:0},
+  cam(u,o){if(cine.mehr&&u>=cu(1,0)){if(u<cu(2,0))poseCross(o,u<cu(1,1));else poseSpd(o,u);return}
+    const k=fitK(),sd=sideV(),r=(2.95-0.4*ease(u))*k;o.p.copy(earthPos).addScaledVector(sd,-r).add(_cn.set(0,0.75*k,0)).addScaledVector(sunDir,-0.15*k);o.t.copy(earthPos)},
+  data(){const l=L();if(cine.mehr&&spdS>0.5)return `${l.timeW}: ${fmH(spdDh())}`;return cine.mehr?`${l.placeShort.lux} · ${fmtHM(state.hour)}`:''}},
  // 4: Luxembourg, then the lighting zones around it
  {id:'lux',cut:true,rel:true,allow:['place','borders','zones','lat'],show:{place:true,borders:true},
   start(){setPl('lux');state.mode='day';state.d=EVENTS[1];this.h0=12-dl(PLACES.lux.lat,EVENTS[1])/2-0.6},
   time(u){if(!cine.mehr){state.hour=this.h0+u*7;state.show.zones=u>=cu(1,0);state.show.lat=u>=cu(0,1)-0.01}else{state.hour=11;state.show.lat=true;state.show.zones=u>=cu(1,0)&&u<cu(2,0)}},
-  grid(u){if(!cine.mehr)return {lat:u>=cu(0,1)-0.01&&u<cu(1,0)?1:0,lux:u>=cu(0,1)-0.01?1:0};
-    return {lat:u<cu(1,0)?1:0,lux:u>=cu(0,2)-0.01&&u<cu(1,0)||u>=cu(2,0)-0.01?1:0,lon:u>=cu(2,0)-0.01?1:0,luxLon:u>=cu(2,1)-0.01?1:0}},
+  grid(u){if(!cine.mehr)return {lat:0,lux:u>=cu(0,1)-0.01?1:0};
+    return {lat:0,lux:u>=cu(0,2)-0.01&&u<cu(1,0)||u>=cu(2,0)-0.01?1:0,lon:u>=cu(2,0)-0.01?1:0,luxLon:u>=cu(2,1)-0.01?1:0}},
   cam(u,o){const P=placeWorld(_cN,1.0),n=_cn.copy(P).sub(earthPos).normalize(),tn=_cs.copy(axisDir).addScaledVector(n,-n.dot(axisDir)).normalize(),k=fitK();
     const far=_t1.copy(earthPos).addScaledVector(n,3.6*k).addScaledVector(tn,-0.9*k),near=_t2.copy(P).addScaledVector(n,0.7).addScaledVector(tn,-0.5);
     const mid=new V3().copy(earthPos).addScaledVector(n,3.3*k).addScaledVector(tn,-0.6*k);
     if(cine.mehr){o.p.copy(mid);o.t.copy(earthPos);return}
     const e=ease(Math.min(1,u/Math.max(0.1,cu(1,0)))),back=kAt(u,cu(1,0),4.5);
     o.p.lerpVectors(far,near,e).lerp(mid,back);o.t.copy(earthPos).lerp(P,Math.min(1,e*1.15)*(1-back))},
-  glow(u){return cine.mehr?gAt(u,[[0,[0,0,0,0,0]],[cu(0,1),[1,0,0,0,0]],[cu(1,0),[0,1,1,0,0]],[cu(1,1),[0,0,0,1,1]],[cu(1,2),[0,0,0,0,0]]])
-    :gAt(u,[[0,NOG],[cu(0,1)-0.01,[0.25,-1,-1,-1,-1]],[cu(0,2)-0.01,[1,-1,-1,-1,-1]],[cu(1,0),[0,0,0,0,0]]])},
+  pole(u){return cine.mehr?u>=cu(0,1)-0.004&&u<cu(1,0):u>=cu(0,2)-0.004&&u<cu(1,0)},
+  glow(u){return cine.mehr?gAt(u,[[0,[0.3,0.3,-1,-1,-1]],[cu(0,1),[1,0.3,-1,-1,-1]],[cu(1,0),[0,1,1,0,0]],[cu(1,1),[0,0,0,1,1]],[cu(1,2),[0,0,0,0,0]]])
+    :gAt(u,[[0,NOG],[cu(0,1)-0.01,[0.3,0.3,-1,-1,-1]],[cu(0,2)-0.01,[1,0.3,-1,-1,-1]],[cu(1,0),[0,0,0,0,0]]])},
   data(){const l=L();return `${l.placeShort.lux} · ${nf(49.6,1)}° ${l.N} · ${nf(6.1,1)}° ${l.E}`}},
  // 5: steep or low light at noon
  {id:'angle',cut:true,rel:true,allow:['beam','place'],show:{beam:true,place:true},
@@ -2671,6 +2791,7 @@ const ERKL=[
     if(!cine.mehr)state.d=seqD(u,[[0,EVENTS[1]],[cu(2,2),EVENTS[3]],[cu(2,4),EVENTS[0]]]);
     else{setPl(u>=cu(2,0)?'tromso':'lux');state.d=seqD(u,[[0,EVENTS[1]],[cu(0,3),EVENTS[3]],[cu(2,0),EVENTS[1]],[cu(2,2),EVENTS[3]]])}},
   cuts(){return cine.mehr?[cu(2,0)]:[]},
+  pole(){return true},
   cam(u,o){poseTop(o)},
   data(){const p=PLACES[state.place],Lh=dl(p.lat,state.d),l=L();return `${l.placeShort[state.place]} · ${fmtDate(state.d)} · ${l.dayW} ${Lh>=24?l.polarDay:Lh<=0?l.polarNight:fmH(Lh)} · ${l.nightW} ${Lh>=24?'0 h':Lh<=0?'24 h':fmH(24-Lh)}`}},
  // 7: Quito on the Equator: steep light all year, 12 hours of daylight
@@ -2684,7 +2805,7 @@ const ERKL=[
     if(!cine.mehr){state.d=u<cu(1,0)?EVENTS[0]:mod(EVENTS[0]+(u-cu(1,0))/(1-cu(1,0))*365,365)}
     else{const tp=u>=cu(2,0)&&u<cu(3,0);state.show.beam=!tp;state.show.daycircle=tp;state.show.rays=tp;state.mode=tp?'day':'year';if(tp)state.show.orbit=false;
       state.hour=tp?mod(6+(u-cu(2,0))*this.dur,24):12;
-      state.d=seqD(u,[[0,EVENTS[0]],[cu(0,1),EVENTS[2],1.2/this.dur],[cu(1,0),EVENTS[1]],[cu(1,1),EVENTS[3]],[cu(3,0),EVENTS[3]+120,1-cu(3,0)]])}},
+      state.d=seqD(u,[[0,EVENTS[0]],[cu(1,0),EVENTS[1]],[cu(1,1),EVENTS[3]],[cu(3,0),EVENTS[3]+120,1-cu(3,0)]])}},
   cuts(){return cine.mehr?[cu(2,0),cu(3,0)]:[]},
   cam(u,o){if(!cine.mehr){mixPose(o,poseSideBeam,poseAng,kAt(u,cu(1,0)-0.01,2.8));return}
     if(u<cu(2,0))poseAng(o);else if(u<cu(3,0))poseTop(o);else poseSideBeam(o)},
@@ -2696,6 +2817,8 @@ const ERKL=[
     :seqD(u,[[0,EVENTS[1]],[cu(1,2),EVENTS[2],0.12],[cu(2,0),EVENTS[3],0.06]])},
   glow(u){return cine.mehr?gAt(u,[[0,[1,0,0,0,0]],[cu(1,0),[0,0,0,1,1]],[cu(2,0),[0,1,0,0,0]]])
     :gAt(u,[[0,[0,0,0,0,0]],[cu(0,0)+0.01,[0,1,1,0,0]],[cu(1,0),[0,1,0.15,0,0]],[cu(1,2),[0,0.25,0,0,0]],[cu(1,2)+0.045,[1,0,0,0,0]],[cu(2,0)-0.01,[0.15,0,1,0,0]],[cu(2,2),[0,1,1,0,0]]])},
+  // the tropics: the zone between the two tropics glows softly up and down, with its name
+  trop(u){return cine.mehr?[0,0]:[u>=cuEnd(2,1)-0.004?1:0,u>=cuEnd(2,0)-0.004?1:0]},
   cam(u,o){tropPose(u,o)},
   data(){return zenData()}},
  // 9: Cape Town: the seasons are the other way round
@@ -2746,7 +2869,7 @@ const TX11={
    nextHint:"Weiter mit › – oder „Mehr dazu“ für eine genauere Erklärung.",autoHint:"Weiter in {s} s – „Anhalten“ hält den Film hier, „Mehr dazu“ erklärt genauer.",autoLbl:"Automatisch",autoTitle:"Nach jedem Kapitel automatisch weiter",endHint:"Ende des Films. „Von vorn“ startet ihn neu.",
    freeLook:"Film angehalten: Die Erde lässt sich jetzt selbst drehen und zoomen. „Weiter“ setzt den Film fort.",
    sunNoon:"Sonnenhöhe mittags",dayW:"Tag",nightW:"Nacht",distW:"Abstand zur Sonne",speedW:"Tempo",mkm:"Mio. km",eqW:"Äquator",npW:"Nordpol",
-   tiltW:"Neigung der Erdachse",zenLbl:"Sonne senkrecht",areaW:"Fläche",zenAt:"Sonne senkrecht über",E:"O",
+   tiltW:"Neigung der Erdachse",tropLbl:"Tropen",timeW:"Vergangene Zeit",insetT:"Blick von oben auf den Nordpol",insetSun:"Sonne",zenLbl:"Sonne senkrecht",areaW:"Fläche",zenAt:"Sonne senkrecht über",E:"O",
    cine:{tropics:{k:"Die Wendekreise",t:"23,5° Nord und Süd",s:"Am 21. Juni steht die Sonne mittags senkrecht über dem nördlichen Wendekreis, am 21. Dezember über dem südlichen. Nur dazwischen, in den Tropen, kann sie senkrecht stehen."},
      energy:{k:"Energie",t:"Ein Jahr Sonnenenergie",s:"Gesammelt ab dem 1. Januar: Rund um den Äquator kommt am meisten an, an den Polen am wenigsten. So entstehen die Beleuchtungszonen."}}},
  fr:{erklBtn:"Film expliqué",chapter:"Chapitre",mehr:"En savoir plus",mehrBack:"Retour au film",voiceOn:"Voix activée",voiceOff:"Voix coupée",
@@ -2754,7 +2877,7 @@ const TX11={
    nextHint:"Suite avec › – ou « En savoir plus » pour une explication plus détaillée.",autoHint:"Suite dans {s} s – « Pause » arrête le film ici, « En savoir plus » explique en détail.",autoLbl:"Automatique",autoTitle:"Passer automatiquement au chapitre suivant",endHint:"Fin du film. « Recommencer » le relance.",
    freeLook:"Film en pause : la Terre peut maintenant être tournée et agrandie. « Continuer » relance le film.",
    sunNoon:"Hauteur du Soleil à midi",dayW:"jour",nightW:"nuit",distW:"Distance au Soleil",speedW:"Vitesse",mkm:"millions de km",eqW:"Équateur",npW:"Pôle Nord",
-   tiltW:"Inclinaison de l'axe",zenLbl:"Soleil à la verticale",areaW:"Surface",zenAt:"Soleil à la verticale à",E:"E",
+   tiltW:"Inclinaison de l'axe",tropLbl:"Tropiques",timeW:"Temps écoulé",insetT:"Vue d'en haut sur le pôle Nord",insetSun:"Soleil",zenLbl:"Soleil à la verticale",areaW:"Surface",zenAt:"Soleil à la verticale à",E:"E",
    cine:{tropics:{k:"Les tropiques",t:"23,5° nord et sud",s:"Le 21 juin, à midi, le Soleil est à la verticale du tropique nord, le 21 décembre à celle du tropique sud. Il ne peut être à la verticale qu'entre les deux, dans la zone tropicale."},
      energy:{k:"Énergie",t:"Une année d'énergie solaire",s:"Additionnée depuis le 1er janvier : autour de l'équateur, il en arrive le plus, aux pôles le moins. Ainsi naissent les zones d'éclairement."}}},
  en:{erklBtn:"Explainer film",chapter:"Chapter",mehr:"Learn more",mehrBack:"Back to the film",voiceOn:"Voice on",voiceOff:"Voice off",
@@ -2762,7 +2885,7 @@ const TX11={
    nextHint:"Continue with › – or “Learn more” for a closer explanation.",autoHint:"Continuing in {s} s – “Hold” stops the film here, “Learn more” explains in detail.",autoLbl:"Auto",autoTitle:"Continue automatically after each chapter",endHint:"End of the film. “Start again” plays it once more.",
    freeLook:"Film paused: the Earth can now be turned and zoomed by hand. “Continue” resumes the film.",
    sunNoon:"Sun height at noon",dayW:"Day",nightW:"Night",distW:"Distance to the Sun",speedW:"Speed",mkm:"million km",eqW:"Equator",npW:"North Pole",
-   tiltW:"Tilt of the axis",zenLbl:"Sun overhead",areaW:"Area",zenAt:"Sun overhead at",E:"E",
+   tiltW:"Tilt of the axis",tropLbl:"Tropics",timeW:"Time elapsed",insetT:"View from above onto the North Pole",insetSun:"Sun",zenLbl:"Sun overhead",areaW:"Area",zenAt:"Sun overhead at",E:"E",
    cine:{tropics:{k:"The tropics",t:"23.5° north and south",s:"On 21 June the Sun is overhead at noon above the northern tropic, on 21 December above the southern one. Only in between, in the tropics, can it be directly overhead."},
      energy:{k:"Energy",t:"One year of solar energy",s:"Collected from 1 January: most arrives around the Equator, least at the poles. This is how the lighting zones form."}}}};
 for(const k in TX11){const c=TX11[k].cine;delete TX11[k].cine;Object.assign(T[k],TX11[k]);Object.assign(T[k].cine,c)}
