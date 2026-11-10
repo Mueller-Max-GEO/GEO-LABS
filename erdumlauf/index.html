@@ -95,6 +95,8 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .evdots button::after{content:"";position:absolute;left:4px;top:4px;width:8px;height:8px;border-radius:50%;background:var(--c,var(--ink));box-shadow:0 0 0 2px rgba(4,6,10,.9)}
 .evdots button.ev-a::after{left:4.5px;top:4.5px;width:7px;height:7px;border-radius:1px;transform:rotate(45deg);box-shadow:0 0 0 1.5px rgba(4,6,10,.95)}
 .evdots button.ev-a::before{content:attr(data-s);position:absolute;left:0;right:0;top:-11px;text-align:center;font-size:9.5px;font-weight:700;color:var(--c);text-shadow:0 0 3px #000}
+.lb-ang{color:#fff;font-weight:700;font-size:20px;letter-spacing:.02em;background:rgba(200,52,44,.92);padding:3px 10px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.45)}
+.lb-luxlat{color:#FFC46B;font-weight:700;font-size:13px;text-shadow:0 0 8px rgba(255,196,107,.6),0 0 2px #000}
 .lb-lat.glow{font-weight:700;font-size:14px;text-shadow:0 0 10px currentColor,0 0 2px #000}
 .lb-zen{color:#FFE3A3;font-weight:700;font-size:13px;padding-left:10px}
 .lb-event.aps b{color:var(--c)}.lb-event.sea b{border-bottom:2px solid var(--c);padding-bottom:1px}
@@ -1841,7 +1843,7 @@ function updateScene(tSec,dt){
       rayArr[i*6]=end.x+rd.x*len;rayArr[i*6+1]=end.y+rd.y*len;rayArr[i*6+2]=end.z+rd.z*len;rayArr[i*6+3]=end.x;rayArr[i*6+4]=end.y;rayArr[i*6+5]=end.z}
     setSegs(rays,rayArr,NR);
   }
-  updateDayCircle(a); updateGhosts(); updateMoon(dEff,a); updateZen(); updateLatGlow(dt,tSec);
+  updateDayCircle(a); updateGhosts(); updateMoon(dEff,a); updateZen(); updateLatGlow(dt,tSec); updateGrid(dt,tSec); updateFlash(dt); updateAng(dt);
 }
 function vis(){
   orbitGroup.visible=state.show.orbit&&!cH('orbit');tickGroup.visible=state.show.months&&!cH('months');eventGroup.visible=state.show.events&&!cH('events');
@@ -2093,7 +2095,7 @@ document.addEventListener('click',e=>{
 document.addEventListener('change',e=>{const el=e.target;if(!el.dataset)return;
   if(el.dataset.tg){state.show[el.dataset.tg]=el.checked;syncToggles();vis()}
   else if('tilt0' in el.dataset){setTilt0(el.checked)}
-  else if('place' in el.dataset){setPlace(el.value)}
+  else if('place' in el.dataset){setPlace(el.value);if(!state.show.place){state.show.place=true;syncToggles();vis()}} // a chosen place is always marked: dot and name
 });
 $('panelBtn').onclick=()=>{const a=$('app');a.classList.toggle('panel-hidden');$('panelBtn').textContent=a.classList.contains('panel-hidden')?L().showPanel:L().hidePanel;resize()};
 /* ---------- full screen, like on YouTube: no borders, controls fade out when the mouse rests ---------- */
@@ -2419,6 +2421,11 @@ const sgnPl=()=>PLACES[state.place].lat<-8?-1:1;
 // the beam on the place at noon, seen from the sunny side (from below for the southern hemisphere)
 function poseBeam(o){const k=fitK(),s=sunDir,sd=sideV(),g=sgnPl();o.p.copy(earthPos).addScaledVector(s,2.5*k).addScaledVector(sd,1.75*k).add(_cn.set(0,1.15*k*g,0));o.t.copy(earthPos).add(_cn.set(0,0.28*g,0));o.up.set(0,1,0)}
 function poseTop(o){topPose(o.p,o.up);o.t.copy(earthPos)}
+// the beam on the place seen exactly from the side (turned a little towards the Sun): the angle between light and ground is visible
+const _sb1=new V3(),_sb2=new V3();
+function poseSideBeam(o){const k=fitK(),sd=sideV(),P=placeWorld(_sb1,1.0),n=_sb2.copy(P).sub(earthPos).normalize(),a=0.38,r=2.35*k;
+  o.p.copy(earthPos).addScaledVector(sd,-Math.cos(a)*r).addScaledVector(sunDir,Math.sin(a)*r).add(_cn.set(0,n.y*r*0.35,0));
+  o.t.copy(earthPos).addScaledVector(n,R_E*earthS*0.55).addScaledVector(sunDir,0.35*k);o.up.set(0,1,0)}
 // exactly from the side: the Sun on the left, the axis and the tropics are clearly visible
 function poseSideFlat(o,dist){const k=fitK(),sd=sideV();o.p.copy(earthPos).addScaledVector(sd,-(dist||4.3)*k).add(_cn.set(0,0.12*k,0));o.t.copy(earthPos);o.up.set(0,1,0)}
 function poseOver(o,az,h){const k=viewScale('tilt'),r=26*k;o.p.set(Math.sin(az)*r,(h||14)*k,Math.cos(az)*r);o.t.set(0,-0.8,0);o.up.set(0,1,0)}
@@ -2437,6 +2444,40 @@ const zenOn=()=>cine.on&&!cine.free&&SHOTS[cine.i]&&SHOTS[cine.i].id==='tropics'
 addLabel('lb-zen',()=>L().zenLbl,o=>o.copy(earthPos).addScaledVector(sunDir,R_E*earthS*1.02),{occl:false,anchor:'l',show:zenOn});
 function updateZen(){zenMark.visible=zenOn();if(zenMark.visible){zenMark.position.copy(earthPos).addScaledVector(sunDir,R_E*earthS*1.004);zenMark.scale.setScalar(earthS)}}
 
+/* ---------- angle between the sunlight and the ground at the place (chapter 7) ---------- */
+// close side view: the ground as a straight line, the middle ray of the beam, and the angle between them
+// (a right-angle square when the Sun is overhead, otherwise an arc with the value in degrees)
+const angRayMat=lmat({color:lin(0xFFF4D6,2.0),linewidth:3.2,transparent:true,opacity:0,depthWrite:false});
+const angGndMat=lmat({color:lin(0xBFEFFF,1.5),linewidth:3.2,transparent:true,opacity:0,depthWrite:false});
+const angArcMat=lmat({color:lin(0xFF5A4E,1.6),linewidth:4,transparent:true,opacity:0,depthWrite:false});
+const ANG_N=36,angRay=dynSegs(1,angRayMat),angGnd=dynSegs(1,angGndMat),angArc=dynSegs(ANG_N,angArcMat);
+[angRay,angGnd,angArc].forEach(o=>{o.renderOrder=6;o.visible=false;scene.add(o)});
+const _aP=new V3(),_aN=new V3(),_aE=new V3(),_aT=new V3(),_aG=new V3(),_aO=new V3(),_aD=new V3(),_aX=new V3();
+const angArr=new Float32Array(ANG_N*6);let angS=0,angSide=1,angDeg=90,angTxt='';
+function angFrame(){const P=placeWorld(_aP,1.0);_aN.copy(P).sub(earthPos).normalize();
+  _aE.crossVectors(axisDir,_aN).normalize();_aT.crossVectors(_aN,_aE).normalize();return P}
+// close view from the east: local vertical up, ground horizontal, the light comes from above
+function poseAng(o){const k=fitK(),P=angFrame(),es=earthS;
+  o.p.copy(P).addScaledVector(_aE,(W<600?1.6:1.3)*k*es).addScaledVector(_aN,0.30*es);o.t.copy(P).addScaledVector(_aN,(W<600?0.02:0.27)*es);o.up.copy(_aN)}
+const angLbl=addLabel('lb-ang',()=>angTxt,out=>{const a=angDeg*DEG/2,r=(Math.abs(angDeg-90)<1.5?0.34:0.42)*earthS;
+  return out.copy(_aO).addScaledVector(_aG,Math.cos(a)*r).addScaledVector(_aN,Math.sin(a)*r)},{occl:false,show:()=>angS>0.5&&angRay.visible});
+function updateAng(dt){const sh=cine.on&&!cine.free?SHOTS[cine.i]:null;const tg=sh&&sh.ang?sh.ang(Math.min(1,cine.t/sh.dur)):0;
+  angS+=(tg-angS)*Math.min(1,dt*3);
+  const vis=angS>0.01&&nearEarth(FAR_D);angRay.visible=angGnd.visible=angArc.visible=vis;if(!vis)return;
+  const P=angFrame(),es=earthS,s=sunDir,sn=s.dot(_aN),st=s.dot(_aT);
+  if(Math.abs(st)>1e-3)angSide=st>0?1:-1;_aG.copy(_aT).multiplyScalar(angSide); // ground direction towards the Sun
+  const al=Math.atan2(Math.max(0,sn),Math.abs(st));angDeg=al/DEG;
+  _aO.copy(P).addScaledVector(_aN,0.004*es);
+  _aD.copy(_aG).multiplyScalar(Math.cos(al)).addScaledVector(_aN,Math.sin(al));
+  let q=0;const push=v=>{angArr[q++]=v.x;angArr[q++]=v.y;angArr[q++]=v.z};
+  push(_aO);push(_aX.copy(_aO).addScaledVector(_aD,0.72*es));setSegs(angRay,angArr,1);
+  q=0;push(_aX.copy(_aO).addScaledVector(_aG,-0.42*es));push(_aX.copy(_aO).addScaledVector(_aG,0.42*es));setSegs(angGnd,angArr,1);
+  q=0;const right=Math.abs(angDeg-90)<1.5;
+  if(right){const a=0.2*es;push(_aX.copy(_aO).addScaledVector(_aG,a));push(_aX.addScaledVector(_aN,a));push(_aX);push(_aX.copy(_aO).addScaledVector(_aN,a));setSegs(angArc,angArr,2)}
+  else{const r=0.3*es;for(let i=0;i<ANG_N;i++)for(const f of [i,i+1]){const a=al*f/ANG_N;push(_aX.copy(_aO).addScaledVector(_aG,Math.cos(a)*r).addScaledVector(_aN,Math.sin(a)*r))}setSegs(angArc,angArr,ANG_N)}
+  angRayMat.opacity=angGndMat.opacity=angArcMat.opacity=angS;
+  const t=(right?'∟ ':'')+nf(Math.round(angDeg),0)+'°';if(t!==angTxt){angTxt=t;angLbl.el.innerHTML=t}}
+
 /* ---------- glowing lines: equator, tropics and polar circles light up when the voice names them ---------- */
 // order as in LATS: equator, northern tropic, southern tropic, northern polar circle, southern polar circle; -1 = hidden
 const LAT_B=latGroup.children.map(l=>({w:l.material.linewidth,c:l.material.color.clone()})),latG=[0,0,0,0,0];
@@ -2447,6 +2488,98 @@ function updateLatGlow(dt,t){let tg=NOG;
   latGroup.children.forEach((l,i)=>{const v=tg[i];l.visible=v>=0;latG[i]+=(Math.max(0,v)-latG[i])*Math.min(1,dt*3.5);
     const g=latG[i]*(0.82+0.18*Math.sin(t*4.2));l.material.linewidth=LAT_B[i].w*(1+2.4*g);l.material.color.copy(LAT_B[i].c).multiplyScalar(1+2.2*g);
     const lb=latLbl[i];if(lb)lb.el.classList.toggle('glow',latG[i]>0.4)})}
+
+/* ---------- grid of latitude (and longitude) circles with the circles of Luxembourg, for chapter 4 ---------- */
+const gridLat=new THREE.Group(),gridLon=new THREE.Group();tilt.add(gridLat);spin.add(gridLon);
+const gridMat=lmat({color:lin(0xDCE6F2,1.1),linewidth:1.1,transparent:true,opacity:0,depthWrite:false});
+const luxMat=lmat({color:lin(0xFFC46B,1.6),linewidth:2.4,transparent:true,opacity:0,depthWrite:false});
+{const R=R_E*1.004,N=160;
+ for(let la=-80;la<=80;la+=10){if(!la)continue;const pts=[];for(let k=0;k<N;k++){const a=k/N*TAU;pts.push(new V3(R*Math.cos(la*DEG)*Math.cos(a),R*Math.sin(la*DEG),R*Math.cos(la*DEG)*Math.sin(a)))}gridLat.add(line2(pts,gridMat,true))}
+ {const la=PLACES.lux.lat,pts=[];for(let k=0;k<N;k++){const a=k/N*TAU;pts.push(new V3(R*1.001*Math.cos(la*DEG)*Math.cos(a),R*1.001*Math.sin(la*DEG),R*1.001*Math.cos(la*DEG)*Math.sin(a)))}gridLat.add(line2(pts,luxMat,true))}
+ for(let lo=0;lo<360;lo+=15){const pts=[];for(let k=0;k<=80;k++)pts.push(placeLocal(-90+k*180/80,lo,R));gridLon.add(line2(pts,gridMat,false))}
+ {const pts=[];for(let k=0;k<=80;k++)pts.push(placeLocal(-90+k*180/80,PLACES.lux.lon,R*1.001));gridLon.add(line2(pts,luxMat,false))}
+ [gridLat,gridLon].forEach(g=>g.traverse(o=>{o.renderOrder=3}))}
+gridLon.children[gridLon.children.length-1].userData.lux=true;
+const gridS={lat:0,lon:0,lux:0,luxLon:0};
+function updateGrid(dt,t){let tg={lat:0,lon:0,lux:0,luxLon:0};
+  if(cine.on&&!cine.free){const sh=SHOTS[cine.i];if(sh.grid)tg=Object.assign(tg,sh.grid(Math.min(1,cine.t/sh.dur)))}
+  const f=Math.min(1,dt*3);for(const k in gridS)gridS[k]+=(tg[k]-gridS[k])*f;
+  const near=nearEarth(FAR_D),pul=0.85+0.15*Math.sin(t*4.2);
+  gridLat.visible=near&&(gridS.lat>0.01||gridS.lux>0.01);gridLon.visible=near&&(gridS.lon>0.01||gridS.luxLon>0.01);
+  // the grid lines are shared by both groups: the stronger of the two settings wins
+  gridMat.opacity=0.42*Math.max(gridS.lat,gridS.lon);
+  luxMat.opacity=Math.max(gridS.lux,gridS.luxLon)*pul;luxMat.linewidth=2.4*(1+0.5*Math.max(gridS.lux,gridS.luxLon));
+  gridLat.children.forEach(o=>{if(o.material===gridMat)o.visible=gridS.lat>0.01;else o.visible=gridS.lux>0.01});
+  gridLon.children.forEach(o=>{if(o.material===gridMat)o.visible=gridS.lon>0.01;else o.visible=gridS.luxLon>0.01})}
+addLabel('lb-lat lb-luxlat',()=>`${L().placeShort.lux} · ${nf(PLACES.lux.lat,1)}° ${L().N}`,out=>{
+    const cl=tilt.worldToLocal(_t1.copy(camera.position));const az=Math.atan2(-cl.z,cl.x)+0.62,la=PLACES.lux.lat,R=R_E*1.012;
+    return tilt.localToWorld(out.set(R*Math.cos(la*DEG)*Math.cos(az),R*Math.sin(la*DEG),-R*Math.cos(la*DEG)*Math.sin(az)))},
+  {occl:false,anchor:'e',show:()=>gridS.lux>0.5&&cine.on&&nearEarth(7.5)});
+
+/* ---------- flashlight (Maglite style) for the experiment in chapter 5, "Mehr dazu" ---------- */
+// black anodised aluminium, knurled grip, wide head with lens; it shines on Luxembourg at night:
+// held straight down the spot is small and bright, tilted it becomes a larger and dimmer ellipse
+const flash=new THREE.Group();flash.visible=false;scene.add(flash);
+const flashLights=[new THREE.DirectionalLight(0xffffff,1.6),new THREE.HemisphereLight(0xcfd8e6,0x202430,0.7)];flashLights.forEach(l=>{l.visible=false;scene.add(l)});
+flashLights[0].position.set(1,2,1.5);
+{const cv=document.createElement('canvas');cv.width=64;cv.height=256;const g=cv.getContext('2d');g.fillStyle='#2b2e34';g.fillRect(0,0,64,256);
+ // knurling: fine diamond pattern
+ g.strokeStyle='rgba(255,255,255,0.16)';g.lineWidth=1.2;for(let i=-256;i<320;i+=8){g.beginPath();g.moveTo(i,0);g.lineTo(i+256,256);g.stroke();g.beginPath();g.moveTo(i+256,0);g.lineTo(i,256);g.stroke()}
+ const knurl=new THREE.CanvasTexture(cv);knurl.wrapS=knurl.wrapT=THREE.RepeatWrapping;knurl.repeat.set(3,2);
+ const metal=new THREE.MeshStandardMaterial({color:lin(0x2a2d33),metalness:0.85,roughness:0.38});
+ const grip=new THREE.MeshStandardMaterial({color:lin(0xffffff),map:knurl,metalness:0.8,roughness:0.5,bumpMap:knurl,bumpScale:0.004});
+ const ring=new THREE.MeshStandardMaterial({color:lin(0x4a4f57),metalness:0.9,roughness:0.25});
+ const rubber=new THREE.MeshStandardMaterial({color:lin(0x111214),metalness:0,roughness:0.9});
+ const S=0.75,cyl=(r1,r2,h,y,m,seg)=>{const c=new THREE.Mesh(new THREE.CylinderGeometry(r1*S,r2*S,h*S,seg||40,1,false),m);c.position.y=(y+h/2)*S;flash.add(c);return c};
+ cyl(0.064,0.064,0.012,0.000,ring);          // bezel ring at the front
+ cyl(0.062,0.062,0.100,0.012,metal);         // head
+ cyl(0.062,0.043,0.060,0.112,metal);         // taper to the barrel
+ cyl(0.042,0.042,0.060,0.172,metal);         // barrel in front of the grip
+ cyl(0.042,0.042,0.300,0.232,grip);          // knurled grip
+ cyl(0.045,0.045,0.050,0.532,metal);         // tail cap
+ cyl(0.038,0.038,0.006,0.582,ring);
+ const sw=new THREE.Mesh(new THREE.BoxGeometry(0.02*S,0.035*S,0.012*S),rubber);sw.position.set(0,0.20*S,0.042*S);flash.add(sw); // switch
+ const lens=new THREE.Mesh(new THREE.CircleGeometry(0.056*S,40),new THREE.MeshBasicMaterial({color:lin(0xFFF1D2,3.0)}));lens.rotation.x=Math.PI/2;lens.position.y=-0.0005;flash.add(lens);
+ flash.userData.len=0.588*S}
+// light cone and spot (built every frame from rays that hit the globe)
+const FL_N=56,FL_ANG=10*DEG;
+const coneGeo=new THREE.BufferGeometry();coneGeo.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(FL_N*9),3));
+const coneMat=new THREE.MeshBasicMaterial({color:lin(0xFFE7B8,0.55),transparent:true,opacity:0.22,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
+const cone=new THREE.Mesh(coneGeo,coneMat);cone.frustumCulled=false;cone.renderOrder=6;scene.add(cone);cone.visible=false;
+const spotGeo=new THREE.BufferGeometry();spotGeo.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(FL_N*9),3));
+const spotMat=new THREE.MeshBasicMaterial({color:lin(0xFFF0CF,1.6),transparent:true,opacity:1,blending:THREE.AdditiveBlending,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4});
+const spot=new THREE.Mesh(spotGeo,spotMat);spot.frustumCulled=false;spot.renderOrder=7;scene.add(spot);spot.visible=false;
+const _fA=new V3(),_fD=new V3(),_fN=new V3(),_fE=new V3(),_fT=new V3(),_fP=new V3(),_fq=new THREE.Quaternion(),_fu=new V3(),_fv=new V3(),_fr=new V3(),_fh=new V3();
+let flashOn=0,flashArea0=0;
+function raySphere(o,d,c,R,out){const oc=_fh.copy(o).sub(c),b=oc.dot(d),q=oc.lengthSq()-R*R,disc=b*b-q;if(disc<0)return null;const t=-b-Math.sqrt(disc);return t>0?out.copy(o).addScaledVector(d,t):null}
+function updateFlash(dt){let tg=0,tilt=0;
+  if(cine.on&&!cine.free){const sh=SHOTS[cine.i];if(sh.flash){const r=sh.flash(Math.min(1,cine.t/sh.dur));tg=r.on;tilt=r.tilt}}
+  else if(cine.on&&cine.free&&flashOn>0.01){tg=flashOn;tilt=flash.userData.tilt||0}
+  // fade in, but gone at once when the scene cuts to the sunlight
+  flashOn=tg>flashOn?flashOn+(tg-flashOn)*Math.min(1,dt*3):tg;const vis=flashOn>0.01;
+  flash.visible=cone.visible=spot.visible=vis;flashLights.forEach(l=>{l.visible=vis});if(!vis)return;
+  flash.userData.tilt=tilt;
+  // frame at Luxembourg: n up, e east, t north
+  const P=placeWorld(_fP,1.0),Rs=R_E*earthS*1.003,C=earthPos;_fN.copy(P).sub(C).normalize();
+  _fE.crossVectors(axisDir,_fN).normalize();_fT.crossVectors(_fN,_fE).normalize();
+  const h=0.46*earthS;_fD.copy(_fN).multiplyScalar(-Math.cos(tilt)).addScaledVector(_fT,-Math.sin(tilt)).normalize(); // beam direction
+  _fA.copy(P).addScaledVector(_fD,-h);flash.position.copy(_fA);flash.scale.setScalar(earthS);
+  flash.quaternion.setFromUnitVectors(_fu.set(0,-1,0),_fD);
+  flashLights[0].position.copy(_fA).addScaledVector(_fN,2).addScaledVector(_fE,2);flashLights[0].target.position.copy(_fA);flashLights[0].target.updateMatrixWorld();
+  // edge rays of the cone
+  _fu.crossVectors(_fD,_fE).normalize();_fv.crossVectors(_fD,_fu).normalize();
+  const cp=coneGeo.attributes.position.array,sp=spotGeo.attributes.position.array,pts=[],hit0=raySphere(_fA,_fD,C,Rs,new V3())||P.clone();
+  for(let i=0;i<FL_N;i++){const a=i/FL_N*TAU;_fr.copy(_fD).multiplyScalar(Math.cos(FL_ANG)).addScaledVector(_fu,Math.sin(FL_ANG)*Math.cos(a)).addScaledVector(_fv,Math.sin(FL_ANG)*Math.sin(a)).normalize();
+    pts.push(raySphere(_fA,_fr,C,Rs,new V3())||_fA.clone().addScaledVector(_fr,h*3))}
+  let area=0;
+  for(let i=0;i<FL_N;i++){const p=pts[i],q=pts[(i+1)%FL_N];cp.set([_fA.x,_fA.y,_fA.z,p.x,p.y,p.z,q.x,q.y,q.z],i*9);
+    const lift=(x)=>x.clone().sub(C).setLength(Rs*1.0015).add(C);const c0=lift(hit0),p1=lift(p),q1=lift(q);sp.set([c0.x,c0.y,c0.z,p1.x,p1.y,p1.z,q1.x,q1.y,q1.z],i*9);
+    area+=_fh.copy(p).sub(hit0).cross(_fr.copy(q).sub(hit0)).length()/2}
+  coneGeo.attributes.position.needsUpdate=true;spotGeo.attributes.position.needsUpdate=true;
+  if(tilt<0.02||!flashArea0)flashArea0=area;
+  // the same light on a larger area: each part of the spot gets less
+  const k=Math.min(1,flashArea0/Math.max(1e-6,area));
+  spotMat.color.copy(lin(0xFFF0CF,1.6)).multiplyScalar(0.25+1.0*k);spotMat.opacity=flashOn;coneMat.opacity=0.22*flashOn}
 
 /* ---------- the chapters ---------- */
 const ERKL=[
@@ -2478,21 +2611,32 @@ const ERKL=[
  // 4: Luxembourg, then the lighting zones around it
  {id:'lux',cut:true,rel:true,allow:['place','borders','zones','lat'],show:{place:true,borders:true},
   start(){setPl('lux');state.mode='day';state.d=EVENTS[1];this.h0=12-dl(PLACES.lux.lat,EVENTS[1])/2-0.6},
-  time(u){if(!cine.mehr){state.hour=this.h0+u*7;state.show.zones=u>=cu(1,0)}else{state.hour=11;state.show.lat=true;state.show.zones=u>=cu(1,0)}},
+  time(u){if(!cine.mehr){state.hour=this.h0+u*7;state.show.zones=u>=cu(1,0);state.show.lat=u>=cu(0,1)-0.01}else{state.hour=11;state.show.lat=true;state.show.zones=u>=cu(1,0)&&u<cu(2,0)}},
+  grid(u){if(!cine.mehr)return {lat:u>=cu(0,1)-0.01&&u<cu(1,0)?1:0,lux:u>=cu(0,1)-0.01?1:0};
+    return {lat:u<cu(1,0)?1:0,lux:u>=cu(0,2)-0.01&&u<cu(1,0)||u>=cu(2,0)-0.01?1:0,lon:u>=cu(2,0)-0.01?1:0,luxLon:u>=cu(2,1)-0.01?1:0}},
   cam(u,o){const P=placeWorld(_cN,1.0),n=_cn.copy(P).sub(earthPos).normalize(),tn=_cs.copy(axisDir).addScaledVector(n,-n.dot(axisDir)).normalize(),k=fitK();
     const far=_t1.copy(earthPos).addScaledVector(n,3.6*k).addScaledVector(tn,-0.9*k),near=_t2.copy(P).addScaledVector(n,0.7).addScaledVector(tn,-0.5);
     const mid=new V3().copy(earthPos).addScaledVector(n,3.3*k).addScaledVector(tn,-0.6*k);
     if(cine.mehr){o.p.copy(mid);o.t.copy(earthPos);return}
     const e=ease(Math.min(1,u/Math.max(0.1,cu(1,0)))),back=kAt(u,cu(1,0),4.5);
     o.p.lerpVectors(far,near,e).lerp(mid,back);o.t.copy(earthPos).lerp(P,Math.min(1,e*1.15)*(1-back))},
-  glow(u){return cine.mehr?gAt(u,[[0,[0,0,0,0,0]],[cu(0,1),[1,0,0,0,0]],[cu(1,0),[0,1,1,0,0]],[cu(1,1),[0,0,0,1,1]],[cu(1,2),[0,0,0,0,0]]]):NOG},
+  glow(u){return cine.mehr?gAt(u,[[0,[0,0,0,0,0]],[cu(0,1),[1,0,0,0,0]],[cu(1,0),[0,1,1,0,0]],[cu(1,1),[0,0,0,1,1]],[cu(1,2),[0,0,0,0,0]]])
+    :gAt(u,[[0,NOG],[cu(0,1)-0.01,[0.25,-1,-1,-1,-1]],[cu(0,2)-0.01,[1,-1,-1,-1,-1]],[cu(1,0),[0,0,0,0,0]]])},
   data(){const l=L();return `${l.placeShort.lux} · ${nf(49.6,1)}° ${l.N} · ${nf(6.1,1)}° ${l.E}`}},
  // 5: steep or low light at noon
  {id:'angle',cut:true,rel:true,allow:['beam','place'],show:{beam:true,place:true},
   start(){setPl('lux');state.mode='year';state.hour=12;state.d=EVENTS[1]},
-  time(u){state.d=cine.mehr?seqD(u,[[0,EVENTS[1]],[cu(0,3),EVENTS[3]],[cu(2,1),EVENTS[1]],[cu(2,2),EVENTS[3]]])
-    :seqD(u,[[0,EVENTS[1]],[cu(1,0),EVENTS[3]],[cu(2,0),EVENTS[0]],[cu(2,0)+(1-cu(2,0))*0.45,EVENTS[2]]])},
-  cam(u,o){poseBeam(o)},
+  time(u){if(cine.mehr){const fl=u<cu(2,0);state.show.orbit=!fl;state.mode=fl?'day':'year';state.hour=fl?0.5:12;state.show.beam=!fl;state.show.place=!fl;state.show.clouds=!fl;
+      state.d=seqD(u,[[0,EVENTS[1]],[cu(2,2),EVENTS[3]]]);return}
+    state.d=seqD(u,[[0,EVENTS[1]],[cu(1,0),EVENTS[3]],[cu(2,0),EVENTS[0]],[cu(2,0)+(1-cu(2,0))*0.45,EVENTS[2]]])},
+  // "Ein einfacher Versuch": held straight down, then tilted (from "Nun wird die Taschenlampe gekippt"), then swinging slowly
+  flash(u){if(!cine.mehr||u>=cu(2,0))return {on:0,tilt:0};const D=this.dur,t3=cu(0,3),t5=cu(1,0);
+    let tilt=0;if(u>=t3)tilt=62*DEG*ease(Math.min(1,(u-t3)*D/2.8));
+    if(u>=t5)tilt=31*DEG+31*DEG*Math.cos((u-t5)*D*TAU/7);return {on:u>=0.01?1:0,tilt}},
+  cuts(){return cine.mehr?[cu(2,0)]:[]},
+  cam(u,o){if(cine.mehr&&u<cu(2,0)){const P=placeWorld(_cN,1.0),n=_cn.copy(P).sub(earthPos).normalize(),e=_cs.crossVectors(axisDir,n).normalize();
+      o.p.copy(P).addScaledVector(n,1.55).addScaledVector(e,1.6);o.t.copy(P).addScaledVector(n,0.3);o.up.copy(n);return}
+    poseBeam(o)},
   data(){const a=astro(state.d),alt=noonAlt(PLACES.lux.lat),l=L();return `${sunData('lux')} · ${l.areaW} ${nf(1/Math.sin(Math.max(1,alt)*DEG),1)}× · ${nf(a.S*Math.sin(alt*DEG),0)} W/m²`}},
  // 6: day length, seen from above the North Pole (in "Mehr": Tromsø, polar day and polar night)
  {id:'days',cut:true,rel:true,top:true,allow:['daycircle','place','rays'],show:{daycircle:true,place:true,rays:true,aurora:false,orbit:false},
@@ -2505,15 +2649,19 @@ const ERKL=[
   data(){const p=PLACES[state.place],Lh=dl(p.lat,state.d),l=L();return `${l.placeShort[state.place]} · ${fmtDate(state.d)} · ${l.dayW} ${Lh>=24?l.polarDay:Lh<=0?l.polarNight:fmH(Lh)} · ${l.nightW} ${Lh>=24?'0 h':Lh<=0?'24 h':fmH(24-Lh)}`}},
  // 7: Quito on the Equator: steep light all year, 12 hours of daylight
  {id:'equator',cut:true,rel:true,allow:['beam','place','daycircle','rays','lat'],show:{beam:true,place:true,aurora:false,lat:true},
-  glow(u){const e=cine.mehr?(u<cu(1,0)?1:0.3):(u<cu(1,0)?1:0.3);return [e,-1,-1,-1,-1]},
+  glow(u){const e=cine.mehr?(u>=cu(3,0)?0.3:0):(u<cu(1,0)-0.01?1:0);return [e,-1,-1,-1,-1]},
+  // close-up from the side: ground line, middle ray and the angle between them
+  ang(u){return cine.mehr?(u<cu(2,0)-0.004?1:0):(u>=cu(1,0)?1:0)},
   top:()=>cine.mehr&&cine.t/SHOTS[cine.i].dur>=cu(2,0),
-  start(){setPl('quito');state.mode='year';state.hour=12;state.d=EVENTS[1]},
-  time(u){if(!cine.mehr){state.d=u<cu(1,0)?EVENTS[1]:mod(EVENTS[1]+(u-cu(1,0))/(1-cu(1,0))*365,365)}
-    else{const tp=u>=cu(2,0)&&u<cu(3,0);state.show.beam=!tp;state.show.daycircle=tp;state.show.rays=tp;state.mode=tp?'day':'year';state.show.orbit=!tp;
+  start(){setPl('quito');state.mode='year';state.hour=12;state.d=EVENTS[0]},
+  time(u){const cl=cine.mehr?u<cu(2,0):u>=cu(1,0)-0.01;state.show.lat=!cl;state.show.orbit=!cl; // close-up: no edge-on equator, no orbit line
+    if(!cine.mehr){state.d=u<cu(1,0)?EVENTS[0]:mod(EVENTS[0]+(u-cu(1,0))/(1-cu(1,0))*365,365)}
+    else{const tp=u>=cu(2,0)&&u<cu(3,0);state.show.beam=!tp;state.show.daycircle=tp;state.show.rays=tp;state.mode=tp?'day':'year';if(tp)state.show.orbit=false;
       state.hour=tp?mod(6+(u-cu(2,0))*this.dur,24):12;
-      state.d=seqD(u,[[0,EVENTS[0]],[cu(0,0)+0.12,EVENTS[2]],[cu(1,0),EVENTS[1]],[cu(1,1),EVENTS[3]],[cu(3,0),EVENTS[3]+120,1-cu(3,0)]])}},
+      state.d=seqD(u,[[0,EVENTS[0]],[cu(0,1),EVENTS[2],1.2/this.dur],[cu(1,0),EVENTS[1]],[cu(1,1),EVENTS[3]],[cu(3,0),EVENTS[3]+120,1-cu(3,0)]])}},
   cuts(){return cine.mehr?[cu(2,0),cu(3,0)]:[]},
-  cam(u,o){if(cine.mehr&&u>=cu(2,0)&&u<cu(3,0))poseTop(o);else poseBeam(o)},
+  cam(u,o){if(!cine.mehr){mixPose(o,poseSideBeam,poseAng,kAt(u,cu(1,0)-0.01,2.8));return}
+    if(u<cu(2,0))poseAng(o);else if(u<cu(3,0))poseTop(o);else poseSideBeam(o)},
   data(){return sunData('quito',true)}},
  // 8: the tropics: the middle ray reaches the Tropic of Cancer in June and the Tropic of Capricorn in December
  {id:'tropics',cut:true,rel:true,allow:['lat','rays','axis'],show:{lat:true,rays:true,axis:true,clouds:false,orbit:false},
