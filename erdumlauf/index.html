@@ -1576,7 +1576,7 @@ const moonMat=new THREE.ShaderMaterial({uniforms:{tMoon:{value:px1(150,150,150)}
     gl_FragColor=vec4(c*uReady,1.0);}`});
 const moon=new THREE.Mesh(new THREE.SphereGeometry(R_MOON,64,40),moonMat); moon.visible=false; scene.add(moon);
 const moonPos=new V3(), moonInfo={E:0,lit:0,lam:0};
-const MO_N=120, moonOrbitGeo=new THREE.BufferGeometry(); moonOrbitGeo.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(MO_N*3),3));
+const MO_N=360, moonOrbitGeo=new THREE.BufferGeometry(); moonOrbitGeo.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(MO_N*3),3));
 const moonOrbit=new THREE.LineLoop(moonOrbitGeo,new THREE.LineBasicMaterial({color:lin(0xAFC3E0),transparent:true,opacity:0.32,depthWrite:false}));
 moonOrbit.frustumCulled=false; moonOrbit.visible=false; scene.add(moonOrbit);
 let moonOrbitT=-1;
@@ -1593,8 +1593,11 @@ function updateMoon(dEff,a){
   moonMat.uniforms.uSunM.value.copy(moonPos).negate().normalize(); moonMat.uniforms.uEarthM.value.copy(_mx);
   moonMat.uniforms.uShine.value=1-moonInfo.lit;          // earthshine is strongest near new moon
   // orbit line: one lunar month around the present position
-  if(Math.abs(jd-moonOrbitT)>0.5||moonOrbit.userData.s!==earthS){moonOrbitT=jd;moonOrbit.userData.s=earthS;const arr=moonOrbitGeo.attributes.position.array;
-    for(let i=0;i<MO_N;i++){const mi=moonEcl(jd+(i/MO_N-0.5)*27.32),v=eclDir(mi.lam,mi.bet,_my).multiplyScalar(MOON_D*(mi.r/384400));arr[i*3]=v.x;arr[i*3+1]=v.y;arr[i*3+2]=v.z}
+  // the real path does not close after one month (gap up to 3.5 % of the radius): spread the gap evenly so the loop has no kink; zero shift at the Moon itself
+  if(Math.abs(jd-moonOrbitT)>0.02||moonOrbit.userData.s!==earthS){moonOrbitT=jd;moonOrbit.userData.s=earthS;const arr=moonOrbitGeo.attributes.position.array,P=27.32;
+    const vf=f=>{const m=moonEcl(jd+f*P);return eclDir(m.lam,m.bet).multiplyScalar(MOON_D*(m.r/384400))},e=0.01;
+    const gap=vf(0.5).sub(vf(-0.5)),dgap=vf(0.5+e).sub(vf(0.5-e)).sub(vf(-0.5+e)).add(vf(-0.5-e)).multiplyScalar(1/(2*e));   // position and direction mismatch
+    for(let i=0;i<MO_N;i++){const f=i/MO_N-0.5,mi=moonEcl(jd+f*P),v=eclDir(mi.lam,mi.bet,_my).multiplyScalar(MOON_D*(mi.r/384400)).addScaledVector(gap,-f).addScaledVector(dgap,-f*f/2);arr[i*3]=v.x;arr[i*3+1]=v.y;arr[i*3+2]=v.z}
     moonOrbitGeo.attributes.position.needsUpdate=true}
   moonOrbit.position.copy(earthPos); moonOrbit.scale.setScalar(earthS);
 }
