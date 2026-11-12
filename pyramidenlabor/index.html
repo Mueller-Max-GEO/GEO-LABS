@@ -4057,11 +4057,11 @@ function setOutline(line,vals,n,h,axMax,z){   // vals: Länge n je Geschlecht (M
   line.geometry.dispose();line.geometry=new THREE.LineGeometry();line.geometry.setPositions(p);line.computeLineDistances()}
 
 /* ---------- Zeitgebirge (alle Jahre hintereinander) ---------- */
-const landMat=new THREE.ShaderMaterial({extensions:{derivatives:true},side:THREE.DoubleSide,
+const landMat=new THREE.ShaderMaterial({extensions:{derivatives:true},side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:2,polygonOffsetUnits:4,
   uniforms:{uYear:{value:2024},uEst:{value:2024},uCo0:{value:-1e5},uCo1:{value:-1e5},uFade:{value:0},uSide:{value:0},uCut:{value:.12},uLight:U_LIGHT,uHi:U_HI,uBg:U_BG},
   vertexShader:`attribute vec3 aC;attribute vec2 aAY;varying vec3 vC;varying vec2 vAY;varying vec3 vW;
-    void main(){vC=aC;vAY=aAY;vec4 w=modelMatrix*vec4(position,1.);vW=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}`,
-  fragmentShader:`uniform float uYear,uEst,uCo0,uCo1,uFade,uSide,uLight,uCut;uniform vec3 uHi,uBg;varying vec3 vC;varying vec2 vAY;varying vec3 vW;
+    varying vec3 vNn;void main(){vC=aC;vAY=aAY;vNn=normal;vec4 w=modelMatrix*vec4(position,1.);vW=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}`,
+  fragmentShader:`uniform float uYear,uEst,uCo0,uCo1,uFade,uSide,uLight,uCut;uniform vec3 uHi,uBg;varying vec3 vC;varying vec2 vAY;varying vec3 vW;varying vec3 vNn;
     float ln(float v,float per,float w){float f=abs(fract(v/per+.5)-.5)*per;return 1.-smoothstep(0.,w*fwidth(v)+1e-4,f);}
     void main(){
       if(uFade<.02)discard;
@@ -4069,8 +4069,8 @@ const landMat=new THREE.ShaderMaterial({extensions:{derivatives:true},side:THREE
       float fut=step(uYear+.45,vAY.y);
       if(fut>.5&&uSide<.5)discard;
       if(fut>.5&&uSide>.5&&vAY.y>uEst+.5){vec2 fc=floor(gl_FragCoord.xy);if(mod(fc.x+fc.y,2.)<.5)discard;}
-      vec3 n=normalize(cross(dFdx(vW),dFdy(vW)));float d=abs(dot(n,normalize(vec3(.35,.6,.72))));
-      vec3 c=vC*(.5+.6*d)*mix(.62,.86,uLight);
+      vec3 n=normalize(vNn);float d=abs(dot(n,normalize(vec3(.35,.6,.72))));
+      vec3 c=vC*(.52+.55*d)*mix(.62,.93,uLight);
       if(uSide>.5){float t=clamp((max(vC.r,vC.b)-.22)/.9,0.,1.);t=pow(t,1.5);   // Seitenansicht: kräftigere Farbe = mehr Menschen
         vec3 d0=vec3(.03,.05,.15),d1=vec3(.07,.30,.68),d2=vec3(.26,.66,.86),d3=vec3(.90,.84,.52),l0=vec3(.92,.94,.97),l1=vec3(.62,.78,.94),l2=vec3(.22,.50,.85),l3=vec3(.05,.20,.48);
         vec3 p0=mix(d0,l0,uLight),p1=mix(d1,l1,uLight),p2=mix(d2,l2,uLight),p3=mix(d3,l3,uLight);
@@ -4092,8 +4092,8 @@ function buildLand(c,mode,grp,axMax){
       const v=(grp===5?g[s*21+Math.min(20,Math.floor(a/5))]:t[s*NA+a])/tt,r=v/axMax,k=(s*nY+y)*NA+a,base=s?COL.f:COL.m,b=.22+.95*Math.pow(Math.min(r,1),.8);
       pos[3*k]=(s?1:-1)*(G.GAP+r*G.XW);pos[3*k+1]=Math.min(G.H,(a+.5)*G.AH);pos[3*k+2]=y*G.DZ;
       col[3*k]=base.r*b;col[3*k+1]=base.g*b;col[3*k+2]=base.b*b;ay[2*k]=a+.5;ay[2*k+1]=c.y0+y}}
-  for(let s=0;s<2;s++)for(let y=0;y<nY-1;y++)for(let a=0;a<NA-1;a++){const k=(s*nY+y)*NA+a;idx[ii++]=k;idx[ii++]=k+NA;idx[ii++]=k+1;idx[ii++]=k+1;idx[ii++]=k+NA;idx[ii++]=k+NA+1}
-  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('aC',new THREE.BufferAttribute(col,3));geo.setAttribute('aAY',new THREE.BufferAttribute(ay,2));geo.setIndex(new THREE.BufferAttribute(idx,1));
+  for(let s=0;s<2;s++)for(let y=0;y<nY-1;y++)for(let a=0;a<NA-1;a++){const k=(s*nY+y)*NA+a;idx[ii++]=k;idx[ii++]=k+NA;idx[ii++]=k+NA+1;idx[ii++]=k;idx[ii++]=k+NA+1;idx[ii++]=k+1}   // Dreiecke entlang der Jahrgänge: keine Sägezähne quer zu den Jahrgangslinien
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('aC',new THREE.BufferAttribute(col,3));geo.setAttribute('aAY',new THREE.BufferAttribute(ay,2));geo.setIndex(new THREE.BufferAttribute(idx,1));geo.computeVertexNormals();   // weiche Schattierung statt einzeln beleuchteter Dreiecke
   land=new THREE.Mesh(geo,landMat);land.frustumCulled=false;scene.add(land)}
 
 /* ---------- Figuren (Menschen-Modus) ---------- */
@@ -4320,7 +4320,7 @@ function computeView(dt){
   const wantLand=(S.view==='land'||S.view==='side')&&!S.people;
   V.landFade+=((wantLand?1:0)-V.landFade)*Math.min(1,dt*4);
   if(wantLand||V.landFade>.02){const key=S.c+S.mode+S.grp+'|'+V.axMax.toPrecision(4);if(key!==landKey){landKey=key;buildLand(c,S.mode,S.grp,V.axMax)}
-    land.position.z=-(year-c.y0)*G.DZ;const u=landMat.uniforms;u.uYear.value=year;u.uEst.value=c.est;u.uFade.value=V.landFade;u.uSide.value=S.view==='side'?1:0;u.uCut.value=bars.visible?V.depth/2+.006:-1;
+    land.position.z=-(year-c.y0)*G.DZ;const u=landMat.uniforms;u.uYear.value=year;u.uEst.value=c.est;u.uFade.value=V.landFade;u.uSide.value=S.view==='side'?1:0;u.uCut.value=-1;
     u.uCo0.value=co?co[0]:-1e5;u.uCo1.value=co?co[1]:-1e5}
   else if(land){landMat.uniforms.uFade.value=0}
   wall.visible=V.landFade<.5&&!(S.people&&S.pstage<2);floorTicks.visible=!(S.people&&S.pstage<2);
