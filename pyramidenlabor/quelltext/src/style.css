@@ -64,8 +64,10 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 .lb.tick{font:500 11.5px var(--f-num);color:var(--lb-soft);text-shadow:var(--halo)}
 .lb.byr{font:400 11px var(--f-num);color:var(--lb-soft);text-shadow:var(--halo)}
 .lb.sex{font:650 16px var(--f-ui);letter-spacing:-.01em;text-shadow:var(--halo)}
+.lb.sex small{font-size:12px;font-weight:500;color:var(--muted)}
 .lb.sex.m{color:var(--m)} .lb.sex.f{color:var(--f)}
 .lb.axis{font:500 12px var(--f-ui);color:var(--muted);text-shadow:var(--halo)}
+.lb.axis.agehd{font-weight:650;font-size:12.5px;color:var(--lb);letter-spacing:.01em}
 .lb.ev,.lb.tag{background:var(--tag-bg);border:1px solid var(--glass-edge);box-shadow:var(--ctl-shadow)}
 .lb.ev{font-size:12.5px;font-weight:650;line-height:1.2;color:var(--ink);border-radius:12px;padding:5px 11px 6px 15px;pointer-events:auto;cursor:pointer}
 .lb.ev::before{content:"";position:absolute;left:6px;top:7px;bottom:7px;width:3.5px;border-radius:2px;background:var(--c,var(--ink))}

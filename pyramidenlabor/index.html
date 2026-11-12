@@ -76,8 +76,10 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 .lb.tick{font:500 11.5px var(--f-num);color:var(--lb-soft);text-shadow:var(--halo)}
 .lb.byr{font:400 11px var(--f-num);color:var(--lb-soft);text-shadow:var(--halo)}
 .lb.sex{font:650 16px var(--f-ui);letter-spacing:-.01em;text-shadow:var(--halo)}
+.lb.sex small{font-size:12px;font-weight:500;color:var(--muted)}
 .lb.sex.m{color:var(--m)} .lb.sex.f{color:var(--f)}
 .lb.axis{font:500 12px var(--f-ui);color:var(--muted);text-shadow:var(--halo)}
+.lb.axis.agehd{font-weight:650;font-size:12.5px;color:var(--lb);letter-spacing:.01em}
 .lb.ev,.lb.tag{background:var(--tag-bg);border:1px solid var(--glass-edge);box-shadow:var(--ctl-shadow)}
 .lb.ev{font-size:12.5px;font-weight:650;line-height:1.2;color:var(--ink);border-radius:12px;padding:5px 11px 6px 15px;pointer-events:auto;cursor:pointer}
 .lb.ev::before{content:"";position:absolute;left:6px;top:7px;bottom:7px;width:3.5px;border-radius:2px;background:var(--c,var(--ink))}
@@ -4031,6 +4033,13 @@ function buildTicks(ticks,axMax){
   tickLines=new THREE.LineSegments(new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute(p,3)),tickMat);wall.add(tickLines);
   axisLines=new THREE.LineSegments(new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute(ax,3)),axisMat);wall.add(axisLines);
   floorTicks=new THREE.LineSegments(new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute(q,3)),tickMat);scene.add(floorTicks)}
+// Altersachse: Pfeil über der Zahl 100 (das Alter geht weiter nach oben), „Alter“ steht über der Pfeilspitze
+const arrowMat=new THREE.MeshBasicMaterial({color:0x1D1D1F,transparent:true,opacity:.8,side:THREE.DoubleSide,depthWrite:false});
+const ageArrow=new THREE.Group();ageArrow.position.z=-G.DEPTH/2-.02;scene.add(ageArrow);
+const arrowShaft=new THREE.Mesh(new THREE.PlaneGeometry(.04,1).translate(0,.5,0),arrowMat),arrowHead=new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape([new THREE.Vector2(-.11,0),new THREE.Vector2(.11,0),new THREE.Vector2(0,.2)])),arrowMat);
+arrowShaft.renderOrder=arrowHead.renderOrder=2;ageArrow.add(arrowShaft,arrowHead);
+let ARROW_TIP=G.H+.9;
+function setArrow(){ARROW_TIP=Math.max(G.H+.9,(V.topY||0)+.32);const y0=G.H+.24;arrowShaft.position.y=y0;arrowShaft.scale.y=ARROW_TIP-.2-y0;arrowHead.position.y=ARROW_TIP-.2}   // wächst mit, wenn Balken über 100 höher reichen
 function fatLine(color,w,dashed){const m=new THREE.LineMaterial({color,linewidth:w,transparent:true,opacity:.95,dashed:!!dashed,dashSize:.22,gapSize:.14});const l=new THREE.Line2(new THREE.LineGeometry(),m);l.frustumCulled=false;l.visible=false;scene.add(l);return l}
 const cmpLine=fatLine(0xFFE08A,2.6,false),tmplLine=fatLine(0xFFFFFF,2.4,true),nowLine=fatLine(0xFFFFFF,1.8,false);
 function setOutline(line,vals,n,h,axMax,z){   // vals: Länge n je Geschlecht (Männer zuerst), gestuft
@@ -4043,13 +4052,14 @@ function setOutline(line,vals,n,h,axMax,z){   // vals: Länge n je Geschlecht (M
 
 /* ---------- Zeitgebirge (alle Jahre hintereinander) ---------- */
 const landMat=new THREE.ShaderMaterial({extensions:{derivatives:true},side:THREE.DoubleSide,
-  uniforms:{uYear:{value:2024},uEst:{value:2024},uCo0:{value:-1e5},uCo1:{value:-1e5},uFade:{value:0},uSide:{value:0},uLight:U_LIGHT,uHi:U_HI,uBg:U_BG},
+  uniforms:{uYear:{value:2024},uEst:{value:2024},uCo0:{value:-1e5},uCo1:{value:-1e5},uFade:{value:0},uSide:{value:0},uCut:{value:.12},uLight:U_LIGHT,uHi:U_HI,uBg:U_BG},
   vertexShader:`attribute vec3 aC;attribute vec2 aAY;varying vec3 vC;varying vec2 vAY;varying vec3 vW;
     void main(){vC=aC;vAY=aAY;vec4 w=modelMatrix*vec4(position,1.);vW=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}`,
-  fragmentShader:`uniform float uYear,uEst,uCo0,uCo1,uFade,uSide,uLight;uniform vec3 uHi,uBg;varying vec3 vC;varying vec2 vAY;varying vec3 vW;
+  fragmentShader:`uniform float uYear,uEst,uCo0,uCo1,uFade,uSide,uLight,uCut;uniform vec3 uHi,uBg;varying vec3 vC;varying vec2 vAY;varying vec3 vW;
     float ln(float v,float per,float w){float f=abs(fract(v/per+.5)-.5)*per;return 1.-smoothstep(0.,w*fwidth(v)+1e-4,f);}
     void main(){
       if(uFade<.02)discard;
+      if(abs(vW.z)<uCut)discard;   // dort stehen die Balken des aktuellen Jahres: keine zweite Fläche am selben Ort (sonst flackert es)
       float fut=step(uYear+.45,vAY.y);
       if(fut>.5&&uSide<.5)discard;
       if(fut>.5&&uSide>.5&&vAY.y>uEst+.5){vec2 fc=floor(gl_FragCoord.xy);if(mod(fc.x+fc.y,2.)<.5)discard;}
@@ -4189,7 +4199,7 @@ for(let i=0;i<=10;i++){L.age.push(mkLabel('age','c'));L.byr.push(mkLabel('byr','
 for(let i=0;i<16;i++)L.tick.push(mkLabel('tick','c'));
 for(let i=0;i<32;i++)L.yr.push(mkLabel('yr','c'));
 for(let i=0;i<8;i++){const o=mkLabel('ev','l');o.line=document.createElementNS('http://www.w3.org/2000/svg','line');leadersEl.appendChild(o.line);o.tip=new THREE.Vector3();o.clampX=true;L.ev.push(o)}
-L.sexM=mkLabel('sex m','r');L.sexF=mkLabel('sex f','l');L.axis=mkLabel('axis','c');L.ageT=mkLabel('axis','c');L.byrT=mkLabel('axis','l');
+L.sexM=mkLabel('sex m','r');L.sexF=mkLabel('sex f','l');L.axis=mkLabel('axis','c');L.ageT=mkLabel('axis agehd','c');L.sexM.clampX=L.sexF.clampX=true;L.byrT=mkLabel('axis','l');
 L.cmp=mkLabel('tag','l');L.tmpl=mkLabel('tag','r');L.coh=mkLabel('tag','l');L.fig=mkLabel('tag','c');L.coh.clampX=true;L.born=mkLabel('tag','l');L.born.clampX=true;L.byrT.clampX=true;L.byr.forEach(o=>o.clampX=true);
 const _p=new THREE.Vector3();
 let VW=1,VH=1,OFFX=0,OFFY=0,UI_L=0,UI_R=1e4;
@@ -4203,7 +4213,7 @@ function placeLabels(){
     if(!ok){if(o.vis){o.vis=false;o.el.style.opacity=0;o.el.style.visibility='hidden'}if(o.line)o.line.style.display='none';continue}
     const tx=o.ax==='c'?'-50%':o.ax==='r'?'-100%':'0',ty=o.ay==='t'?'0':o.ay==='b'?'-100%':'-50%';
     o.sx=_o.x+o.dx;o.sy=_o.y+o.dy;
-    if(o.clampX){const w=o.el.offsetWidth||120;if(o.ax==='l')o.sx=Math.min(o.sx,UI_R-w-6);else if(o.ax==='r')o.sx=Math.max(o.sx,UI_L+w+6)}
+    if(o.clampX){const w=o.el.offsetWidth||120;if(o.ax==='l')o.sx=Math.min(o.sx,UI_R-w-6);else if(o.ax==='r')o.sx=Math.max(o.sx,UI_L+w+6);else if(o.ax==='c')o.sx=clamp(o.sx,UI_L+w/2+6,Math.max(UI_L+w/2+6,UI_R-w/2-6))}
     const sc=o.rs?LSC:1,org=(o.ax==='c'?'50%':o.ax==='r'?'100%':'0')+' '+(o.ay==='t'?'0':o.ay==='b'?'100%':'50%');if(o.org!==org){o.org=org;o.el.style.transformOrigin=org}
     const tf=`translate(${o.sx.toFixed(1)}px,${o.sy.toFixed(1)}px) translate(${tx},${ty})`+(sc!==1?` scale(${sc.toFixed(3)})`:'');if(o.tf!==tf){o.tf=tf;o.el.style.transform=tf}
     if(!o.vis){o.vis=true;o.el.style.visibility='visible';o.el.style.opacity=1}
@@ -4260,9 +4270,10 @@ function computeView(dt){
   bars.instanceMatrix.needsUpdate=true;aCol.needsUpdate=true;aHi.needsUpdate=true;
   // über 100
   topBars.visible=!g5&&!S.people;
+  V.topY=0;
   if(topBars.visible){for(let s=0;s<2;s++)for(let j=0;j<NT;j++){const i=101+j,k=s*NT+j,o=s*ES,v=eA[o+i]+(eB[o+i+1]-eA[o+i])*fr;let hi=0;
       let len=v>0?clamp(v/den/V.axMax*G.XW,1e-4,G.XW*1.04):0;if(len<.012)len=0;   // fast leere Jahrgänge ganz weglassen: sonst stünde ihre Seitenwand als dünne Säule im Bild
-      const y0=(i+fr)*G.AH,h=G.AH-gap;V.lensT[k]=len;V.by0T[j]=y0;
+      const y0=(i+fr)*G.AH,h=G.AH-gap;V.lensT[k]=len;V.by0T[j]=y0;if(len>0)V.topY=Math.max(V.topY,y0+h);
       if(co&&byear(i,year)<=co[1]&&byear(i,year)>=co[0])hi=1;if(hv&&hv.i===i)hi=Math.max(hi,hv.s===s?.75:.35);
       if(len>0){_m4.makeScale((s?1:-1)*len,h,V.depth);_m4.setPosition((s?1:-1)*G.GAP,y0+gap/2,0)}else _m4.makeScale(0,0,0);topBars.setMatrixAt(k,_m4);
       barColor(s,100,_c);tCol.array[3*k]=_c.r;tCol.array[3*k+1]=_c.g;tCol.array[3*k+2]=_c.b;tHi.array[k]=hi}
@@ -4296,7 +4307,7 @@ function computeView(dt){
   const wantLand=(S.view==='land'||S.view==='side')&&!S.people;
   V.landFade+=((wantLand?1:0)-V.landFade)*Math.min(1,dt*4);
   if(wantLand||V.landFade>.02){const key=S.c+S.mode+S.grp+'|'+V.axMax.toPrecision(4);if(key!==landKey){landKey=key;buildLand(c,S.mode,S.grp,V.axMax)}
-    land.position.z=-(year-c.y0)*G.DZ;const u=landMat.uniforms;u.uYear.value=year;u.uEst.value=c.est;u.uFade.value=V.landFade;u.uSide.value=S.view==='side'?1:0;
+    land.position.z=-(year-c.y0)*G.DZ;const u=landMat.uniforms;u.uYear.value=year;u.uEst.value=c.est;u.uFade.value=V.landFade;u.uSide.value=S.view==='side'?1:0;u.uCut.value=bars.visible?V.depth/2+.006:-1;
     u.uCo0.value=co?co[0]:-1e5;u.uCo1.value=co?co[1]:-1e5}
   else if(land){landMat.uniforms.uFade.value=0}
   wall.visible=V.landFade<.5&&!(S.people&&S.pstage<2);floorTicks.visible=!(S.people&&S.pstage<2);
@@ -4325,7 +4336,8 @@ function updateLabels(){
     if(sideV)o.p.set(-(G.GAP+G.XW+.45),a*G.AH,0);else o.p.set(adx,a*G.AH+(S.grp===5&&a<100?.25:.05),zw);o.ax=aax;o.rs=true;
     setTxt(o,S.grp===5&&!sideV?(a<100?a+'–'+(a+4):'100+'):String(a));
     const b=L.byr[i];b.on=S.birth&&!sideV&&!S.people;b.p.set(G.GAP+G.XW+.35,a*G.AH+.05,zw);b.rs=true;setTxt(b,String(byear(a,year)))}
-  L.ageT.on=!S.people||S.pstage===2;if(sideV)L.ageT.p.set(-(G.GAP+G.XW+.45),G.H+.45,0);else L.ageT.p.set(adx,G.H+.42,zw);L.ageT.ax=aax;L.ageT.rs=true;setTxt(L.ageT,T('axAge'));
+  L.ageT.on=!S.people||S.pstage===2;if(sideV)L.ageT.p.set(-(G.GAP+G.XW+.45),G.H+.45,0);else{setArrow();L.ageT.p.set(0,ARROW_TIP+.05,zw);L.ageT.ay='b'}L.ageT.ax='c';L.ageT.rs=true;if(sideV)L.ageT.ay='m';
+  ageArrow.visible=!sideV&&V.landFade<.5&&(!S.people||S.pstage===2);setArrow();setTxt(L.ageT,T('axAge'));
   L.byrT.on=S.birth&&!sideV&&!S.people;L.byrT.p.set(G.GAP+G.XW+.35,G.H+.42,zw);setTxt(L.byrT,T('axBirth'));
   // Skala
   let k=0;const front=!sideV;
@@ -4336,7 +4348,7 @@ function updateLabels(){
   setTxt(L.axis,S.mode==='pct'?T(S.grp===5?'axPct5':'axPct1'):T(S.grp===5?'axAbs5':'axAbs1')+(V.unit===1e6?' '+T('inMio'):V.unit===1e3?' '+T('inTsd'):''));
   L.sexM.on=!flat;L.sexF.on=S.view!=='side'&&!flat;L.sexM.p.set(-G.GAP-G.XW*.52,G.H+.42,sideV?0:zf);L.sexF.p.set(G.GAP+G.XW*.52,G.H+.42,sideV?0:zf);L.sexM.ax='c';L.sexF.ax='c';L.sexM.rs=L.sexF.rs=true;
   if(S.view==='side'){L.sexM.p.set(-G.GAP-G.XW,G.H+.45,-3.2)}
-  setTxt(L.sexM,T('men'));setTxt(L.sexF,T('women'));
+  setTxt(L.sexM,S.view==='side'?T('menSide'):T('men'));setTxt(L.sexF,T('women'));
   // Jahre am Zeitgebirge
   k=0;if(V.landFade>.5){const stp=c.nY>200?20:10;for(let y=Math.ceil(c.y0/stp)*stp;y<=(S.view==='side'?c.y1:year);y+=stp){const o=L.yr[k++];if(!o)break;o.on=true;o.p.set(S.view==='side'?-(G.GAP+G.XW*.3):G.GAP+G.XW+.6,0,(y-year)*G.DZ);o.ay='t';o.dy=S.view==='side'?8:0;setTxt(o,String(y))}}
   for(;k<L.yr.length;k++)L.yr[k].on=false;
@@ -4366,12 +4378,12 @@ function updateLabels(){
 }
 
 /* ---------- Kamera ---------- */
-const VIEWS={front:{p:[0,5.25,29],t:[0,5.05,0]},oblique:{p:[13.5,8.6,24],t:[0,4.9,0]},land:{p:[14.5,10.5,26.5],t:[.8,4.6,-2.6]},side:{p:[-36,5.3,.02],t:[0,5.3,0]},
+const VIEWS={front:{p:[0,5.5,29],t:[0,5.3,0]},oblique:{p:[13.5,8.85,24],t:[0,5.15,0]},land:{p:[14.5,10.5,26.5],t:[.8,4.6,-2.6]},side:{p:[-36,5.3,.02],t:[0,5.3,0]},
   crowd:{p:[0,21,18.5],t:[0,0,3.3]},floor:{p:[0,19,19],t:[0,1.5,.6]}};
 const cam={a:null,t0:0,dur:1.4,fromP:new THREE.Vector3(),fromT:new THREE.Vector3(),toP:new THREE.Vector3(),toT:new THREE.Vector3()};
 let USE_W=800,USE_H=500;
 function fitDist(){ // Abstand, bei dem die ganze Pyramide in den freien Bereich passt
-  const needW=2*(G.GAP+G.XW)+1.2,needH=G.H+1.5,t=Math.tan(camera.fov*Math.PI/360);
+  const needW=2*(G.GAP+G.XW)+1.2,needH=G.H+2.0,t=Math.tan(camera.fov*Math.PI/360);
   return Math.max(needH/(2*t)*(VH/USE_H),needW/(2*t*(VW/VH))*(VW/USE_W))}
 function flyTo(name,dur){const v=VIEWS[name];if(!v)return;cam.fromP.copy(camera.position);cam.fromT.copy(controls.target);cam.toP.fromArray(v.p);cam.toT.fromArray(v.t);
   const f=fitDist()/29,k={front:f,oblique:f*1.1,side:f*1.2,land:Math.max(1,f*1.12),crowd:Math.max(1,f),floor:Math.max(1,f)}[name]||1;
@@ -4396,7 +4408,7 @@ function applyTheme(name){
   for(const k in TH.col)COL[k].set(TH.col[k]);U_HI.value.set(COL.hi.r,COL.hi.g,COL.hi.b);
   const fu=floor.material.uniforms;fu.uBg.value.fromArray(TH.floorBg);fu.uBase.value.fromArray(TH.base);fu.uGlow.value.fromArray(TH.glow);fu.uGrid.value.fromArray(TH.grid);fu.uGridK.value=TH.gridK;
   sky.material.uniforms.uTop.value.fromArray(TH.skyTop);sky.material.uniforms.uBot.value.fromArray(TH.skyBot);
-  tickMat.color.set(TH.tick);tickMat.opacity=Math.min(1,TH.tickOp*(S.pres?1.5:1));axisMat.color.set(TH.axis);axisMat.opacity=TH.axisOp;
+  arrowMat.color.set(TH.axis);arrowMat.opacity=Math.min(1,TH.axisOp*1.1);tickMat.color.set(TH.tick);tickMat.opacity=Math.min(1,TH.tickOp*(S.pres?1.5:1));axisMat.color.set(TH.axis);axisMat.opacity=TH.axisOp;
   cmpLine.material.color.set(TH.cmp);tmplLine.material.color.set(TH.tmpl);nowLine.material.color.set(TH.now);outlineLineMat.color.set(TH.outline);outlineFill.color.set(TH.fill);
   landKey='';if(typeof resize==='function'&&VW>1)resize()}
 
@@ -4435,7 +4447,7 @@ const STR={
 de:{eyebrow:' · Pyramiden-Labor',info:'Quellen',thDark:'Dunkel',thLight:'Hell',stFree:'Frei entdecken',stFreeK:'Freier Modus',fs:'Vollbild',film:'▶ Erklärfilm',filmEnd:'■ Film beenden',panelOn:'Bedienfeld',panelOff:'Bedienfeld',
   vFront:'Diagramm',vOblique:'Schräg',vLand:'Zeitgebirge',vSide:'Alter × Zeit',tEvents:'Ereignisse',tGroups:'Alters­gruppen',tExcess:'Über­schuss',tRates:'Geburten & Sterbefälle',tBirth:'Geburts­jahre',tPeople:'Figuren',
   tabLearn:'Lernweg',tabData:'Zahlen',tabView:'Anzeige',tabQuiz:'Quiz',mAbs:'Anzahl',mPct:'Prozent',g5:'5 Jahre',g1:'1 Jahr',
-  men:'Männer',women:'Frauen',axAge:'Alter',axBirth:'Geburtsjahr',axAbs5:'Personen je 5-Jahres-Gruppe',axAbs1:'Personen je Altersjahr',axPct5:'Anteil an der Gesamtbevölkerung (je 5-Jahres-Gruppe)',axPct1:'Anteil an der Gesamtbevölkerung (je Altersjahr)',
+  men:'Männer',menSide:'Männer <small>(die Frauen liegen dahinter)</small>',women:'Frauen',axAge:'Alter',axBirth:'Geburtsjahr',axAbs5:'Personen je 5-Jahres-Gruppe',axAbs1:'Personen je Altersjahr',axPct5:'Anteil an der Gesamtbevölkerung (je 5-Jahres-Gruppe)',axPct1:'Anteil an der Gesamtbevölkerung (je Altersjahr)',
   inTsd:'(in Tausend)',inMio:'(in Millionen)',mio:'Mio.',mrd:'Mrd.',inh:'Einwohner',asOf:'Stand 1. Januar',
   kCensus:'Volkszählung',kInterp:'zwischen zwei Volkszählungen (geschätzt)',kHmd:'Human Mortality Database',kEst:'Schätzung der UN',kProj:'Projektion der UN',srcStatec:'STATEC',srcUn:'UN WPP 2024',srcHmd:'HMD',
   evBorn:'geboren {0}–{1}',evAges:'Alter {0}–{1}',cmpTag:'Vergleich: {0} {1}',tmplTag:'Idealform: {0}',cohTag1:'Jahrgang {0}',cohTag2:'Jahrgänge {0}–{1}',cohAge:'{0} Jahre alt',figTag:'1 Figur ≈ {0} Menschen',
@@ -4460,7 +4472,7 @@ de:{eyebrow:' · Pyramiden-Labor',info:'Quellen',thDark:'Dunkel',thLight:'Hell',
 fr:{eyebrow:' · Labo des pyramides',info:'Sources',thDark:'Sombre',thLight:'Clair',stFree:'Exploration libre',stFreeK:'Mode libre',fs:'Plein écran',film:'▶ Film explicatif',filmEnd:'■ Quitter le film',panelOn:'Panneau',panelOff:'Panneau',
   vFront:'Diagramme',vOblique:'Oblique',vLand:'Relief du temps',vSide:'Âge × temps',tEvents:'Événements',tGroups:'Groupes d’âge',tExcess:'Excédent',tRates:'Naissances & décès',tBirth:'Années de naissance',tPeople:'Figurines',
   tabLearn:'Parcours',tabData:'Chiffres',tabView:'Affichage',tabQuiz:'Quiz',mAbs:'Effectifs',mPct:'Pourcent',g5:'5 ans',g1:'1 an',
-  men:'Hommes',women:'Femmes',axAge:'Âge',axBirth:'Année de naissance',axAbs5:'Personnes par classe d’âge de 5 ans',axAbs1:'Personnes par année d’âge',axPct5:'Part de la population totale (par classe de 5 ans)',axPct1:'Part de la population totale (par année d’âge)',
+  men:'Hommes',menSide:'Hommes <small>(les femmes sont derrière)</small>',women:'Femmes',axAge:'Âge',axBirth:'Année de naissance',axAbs5:'Personnes par classe d’âge de 5 ans',axAbs1:'Personnes par année d’âge',axPct5:'Part de la population totale (par classe de 5 ans)',axPct1:'Part de la population totale (par année d’âge)',
   inTsd:'(en milliers)',inMio:'(en millions)',mio:'M',mrd:'Md',inh:'habitants',asOf:'au 1er janvier',
   kCensus:'Recensement',kInterp:'entre deux recensements (estimation)',kHmd:'Human Mortality Database',kEst:'estimation de l’ONU',kProj:'projection de l’ONU',srcStatec:'STATEC',srcUn:'ONU WPP 2024',srcHmd:'HMD',
   evBorn:'nés en {0}–{1}',evAges:'âge {0}–{1}',cmpTag:'Comparaison : {0} {1}',tmplTag:'Forme idéale : {0}',cohTag1:'Génération {0}',cohTag2:'Générations {0}–{1}',cohAge:'{0} ans',figTag:'1 figurine ≈ {0} personnes',
