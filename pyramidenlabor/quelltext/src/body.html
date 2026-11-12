@@ -1,0 +1,84 @@
+<div class="app" id="app">
+  <div class="stage" id="stage">
+    <div class="labels" id="labels"></div>
+    <svg class="leaders" id="leaders" aria-hidden="true"></svg>
+    <div class="tip" id="tip" role="status"></div>
+  </div>
+
+  <header class="hud">
+    <div class="title">
+      <div class="eyebrow"><b>GEO GYM</b><span data-t="eyebrow"></span></div>
+      <h1 class="big"><span id="tCountry">Luxemburg</span><span class="yr" id="tYear">2024</span></h1>
+      <div class="sub" id="tSub"></div>
+    </div>
+    <div class="tools">
+      <button class="tbtn accent" id="filmBtn"></button>
+      <div class="lang" role="group" aria-label="Sprache / Langue"><button data-lang="de" aria-pressed="true">DE</button><button data-lang="fr" aria-pressed="false">FR</button></div>
+      <button class="tbtn" id="presBtn" aria-pressed="false"></button>
+      <button class="tbtn" id="themeBtn"></button>
+      <button class="tbtn" id="infoBtn" data-t="info"></button>
+      <button class="tbtn" id="panelBtn" aria-pressed="false"></button>
+      <button class="tbtn" id="fsBtn" data-t="fs"></button>
+    </div>
+  </header>
+
+  <nav class="rail" id="rail">
+    <button class="rbtn" data-view="front" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M12 3V21"/><path d="M11 18H4M11 14H6M11 10H8M11 6H9.5M13 18H20M13 14H18M13 10H16M13 6H14.5"/></svg><span data-t="vFront"></span></button>
+    <button class="rbtn" data-view="oblique" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 18L14 20L20 16L10 14Z"/><path d="M12 17V4M9 15.5L7 15M14.5 16.5L17 16M10 11.5L8.5 11M13.6 12.3L15.5 12M11 7.6L10 7.4M13 8L14 8"/></svg><span data-t="vOblique"></span></button>
+    <button class="rbtn" data-view="land" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M3 19L9 7L13 13L16 9L21 19Z"/><path d="M6 13L11 15L15 12L18.5 14" opacity=".6"/></svg><span data-t="vLand"></span></button>
+    <button class="rbtn" data-view="side" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 4V20H20"/><path d="M4 20L18 6M4 14L12 6M10 20L20 10" opacity=".7"/></svg><span data-t="vSide"></span></button>
+    <i class="sep"></i>
+    <button class="rbtn" id="tEvents" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M4 7H14L19 12L14 17H4Z"/><circle cx="8" cy="12" r="1.2" class="f"/></svg><span data-t="tEvents"></span></button>
+    <button class="rbtn" id="tGroups" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="5" y="15" width="14" height="5" rx="1"/><rect x="5" y="9" width="14" height="5" rx="1" class="f" opacity=".5"/><rect x="5" y="3" width="14" height="5" rx="1"/></svg><span data-t="tGroups"></span></button>
+    <button class="rbtn" id="tExcess" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M12 4V20"/><path d="M11 8H5M13 8H21M11 14H7M13 14H17"/><path d="M19 8H21" stroke-width="4"/></svg><span data-t="tExcess"></span></button>
+    <button class="rbtn" id="tRates" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 4V20H20"/><path d="M5 7C10 7 12 9 14 14S18 17 20 17"/><path d="M5 9C8 9 9 12 11 16S17 18.5 20 18.5" opacity=".6"/></svg><span data-t="tRates"></span></button>
+    <button class="rbtn" id="tBirth" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 9.5H20M8 3V6.5M16 3V6.5"/></svg><span data-t="tBirth"></span></button>
+    <button class="rbtn" id="tPeople" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="8" cy="7" r="2.3"/><path d="M4 19V15A4 4 0 0 1 12 15V19"/><circle cx="16.5" cy="8.5" r="1.9"/><path d="M14 19V16A3 3 0 0 1 20 16V19"/></svg><span data-t="tPeople"></span></button>
+  </nav>
+
+  <section class="chart" id="chart" hidden>
+    <div class="ch"><b id="chTitle"></b><div class="seg2" id="chMode"><button data-cm="land" aria-pressed="true"></button><button data-cm="model" aria-pressed="false"></button></div><button class="x" id="chX" aria-label="×">×</button></div>
+    <canvas id="chCv" width="860" height="300"></canvas>
+    <div class="lg" id="chLg"></div>
+    <div class="ph" id="chPh"></div>
+  </section>
+
+  <aside class="panel" id="panel">
+    <div class="ptabs" role="tablist">
+      <button role="tab" data-tab="learn" aria-selected="true" data-t="tabLearn"></button>
+      <button role="tab" data-tab="data" aria-selected="false" data-t="tabData"></button>
+      <button role="tab" data-tab="view" aria-selected="false" data-t="tabView"></button>
+      <button role="tab" data-tab="quiz" aria-selected="false" data-t="tabQuiz"></button>
+    </div>
+    <div class="pscroll" id="pscroll">
+      <div id="pLearn"></div><div id="pData" hidden></div><div id="pView" hidden></div><div id="pQuiz" hidden></div>
+    </div>
+  </aside>
+
+  <footer class="dock" id="dock">
+    <div class="transport">
+      <button class="play" id="play" aria-label="Abspielen"><svg viewBox="0 0 20 20" id="playIco"><path d="M5 3L17 10L5 17Z"/></svg></button>
+      <div class="seg" id="step"><button data-step="-1" id="stepB"></button><button data-step="1" id="stepF"></button></div>
+      <div class="seg" id="speed"><button data-sp="1" aria-pressed="false">½×</button><button data-sp="4" aria-pressed="true">1×</button><button data-sp="10" aria-pressed="false">2×</button></div>
+      <div class="countries" id="countries"></div>
+      <div class="seg" id="segMode"><button data-mode="abs" aria-pressed="true" data-t="mAbs"></button><button data-mode="pct" aria-pressed="false" data-t="mPct"></button></div>
+      <div class="seg" id="segGrp"><button data-grp="5" aria-pressed="true" data-t="g5"></button><button data-grp="1" aria-pressed="false" data-t="g1"></button></div>
+    </div>
+    <div class="track">
+      <div class="tl" id="tl"></div>
+      <input type="range" id="year" min="1880" max="2100" step="0.05" value="2024" aria-label="Jahr">
+      <div class="yrs" id="yrs"></div>
+    </div>
+  </footer>
+
+  <div class="cine" id="cine" hidden>
+    <div class="cap" id="cap"></div>
+    <div class="cbar"><i id="cbar"></i></div>
+    <div class="cnav" id="cnav"></div>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+  <div class="sheet" id="sheet" hidden><div class="sheet-in"><div class="phd"><h2 id="shT"></h2><button class="x" id="shX" aria-label="×">×</button></div><div class="cols" id="shB"></div></div></div>
+  <div class="veil" id="veil"><div><b>Pyramiden-Labor</b><span id="veilT">Die Bevölkerungsdaten werden geladen …</span></div></div>
+  <div id="diag" hidden></div>
+</div>
