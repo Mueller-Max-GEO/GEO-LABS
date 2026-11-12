@@ -14,7 +14,7 @@ const { chromium } = require('playwright');
     for(let i=0;i<10;i++){await wait(150);document.querySelector('#pQuiz .opt').click();await wait(80);out.push(document.querySelector('#pQuiz h2').textContent.slice(0,60));document.getElementById('qNext').click()}
     await wait(200);out.push('END: '+document.querySelector('#pQuiz h2').textContent);
     document.getElementById('infoBtn').click();await wait(100);out.push('sheet '+document.getElementById('shB').children.length);document.getElementById('shX').click();
-    L.filmStart();for(let i=0;i<8;i++){L.filmGo(i);L.FILM.t=L.FILM.dur*.5;await wait(500);L.FILM.t=L.FILM.dur*.97;await wait(400);out.push('film '+(i+1)+' dur '+L.FILM.dur.toFixed(0)+'s sentences '+L.FILM.items.length+' para '+L.FILM.para)}
+    L.filmStart();for(let i=0;i<9;i++){L.filmGo(i);L.FILM.t=L.FILM.dur*.5;await wait(500);L.FILM.t=L.FILM.dur*.97;await wait(400);out.push('film '+(i+1)+' dur '+L.FILM.dur.toFixed(0)+'s sentences '+L.FILM.items.length+' para '+L.FILM.para)}
     L.filmEnd();await wait(300);out.push('after film: '+L.S.c+' '+L.S.year+' film='+L.S.film);
     return out});
   console.log(res.join('\n')); console.log([...new Set(errs)].slice(0,12).join('\n')||'NO ERRORS'); await b.close();

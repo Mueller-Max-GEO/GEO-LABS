@@ -253,6 +253,11 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 .app.hl-title .title{outline:2.5px solid var(--accent);outline-offset:10px;border-radius:10px}
 
 /* Film */
+.fade{position:absolute;inset:0;z-index:8;background:var(--bg);opacity:0;pointer-events:none}
+.chart:not([hidden]){animation:chartIn .55s ease-out both}
+@keyframes chartIn{from{opacity:0;transform:translateY(8px)}}
+.lb.age,.lb.tick,.lb.sex{transition:opacity .25s,color .5s,font-size .5s}
+.app.hl-title .title{transition:outline-color .5s}
 .cine{position:absolute;left:0;right:0;bottom:0;z-index:9;display:flex;flex-direction:column;align-items:center;gap:13px;pointer-events:none;
   padding:60px max(16px,env(safe-area-inset-right,0px)) max(18px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:linear-gradient(to top,rgba(var(--scrim),.98),rgba(var(--scrim),.84) 60%,rgba(var(--scrim),0))}
 .cine>*{pointer-events:auto}
@@ -458,6 +463,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
     </div>
   </footer>
 
+  <div class="fade" id="fade" aria-hidden="true"></div>
   <div class="cine" id="cine" hidden>
     <div class="cap" id="cap"></div>
     <div class="cbar"><i id="cbar"></i></div>
@@ -4222,7 +4228,7 @@ function placeLabels(){
 
 /* ---------- Anzeige berechnen (jedes Bild) ---------- */
 const cur=new Float32Array(NB),cur5=new Float32Array(42),cmpA=new Float32Array(NB),cmp5=new Float32Array(42);
-const V={lensT:new Float32Array(2*NE),by0T:new Float32Array(NE),ext:null,axMax:1,axShown:0,ticks:[],lens:new Float32Array(NBX),by0:new Float32Array(NBX),bh:new Float32Array(NBX),frac:0,moving:false,n:21,h:.5,tot:1,depth:G.DEPTH,depthT:G.DEPTH,landFade:0,proj:0,st:null,unit:1};
+const V={mt:1,mk:null,my:null,shown:new Float32Array(NBX),mFrom:new Float32Array(NBX),cmpA:1,cmpK:'',tmplA:1,tmplK:'',exA:0,lensT:new Float32Array(2*NE),by0T:new Float32Array(NE),ext:null,axMax:1,axShown:0,ticks:[],lens:new Float32Array(NBX),by0:new Float32Array(NBX),bh:new Float32Array(NBX),frac:0,moving:false,n:21,h:.5,tot:1,depth:G.DEPTH,depthT:G.DEPTH,landFade:0,proj:0,st:null,unit:1};
 const fmtInt=n=>Math.round(n).toLocaleString(S.lang==='fr'?'fr-FR':'de-DE').replace(/[  .]/g,' ');
 const fmtDec=(n,d)=>n.toLocaleString(S.lang==='fr'?'fr-FR':'de-DE',{minimumFractionDigits:d,maximumFractionDigits:d});
 const fmtMax=(n,d)=>n.toLocaleString(S.lang==='fr'?'fr-FR':'de-DE',{maximumFractionDigits:d});
@@ -4254,6 +4260,11 @@ function computeView(dt){
   if(!g5){popAt(c,yi,pA);popAt(c,yi+1,pB);extend(pA,eA);extend(pB,eB)}extend(cur,eC);V.ext=eC;
   if(V.prevYear!=null&&Math.abs(year-V.prevYear)>1e-5)V.moveT=.7;else V.moveT=Math.max(0,(V.moveT||0)-dt);V.prevYear=year;V.moving=V.moveT>0;
   U_YEAR.value=year;U_STRIPE.value+=((S.stripes?(V.moving?.17:.075):0)-U_STRIPE.value)*Math.min(1,dt*5);
+  // Übergang: wechselt das Bild sprunghaft (anderes Land, Anzahl ↔ Prozent, Jahressprung), gleiten die Balken in 0,9 s in die neue Länge
+  {const mk=S.c+'|'+S.mode+'|'+S.grp+'|'+(S.people?1:0),jump=V.my!=null&&Math.abs(year-V.my)>1.5&&performance.now()-(V.scrub||0)>400;
+    if(V.mk!=null&&(V.mk!==mk||jump)&&V.mk.split('|')[2]===String(S.grp)&&!S.people){V.mFrom.set(V.shown);V.mt=0}
+    V.mk=mk;V.my=year;if(V.mt<1)V.mt=Math.min(1,V.mt+dt/.9)}
+  const me=V.mt<1?ease(V.mt):1;
   for(let s=0;s<2;s++)for(let i=0;i<=NA;i++){                    // i = NA: die Neugeborenen des laufenden Jahres (nur bei einzelnen Jahrgängen)
     const k=i<NA?s*NA+i:NB+s;let len=0,y0=0,h=0,hi=0,age=i;
     if(i<V.n){let v;
@@ -4264,6 +4275,7 @@ function computeView(dt){
       if(co){const a0=g5?i*5:i,a1=g5?(i===20?100:i*5+4):i;if(byear(a1,year)<=co[1]&&byear(a0,year)>=co[0])hi=1}
       if(hv&&hv.i===i)hi=Math.max(hi,hv.s===s?.75:.35)}
     else if(i===NA&&!g5&&fr>.012){len=clamp(pB[s*NA]/den/V.axMax*G.XW,1e-4,G.XW*1.04);y0=0;h=fr*G.AH-gap;age=0}
+    if(me<1)len=V.mFrom[k]+(len-V.mFrom[k])*me;V.shown[k]=len;
     V.lens[k]=len;V.by0[k]=y0;V.bh[k]=h;
     _m4.makeScale((s?1:-1)*len,Math.max(h,1e-4),V.depth);_m4.setPosition((s?1:-1)*G.GAP,y0+gap/2,0);bars.setMatrixAt(k,_m4);
     barColor(s,age,_c);aCol.array[3*k]=_c.r;aCol.array[3*k+1]=_c.g;aCol.array[3*k+2]=_c.b;aHi.array[k]=hi}
@@ -4279,30 +4291,31 @@ function computeView(dt){
       barColor(s,100,_c);tCol.array[3*k]=_c.r;tCol.array[3*k+1]=_c.g;tCol.array[3*k+2]=_c.b;tHi.array[k]=hi}
     topBars.instanceMatrix.needsUpdate=true;tCol.needsUpdate=true;tHi.needsUpdate=true}
   // Überschuss
-  exBars.visible=S.excess&&!S.people;
+  V.exA+=((S.excess?1:0)-V.exA)*Math.min(1,dt*3.5);if(Math.abs((S.excess?1:0)-V.exA)<.003)V.exA=S.excess?1:0;exMat.uniforms.uStripe.value=U_STRIPE.value*(1-V.exA);
+  exBars.visible=(S.excess||V.exA>.003)&&!S.people;
   if(exBars.visible){for(let i=0;i<NA;i++){let x0=0,len=0,s=0,y0=0,h=0;
       if(i<V.n){const m=V.lens[i],f=V.lens[NA+i];s=f>m?1:0;x0=Math.min(m,f);len=Math.abs(f-m);y0=V.by0[i];h=V.bh[i];
         if(len>2e-4){const k=s*NA+i;_m4.makeScale((s?1:-1)*Math.max(x0,1e-4),Math.max(h,1e-4),V.depth);_m4.setPosition((s?1:-1)*G.GAP,y0+gap/2,0);bars.setMatrixAt(k,_m4)}}   // längerer Balken: nur bis zum Beginn des Überschusses
       if(len>2e-4&&h>0){_m4.makeScale((s?1:-1)*len,h,V.depth);_m4.setPosition((s?1:-1)*(G.GAP+x0),y0+gap/2,0)}else _m4.makeScale(0,0,0);exBars.setMatrixAt(i,_m4);   // kein Überschuss: nichts zeichnen (sonst läge eine Fläche auf dem Balkenende)
-      const cc=s?COL.fx:COL.mx;exCol.array[3*i]=cc.r;exCol.array[3*i+1]=cc.g;exCol.array[3*i+2]=cc.b}
+      barColor(s,g5?i*5+2:i,_c);_c.lerp(s?COL.fx:COL.mx,V.exA);exCol.array[3*i]=_c.r;exCol.array[3*i+1]=_c.g;exCol.array[3*i+2]=_c.b}
     for(let j=0;j<NT;j++){const i=NA+j;let x0=0,len=0,s=0,y0=0,h=0;
       if(topBars.visible){const m=V.lensT[j],f=V.lensT[NT+j];s=f>m?1:0;x0=Math.min(m,f);len=Math.abs(f-m);y0=V.by0T[j];h=G.AH-gap;
         if(len>2e-4&&x0>0){_m4.makeScale((s?1:-1)*x0,h,V.depth);_m4.setPosition((s?1:-1)*G.GAP,y0+gap/2,0);topBars.setMatrixAt(s*NT+j,_m4)}}
       if(len>2e-4){_m4.makeScale((s?1:-1)*len,h,V.depth);_m4.setPosition((s?1:-1)*(G.GAP+x0),y0+gap/2,0)}else _m4.makeScale(0,0,0);exBars.setMatrixAt(i,_m4);
-      const cc=s?COL.fx:COL.mx;exCol.array[3*i]=cc.r;exCol.array[3*i+1]=cc.g;exCol.array[3*i+2]=cc.b}
+      barColor(s,100,_c);_c.lerp(s?COL.fx:COL.mx,V.exA);exCol.array[3*i]=_c.r;exCol.array[3*i+1]=_c.g;exCol.array[3*i+2]=_c.b}
     exBars.instanceMatrix.needsUpdate=true;exCol.needsUpdate=true;bars.instanceMatrix.needsUpdate=true;topBars.instanceMatrix.needsUpdate=true}
   // Vergleich
   const zf=V.depth/2+.03;
   if(S.cmp){const cc=DATA.by[S.cmp],yy=clamp(S.cmpYear==null?year:S.cmpYear,cc.y0,cc.y1);popAt(cc,yy,cmpA);const tt=total(cmpA),d2=S.mode==='pct'?tt:1;
     let a=cmpA,n=NA;if(g5){group5(cmpA,cmp5);a=cmp5;n=21}
     const vals=new Float32Array(2*n);for(let k=0;k<2*n;k++)vals[k]=a[k]/d2;if(!g5)fix100(vals,n);
-    setOutline(cmpLine,vals,n,V.h,V.axMax,zf);cmpLine.visible=true;V.cmpYear=yy;V.cmpTot=tt}else cmpLine.visible=false;
+    setOutline(cmpLine,vals,n,V.h,V.axMax,zf);cmpLine.visible=true;{const k=S.cmp+S.mode+S.c+S.grp+(S.cmpYear==null?'':S.cmpYear);if(k!==V.cmpK){V.cmpK=k;V.cmpA=0}V.cmpA=Math.min(1,V.cmpA+dt/.7);cmpLine.material.opacity=.95*ease(V.cmpA)}V.cmpYear=yy;V.cmpTot=tt}else cmpLine.visible=false;
   // heller Umriss des aktuellen Jahres (im Zeitgebirge)
   if(V.landFade>.3&&S.view==='land'&&(g5||fr<.03||fr>.97)){const n=V.n,vals=new Float32Array(2*n);for(let k=0;k<2*n;k++)vals[k]=src[k]/den;if(!g5)fix100(vals,n);setOutline(nowLine,vals,n,V.h,V.axMax,zf);nowLine.visible=true}else nowLine.visible=false;
   // Idealform
   if(S.tmpl){const tp=S.tmpl==='auto'?shapeOf(V.st.base):S.tmpl,w=TEMPLATE[tp],n=V.n,vals=new Float32Array(2*n),sc=S.mode==='pct'?1:V.tot;
     for(let i=0;i<n;i++){let v=0;if(g5){if(i<20)for(let a=0;a<5;a++)v+=w[i*5+a];else v=w[100]}else v=w[i];vals[i]=vals[n+i]=v*sc}
-    setOutline(tmplLine,vals,n,V.h,V.axMax,zf+.02);tmplLine.visible=true;V.tmplType=tp}else tmplLine.visible=false;
+    setOutline(tmplLine,vals,n,V.h,V.axMax,zf+.02);tmplLine.visible=true;{const k=tp+S.c+S.mode+S.grp;if(k!==V.tmplK){V.tmplK=k;V.tmplA=0}V.tmplA=Math.min(1,V.tmplA+dt/.7);tmplLine.material.opacity=.95*ease(V.tmplA)}V.tmplType=tp}else tmplLine.visible=false;
   // Zeitgebirge
   const wantLand=(S.view==='land'||S.view==='side')&&!S.people;
   V.landFade+=((wantLand?1:0)-V.landFade)*Math.min(1,dt*4);
@@ -4388,7 +4401,7 @@ function fitDist(){ // Abstand, bei dem die ganze Pyramide in den freien Bereich
 function flyTo(name,dur){const v=VIEWS[name];if(!v)return;cam.fromP.copy(camera.position);cam.fromT.copy(controls.target);cam.toP.fromArray(v.p);cam.toT.fromArray(v.t);
   const f=fitDist()/29,k={front:f,oblique:f*1.1,side:f*1.2,land:Math.max(1,f*1.12),crowd:Math.max(1,f),floor:Math.max(1,f)}[name]||1;
   cam.toP.sub(cam.toT).multiplyScalar(k).add(cam.toT);
-  cam.a=name;cam.t0=performance.now();cam.dur=(dur==null?1.4:dur)*1000;if(cam.dur<=0){camera.position.copy(cam.toP);controls.target.copy(cam.toT);cam.a=null}}
+  cam.a=name;cam.t0=performance.now();cam.dur=(dur==null?(S.film?2.2:1.4):dur)*1000;if(cam.dur<=0){camera.position.copy(cam.toP);controls.target.copy(cam.toT);cam.a=null}}
 function camStep(now){if(!cam.a)return;const k=clamp((now-cam.t0)/cam.dur,0,1),e=ease(k);camera.position.lerpVectors(cam.fromP,cam.toP,e);controls.target.lerpVectors(cam.fromT,cam.toT,e);if(k>=1)cam.a=null}
 renderer.domElement.addEventListener('pointerdown',()=>{cam.a=null});
 
@@ -4599,30 +4612,118 @@ const QUIZ_FIX=[
 /* Erklärfilm: Kapitel mit Absätzen. Die Bilder dazu stehen in e_film.js. */
 const FILM_TXT={
 de:[
-{t:'Menschen zählen',p:['Luxemburg hat rund 670 000 Einwohner. Wie alt sind sie? Und wie viele sind Männer, wie viele Frauen?','Ein Bevölkerungsdiagramm ordnet alle Menschen eines Landes. Die Männer stehen links, die Frauen rechts. Jede Reihe ist eine Altersgruppe: vorn die Kinder, hinten die ältesten Menschen.','Jetzt richtet sich das Bild auf. Die jüngsten Menschen stehen unten, die ältesten oben. Jede Figur steht für mehrere hundert Menschen.','Luxemburg von 1994 bis heute: Jedes Jahr werden alle ein Jahr älter. Wer eine Altersgrenze überschreitet, steigt in die nächste Reihe auf. Unten kommen Neugeborene dazu. Oben sterben Menschen.','Aus den Reihen werden Balken. Je länger ein Balken ist, desto mehr Menschen gehören zu dieser Altersgruppe.']},
-{t:'Das Diagramm lesen',p:['Die senkrechte Achse zeigt das Alter – in Stufen von fünf Jahren, von null bis über hundert.','Die waagrechte Achse zeigt die Anzahl der Menschen. Gezählt wird von der Mitte aus nach beiden Seiten: nach links die Männer, nach rechts die Frauen.','Ein Beispiel: Dieser Balken zeigt die Frauen zwischen 30 und 34 Jahren. Anfang 2024 sind es in Luxemburg rund 26 000.','Zu jedem Bevölkerungsdiagramm gehören drei Angaben: das Land, das Jahr und die Einheit.']},
-{t:'Anzahl und Prozent',p:['Die Balken können absolute Zahlen zeigen: so viele Menschen leben tatsächlich in jeder Altersgruppe.','Deutschland hat mehr als hundertmal so viele Einwohner wie Luxemburg. Mit absoluten Zahlen passen beide Länder nicht in ein Bild.','Deshalb gibt es eine zweite Darstellung: Prozent. Jeder Balken zeigt nun den Anteil der Altersgruppe an der gesamten Bevölkerung. Jetzt lassen sich die Formen vergleichen.','Absolute Zahlen zeigen die Größe einer Bevölkerung. Prozentwerte zeigen ihren Aufbau.']},
-{t:'Drei Grundformen',p:['Bevölkerungsdiagramme haben sehr unterschiedliche Formen. Drei Grundformen kommen immer wieder vor.','Die Pyramide: eine breite Basis und eine schmale Spitze. Es werden viele Kinder geboren. Die Bevölkerung ist jung und wächst schnell. Ein Beispiel ist Niger.','Die Glocke: Die Basis ist kaum breiter als die Mitte. Es werden weniger Kinder geboren, die Bevölkerung wächst nur noch langsam. Ein Beispiel ist Indien.','Die Urne: Die Basis ist schmaler als die Mitte. Es werden wenige Kinder geboren, und viele Menschen sind alt. Die Bevölkerung altert und kann schrumpfen. Ein Beispiel ist Japan.']},
-{t:'Luxemburg im Wandel',p:['Luxemburg im Jahr 1880: eine Pyramide. In den Familien werden viele Kinder geboren, aber nur wenige Menschen werden alt.','Im zwanzigsten Jahrhundert wird die Basis schmaler: Es werden weniger Kinder geboren. Zwei Weltkriege und eine Wirtschaftskrise hinterlassen Kerben.','Um 1960 folgt ein Babyboom. Danach sinkt die Zahl der Geburten wieder.','Seit den 1990er-Jahren wächst Luxemburg vor allem durch Zuwanderung. Viele Zugezogene sind junge Erwachsene. Deshalb ist das Diagramm heute in der Mitte am breitesten.']},
-{t:'Spuren der Geschichte',p:['Ein Bevölkerungsdiagramm ist auch ein Geschichtsbuch. Deutschland im Jahr 1950, jetzt mit einzelnen Jahrgängen.','Diese Kerben zeigen Jahre, in denen wenige Kinder geboren wurden: im Ersten Weltkrieg, in der Weltwirtschaftskrise und am Ende des Zweiten Weltkriegs.','Auf der Männerseite fehlen viele Männer. Sie sind im Zweiten Weltkrieg gefallen.','Mit jedem Jahr rücken alle Jahrgänge eine Stufe nach oben. Die Kerben wandern mit. Unten wächst der Babyboom heran.','Nicht jede Kerbe ist die Spur eines Krieges. Auch Wirtschaftskrisen, politische Entscheidungen und Wanderungen verändern die Form.']},
-{t:'Jahrgänge und Zukunft',p:['Stellt man die Diagramme aller Jahre hintereinander, entsteht ein Gebirge aus Zeit.','Die hellen, schrägen Linien sind Jahrgänge. Farbig markiert ist der Jahrgang 1964, der stärkste in Deutschland.','Alle Menschen, die heute leben, werden jedes Jahr ein Jahr älter. Deshalb lässt sich die Zukunft ein Stück weit berechnen. Das Ergebnis heißt Projektion.','Eine Projektion ist keine Vorhersage. Sie zeigt, was geschieht, wenn sich Geburten, Sterbefälle und Wanderungen so entwickeln wie angenommen.']},
-{t:'Der demografische Übergang',p:['Warum verändern sich die Formen? Entscheidend sind zwei Größen: die Geburtenrate und die Sterberate.','Frankreich um 1820: Beide Raten sind hoch. Viele Kinder werden geboren, aber viele Menschen sterben früh. Das Diagramm ist eine Pyramide.','In zweihundert Jahren sinken beide Raten: die Sterberate durch bessere Ernährung, Hygiene und Medizin, die Geburtenrate, weil die Familien weniger Kinder bekommen. Die Basis wird schmaler.','Heute sind beide Raten niedrig. Die Bevölkerung wächst kaum noch und wird älter. Diesen Wandel nennt man demografischen Übergang.','Ein Bevölkerungsdiagramm zeigt also drei Dinge: den Aufbau einer Bevölkerung, ihre Geschichte und einen Blick in ihre Zukunft. Probier es jetzt selbst aus.']}],
+{t:'Menschen zählen',p:[
+ 'Luxemburg im Jahr 1994. Damals leben hier rund 400 000 Menschen. Jede Figur steht für etwa 570 von ihnen.',
+ 'Nun ordnen sie sich. Die Männer gehen nach links, die Frauen nach rechts. Dann stellen sich alle nach ihrem Alter in Reihen auf: vorn die Kinder, hinten die ältesten Menschen.',
+ 'Jetzt richtet sich das Bild auf. Die jüngsten Menschen stehen unten, die ältesten oben. Jede Reihe ist eine Altersgruppe von fünf Jahren.',
+ 'Nun läuft die Zeit, bis heute. Jedes Jahr werden alle ein Jahr älter. Wer eine Altersgrenze überschreitet, steigt eine Reihe höher. Unten kommen Neugeborene dazu, oben sterben Menschen. Und weil viele Menschen zuziehen, wächst Luxemburg auf rund 670 000 Einwohner.',
+ 'Zum Schluss werden aus den Reihen Balken. Je länger ein Balken ist, desto mehr Menschen gehören zu dieser Altersgruppe. So entsteht ein Bevölkerungsdiagramm.']},
+{t:'Das Diagramm lesen',p:[
+ 'Wie liest man ein Bevölkerungsdiagramm? Zuerst die senkrechte Achse in der Mitte. Sie zeigt das Alter: unten null Jahre, oben hundert Jahre und mehr.',
+ 'Dann die waagrechte Achse. Sie zeigt die Anzahl der Menschen. Gezählt wird von der Mitte nach außen: links für die Männer, rechts für die Frauen.',
+ 'Ein Beispiel. Der markierte Balken zeigt die Frauen von 30 bis 34 Jahren. Wie viele es sind, liest man an der unteren Achse ab, genau dort, wo der Balken endet. Anfang 2024 sind es in Luxemburg rund 26 000.',
+ 'Drei Angaben gehören zu jedem Diagramm: das Land, das Jahr und die Einheit. Erst mit ihnen ist ein Diagramm vollständig.']},
+{t:'Anzahl und Prozent',p:[
+ 'Bisher zeigen die Balken absolute Zahlen. Sie sagen, wie viele Menschen tatsächlich in jeder Altersgruppe leben.',
+ 'Zum Vergleich kommt Deutschland dazu, als orangefarbener Umriss. Deutschland hat über hundertmal so viele Einwohner. Der Umriss passt nicht einmal ins Bild.',
+ 'Deshalb gibt es eine zweite Darstellung: Prozent. Jeder Balken zeigt jetzt, welcher Anteil der ganzen Bevölkerung in dieser Altersgruppe lebt. Nun lassen sich die beiden Formen vergleichen.',
+ 'Kurz gesagt: Absolute Zahlen zeigen, wie groß eine Bevölkerung ist. Man braucht sie zum Planen, zum Beispiel für die Zahl der Schulplätze. Prozentwerte zeigen, wie eine Bevölkerung aufgebaut ist. Man braucht sie, um Länder unterschiedlicher Größe oder verschiedene Jahre zu vergleichen.']},
+{t:'Drei Altersgruppen',p:[
+ 'Oft teilt man eine Bevölkerung in drei große Altersgruppen. Unten die Kinder und Jugendlichen unter 15 Jahren. In der Mitte die Menschen im erwerbsfähigen Alter, von 15 bis 64 Jahren. Oben die älteren Menschen ab 65 Jahren.',
+ 'Warum ist diese Einteilung wichtig? Die mittlere Gruppe arbeitet und trägt den größten Teil von Steuern und Beiträgen. Damit werden auch Kinder und ältere Menschen versorgt: mit Schulen, Renten und Pflege.',
+ 'Den Anteil einer Gruppe liest man in der Prozent-Darstellung ab. Dafür zählt man die Balken dieser Gruppe auf beiden Seiten zusammen. In Luxemburg ist etwa jeder Sechste jünger als 15 Jahre, das sind rund 16 Prozent.',
+ 'Hat ein Land außergewöhnlich viele Kinder, wie Niger, ist fast die Hälfte der Menschen jünger als 15 Jahre. Das Land braucht viele Schulen, Ärztinnen und Ärzte und später sehr viele Arbeitsplätze. Die Bevölkerung wächst schnell, denn die vielen Kinder bekommen später selbst Kinder.',
+ 'Hat ein Land außergewöhnlich viele ältere Menschen, spricht man von Überalterung. In Japan ist fast jeder Dritte 65 Jahre oder älter. Es gibt mehr Menschen in Rente und mehr Pflegebedarf, aber immer weniger Menschen im erwerbsfähigen Alter, die dafür aufkommen.',
+ 'Die drei Altersgruppen zeigen also, wofür ein Land sorgen muss: für Schulen und Arbeitsplätze, oder für Renten und Pflege.']},
+{t:'Drei Grundformen',p:[
+ 'In jedem Land sieht das Diagramm anders aus. Trotzdem lassen sich drei Grundformen unterscheiden. Entscheidend ist der Vergleich der Basis, also der Kinder, mit der Mitte des Diagramms.',
+ 'Die erste Form ist die Pyramide. Die gestrichelte Linie zeigt ihre ideale Form: unten breit, oben schmal. Es werden viele Kinder geboren. Die Bevölkerung ist jung und wächst schnell. Ein Beispiel ist Niger in Westafrika.',
+ 'Die zweite Form ist die Glocke. Die Basis ist kaum breiter als die Mitte. Es werden weniger Kinder geboren. Die Bevölkerung wächst langsamer. Ein Beispiel ist Indien.',
+ 'Die dritte Form ist die Urne. Die Basis ist schmaler als die Mitte. Es werden wenige Kinder geboren, und viele Menschen sind alt. Die Bevölkerung altert und kann schrumpfen. Ein Beispiel ist Japan.',
+ 'Pyramide, Glocke, Urne: Die Form zeigt, ob eine Bevölkerung jung ist und wächst, oder alt ist und schrumpft.']},
+{t:'Luxemburg im Wandel',p:[
+ 'Nun zurück nach Luxemburg, diesmal fast 150 Jahre in die Vergangenheit. Im Jahr 1880 ist das Diagramm eine Pyramide: viele Kinder, wenige alte Menschen.',
+ 'Im zwanzigsten Jahrhundert werden weniger Kinder geboren. Die Basis wird schmaler. Die beiden Weltkriege und eine Wirtschaftskrise hinterlassen Kerben.',
+ 'Um 1960 werden wieder mehr Kinder geboren. Man spricht vom Babyboom. Danach sinkt die Zahl der Geburten erneut.',
+ 'Seit etwa 1990 wächst Luxemburg vor allem durch Zuwanderung. Viele Zugezogene sind junge Erwachsene. Deshalb ist das Diagramm heute in der Mitte am breitesten.']},
+{t:'Spuren der Geschichte',p:[
+ 'Bisher stand jeder Balken für fünf Jahrgänge. Jetzt steht jeder Balken für einen einzigen Jahrgang. So werden feine Spuren sichtbar. Das Beispiel ist Deutschland im Jahr 1950.',
+ 'Die Kerben zeigen Jahrgänge mit wenigen Geburten: im Ersten Weltkrieg, in der Weltwirtschaftskrise und am Ende des Zweiten Weltkriegs.',
+ 'Bei den älteren Männern fehlt ein großer Teil. Viele Männer sind im Zweiten Weltkrieg gestorben. Der farblich abgesetzte Teil zeigt, wo die Frauen in der Überzahl sind.',
+ 'Nun läuft die Zeit weiter. Jedes Jahr rücken alle Jahrgänge eine Stufe nach oben, und die Kerben wandern mit. Unten wächst der Babyboom heran.',
+ 'Nicht jede Kerbe stammt von einem Krieg. Auch Krisen, politische Entscheidungen und Wanderungen verändern die Form.']},
+{t:'Jahrgänge und Zukunft',p:[
+ 'Stellt man die Diagramme aller Jahre hintereinander, entsteht ein Gebirge aus Zeit. Vorn steht das Jahr 2024, dahinter die Vergangenheit.',
+ 'Von der Seite gesehen werden die Jahrgänge zu schrägen Linien. Hervorgehoben ist der Jahrgang 1964, der geburtenstärkste in Deutschland.',
+ 'Alle Menschen, die heute leben, werden jedes Jahr ein Jahr älter. Deshalb lässt sich die Zukunft ein Stück weit berechnen. Das Ergebnis heißt Projektion.',
+ 'Eine Projektion ist keine Vorhersage. Sie zeigt, was geschieht, wenn sich Geburten, Sterbefälle und Wanderungen so entwickeln wie angenommen.']},
+{t:'Der demografische Übergang',p:[
+ 'Warum verändern sich die Formen? Entscheidend sind zwei Werte: die Geburtenrate und die Sterberate, jeweils je tausend Einwohner. Die Grafik zeigt beide Kurven.',
+ 'Frankreich um 1820. Beide Raten sind hoch. Es werden viele Kinder geboren, aber viele Menschen sterben früh. Das Diagramm ist eine Pyramide.',
+ 'In den folgenden zweihundert Jahren sinken beide Raten. Zuerst die Sterberate, dank besserer Ernährung, Hygiene und Medizin. Später die Geburtenrate, weil die Familien weniger Kinder bekommen. Die Basis wird schmaler.',
+ 'Heute sind beide Raten niedrig. Die Bevölkerung wächst kaum noch und wird älter. Diesen Wandel nennt man den demografischen Übergang.',
+ 'Das Modell fasst den Ablauf in vier Abschnitte. Vor dem Übergang sind beide Raten hoch. In Phase eins sinkt die Sterberate, die Geburtenrate bleibt aber hoch: Die Bevölkerung wächst sehr schnell. In Phase zwei sinkt auch die Geburtenrate, und das Wachstum wird kleiner. Nach dem Übergang sind beide Raten niedrig. Die grüne Fläche zwischen den Kurven ist das natürliche Wachstum.',
+ 'Ein Bevölkerungsdiagramm zeigt also drei Dinge: wie eine Bevölkerung aufgebaut ist, was sie erlebt hat und wohin sie sich entwickeln könnte. Probier es jetzt selbst aus.']}],
 fr:[
-{t:'Compter une population',p:['Le Luxembourg compte environ 670 000 habitants. Quel âge ont-ils ? Combien sont des hommes, combien des femmes ?','Une pyramide des âges range tous les habitants d’un pays. Les hommes sont à gauche, les femmes à droite. Chaque rangée est une classe d’âge : devant les enfants, derrière les personnes les plus âgées.','L’image se redresse. Les plus jeunes sont en bas, les plus âgés en haut. Chaque figurine représente plusieurs centaines de personnes.','Le Luxembourg de 1994 à aujourd’hui : chaque année, tout le monde vieillit d’un an. Ceux qui franchissent une limite d’âge montent dans la rangée suivante. En bas arrivent les nouveau-nés. En haut, des personnes meurent.','Les rangées deviennent des barres. Plus une barre est longue, plus cette classe d’âge est nombreuse.']},
-{t:'Lire le diagramme',p:['L’axe vertical indique l’âge, par tranches de cinq ans, de zéro à plus de cent ans.','L’axe horizontal indique le nombre de personnes. On compte à partir du centre : à gauche les hommes, à droite les femmes.','Un exemple : cette barre représente les femmes de 30 à 34 ans. Début 2024, elles sont environ 26 000 au Luxembourg.','Toute pyramide des âges comporte trois indications : le pays, l’année et l’unité.']},
-{t:'Effectifs et pourcentages',p:['Les barres peuvent représenter des effectifs : le nombre réel de personnes de chaque classe d’âge.','L’Allemagne compte plus de cent fois plus d’habitants que le Luxembourg. En valeurs absolues, les deux pays ne tiennent pas sur la même image.','Il existe donc une seconde représentation : les pourcentages. Chaque barre indique la part de la classe d’âge dans la population totale. On peut alors comparer les formes.','Les effectifs montrent la taille d’une population. Les pourcentages montrent sa structure.']},
-{t:'Trois formes de base',p:['Les pyramides des âges ont des formes très différentes. Trois formes de base reviennent souvent.','La pyramide : une base large et un sommet étroit. Les naissances sont nombreuses. La population est jeune et augmente vite. Le Niger en est un exemple.','La cloche : la base est à peine plus large que le milieu. Les naissances diminuent, la population augmente lentement. L’Inde en est un exemple.','L’urne : la base est plus étroite que le milieu. Les naissances sont peu nombreuses et les personnes âgées nombreuses. La population vieillit et peut diminuer. Le Japon en est un exemple.']},
-{t:'Le Luxembourg change',p:['Le Luxembourg en 1880 : une pyramide. Les familles ont beaucoup d’enfants, mais peu de personnes atteignent un âge élevé.','Au vingtième siècle, la base se rétrécit : les naissances diminuent. Deux guerres mondiales et une crise économique laissent des creux.','Vers 1960 arrive un baby-boom. Ensuite, les naissances diminuent de nouveau.','Depuis les années 1990, le Luxembourg grandit surtout grâce à l’immigration. Beaucoup d’arrivants sont de jeunes adultes. C’est pourquoi le diagramme est aujourd’hui le plus large au milieu.']},
-{t:'Les traces de l’histoire',p:['Une pyramide des âges est aussi un livre d’histoire. L’Allemagne en 1950, cette fois année d’âge par année d’âge.','Ces creux indiquent des années où les naissances ont été peu nombreuses : pendant la Première Guerre mondiale, pendant la crise économique mondiale et à la fin de la Seconde Guerre mondiale.','Du côté des hommes, beaucoup manquent. Ils sont morts pendant la Seconde Guerre mondiale.','Chaque année, toutes les générations montent d’un cran. Les creux se déplacent avec elles. En bas, le baby-boom grandit.','Un creux n’est pas toujours la trace d’une guerre. Les crises économiques, les décisions politiques et les migrations modifient aussi la forme.']},
-{t:'Générations et avenir',p:['Si l’on place les diagrammes de toutes les années les uns derrière les autres, on obtient un relief du temps.','Les lignes claires obliques sont des générations. En couleur : la génération 1964, la plus nombreuse d’Allemagne.','Toutes les personnes qui vivent aujourd’hui vieillissent d’un an chaque année. On peut donc calculer une partie de l’avenir. Le résultat s’appelle une projection.','Une projection n’est pas une prévision. Elle montre ce qui se passe si les naissances, les décès et les migrations évoluent comme supposé.']},
-{t:'La transition démographique',p:['Pourquoi les formes changent-elles ? Deux grandeurs sont décisives : le taux de natalité et le taux de mortalité.','La France vers 1820 : les deux taux sont élevés. Les naissances sont nombreuses, mais beaucoup de personnes meurent jeunes. Le diagramme est une pyramide.','En deux cents ans, les deux taux baissent : la mortalité grâce à une meilleure alimentation, à l’hygiène et à la médecine, la natalité parce que les familles ont moins d’enfants. La base se rétrécit.','Aujourd’hui, les deux taux sont faibles. La population n’augmente presque plus et vieillit. Ce changement s’appelle la transition démographique.','Une pyramide des âges montre donc trois choses : la structure d’une population, son histoire et un regard vers son avenir. À vous d’essayer maintenant.']}]};
+{t:'Compter une population',p:[
+ 'Le Luxembourg en 1994. Environ 400 000 personnes y vivent alors. Chaque figurine en représente environ 570.',
+ 'Elles se rangent maintenant. Les hommes vont à gauche, les femmes à droite. Puis chacun se place en rangées selon son âge : devant les enfants, derrière les personnes les plus âgées.',
+ 'L’image se redresse. Les plus jeunes sont en bas, les plus âgés en haut. Chaque rangée est une classe d’âge de cinq ans.',
+ 'Le temps passe, jusqu’à aujourd’hui. Chaque année, tout le monde vieillit d’un an. Celui qui franchit une limite d’âge monte d’une rangée. En bas arrivent les nouveau-nés, en haut des personnes meurent. Et comme beaucoup de personnes s’installent au pays, le Luxembourg atteint environ 670 000 habitants.',
+ 'Pour finir, les rangées deviennent des barres. Plus une barre est longue, plus cette classe d’âge est nombreuse. Voilà une pyramide des âges.']},
+{t:'Lire le diagramme',p:[
+ 'Comment lire une pyramide des âges ? D’abord l’axe vertical, au milieu. Il indique l’âge : en bas zéro an, en haut cent ans et plus.',
+ 'Ensuite l’axe horizontal. Il indique le nombre de personnes. On compte à partir du centre vers l’extérieur : à gauche les hommes, à droite les femmes.',
+ 'Un exemple. La barre marquée représente les femmes de 30 à 34 ans. Leur nombre se lit sur l’axe du bas, exactement là où la barre s’arrête. Début 2024, elles sont environ 26 000 au Luxembourg.',
+ 'Trois indications accompagnent chaque diagramme : le pays, l’année et l’unité. Sans elles, un diagramme n’est pas complet.']},
+{t:'Effectifs et pourcentages',p:[
+ 'Jusqu’ici, les barres montrent des effectifs. Elles indiquent combien de personnes vivent réellement dans chaque classe d’âge.',
+ 'Pour comparer, l’Allemagne apparaît en contour orange. Elle compte plus de cent fois plus d’habitants. Son contour ne tient même pas dans l’image.',
+ 'Il existe donc une seconde représentation : les pourcentages. Chaque barre indique maintenant la part de la population totale qui vit dans cette classe d’âge. On peut alors comparer les deux formes.',
+ 'En bref : les effectifs montrent la taille d’une population. On en a besoin pour planifier, par exemple le nombre de places dans les écoles. Les pourcentages montrent la structure d’une population. On en a besoin pour comparer des pays de tailles différentes ou des années différentes.']},
+{t:'Trois grands groupes d’âge',p:[
+ 'On divise souvent une population en trois grands groupes d’âge. En bas, les enfants et les jeunes de moins de 15 ans. Au milieu, les personnes en âge de travailler, de 15 à 64 ans. En haut, les personnes âgées de 65 ans et plus.',
+ 'Pourquoi cette division est-elle importante ? Le groupe du milieu travaille et paie la plus grande partie des impôts et des cotisations. Cela permet aussi de prendre en charge les enfants et les personnes âgées : écoles, pensions et soins.',
+ 'La part d’un groupe se lit en pourcentages. Il suffit d’additionner les barres de ce groupe des deux côtés. Au Luxembourg, environ une personne sur six a moins de 15 ans, soit environ 16 pour cent.',
+ 'Quand un pays a exceptionnellement beaucoup d’enfants, comme le Niger, presque la moitié de la population a moins de 15 ans. Le pays a besoin de nombreuses écoles, de médecins et plus tard de très nombreux emplois. La population augmente vite, car ces enfants auront à leur tour des enfants.',
+ 'Quand un pays a exceptionnellement beaucoup de personnes âgées, on parle de vieillissement de la population. Au Japon, presque une personne sur trois a 65 ans ou plus. Il y a plus de retraités et plus de besoins en soins, mais de moins en moins de personnes en âge de travailler pour les financer.',
+ 'Les trois grands groupes d’âge montrent donc à quoi un pays doit pourvoir : aux écoles et aux emplois, ou aux pensions et aux soins.']},
+{t:'Trois formes de base',p:[
+ 'Dans chaque pays, le diagramme a une autre allure. On distingue pourtant trois formes de base. Ce qui compte, c’est la comparaison entre la base, c’est-à-dire les enfants, et le milieu du diagramme.',
+ 'La première forme est la pyramide. La ligne pointillée montre sa forme idéale : large en bas, étroite en haut. Les naissances sont nombreuses. La population est jeune et augmente vite. Le Niger, en Afrique de l’Ouest, en est un exemple.',
+ 'La deuxième forme est la cloche. La base est à peine plus large que le milieu. Les naissances diminuent. La population augmente plus lentement. L’Inde en est un exemple.',
+ 'La troisième forme est l’urne. La base est plus étroite que le milieu. Les naissances sont peu nombreuses et beaucoup de personnes sont âgées. La population vieillit et peut diminuer. Le Japon en est un exemple.',
+ 'Pyramide, cloche, urne : la forme montre si une population est jeune et augmente, ou âgée et diminue.']},
+{t:'Le Luxembourg change',p:[
+ 'Retour au Luxembourg, cette fois près de 150 ans en arrière. En 1880, le diagramme est une pyramide : beaucoup d’enfants, peu de personnes âgées.',
+ 'Au vingtième siècle, les naissances diminuent. La base se rétrécit. Les deux guerres mondiales et une crise économique laissent des creux.',
+ 'Vers 1960, les naissances augmentent de nouveau. On parle de baby-boom. Ensuite, elles diminuent encore.',
+ 'Depuis 1990 environ, le Luxembourg grandit surtout grâce à l’immigration. Beaucoup d’arrivants sont de jeunes adultes. C’est pourquoi le diagramme est aujourd’hui le plus large au milieu.']},
+{t:'Les traces de l’histoire',p:[
+ 'Jusqu’ici, chaque barre représentait cinq générations. Maintenant, chaque barre représente une seule année de naissance. Des traces fines apparaissent. L’exemple est l’Allemagne en 1950.',
+ 'Les creux montrent des générations peu nombreuses : pendant la Première Guerre mondiale, pendant la crise économique mondiale et à la fin de la Seconde Guerre mondiale.',
+ 'Chez les hommes âgés, une grande partie manque. Beaucoup d’hommes sont morts pendant la Seconde Guerre mondiale. La partie de couleur différente montre où les femmes sont plus nombreuses.',
+ 'Le temps continue. Chaque année, toutes les générations montent d’un cran, et les creux se déplacent avec elles. En bas, le baby-boom grandit.',
+ 'Un creux n’est pas toujours la trace d’une guerre. Les crises, les décisions politiques et les migrations modifient aussi la forme.']},
+{t:'Générations et avenir',p:[
+ 'Si l’on place les diagrammes de toutes les années les uns derrière les autres, on obtient un relief du temps. Devant se trouve l’année 2024, derrière le passé.',
+ 'Vues de côté, les générations deviennent des lignes obliques. En évidence : la génération 1964, la plus nombreuse d’Allemagne.',
+ 'Toutes les personnes qui vivent aujourd’hui vieillissent d’un an chaque année. On peut donc calculer une partie de l’avenir. Le résultat s’appelle une projection.',
+ 'Une projection n’est pas une prévision. Elle montre ce qui se passe si les naissances, les décès et les migrations évoluent comme supposé.']},
+{t:'La transition démographique',p:[
+ 'Pourquoi les formes changent-elles ? Deux valeurs sont décisives : le taux de natalité et le taux de mortalité, chacun pour mille habitants. Le graphique montre les deux courbes.',
+ 'La France vers 1820. Les deux taux sont élevés. Les naissances sont nombreuses, mais beaucoup de personnes meurent jeunes. Le diagramme est une pyramide.',
+ 'Pendant les deux cents années suivantes, les deux taux baissent. D’abord la mortalité, grâce à une meilleure alimentation, à l’hygiène et à la médecine. Ensuite la natalité, parce que les familles ont moins d’enfants. La base se rétrécit.',
+ 'Aujourd’hui, les deux taux sont faibles. La population n’augmente presque plus et vieillit. Ce changement s’appelle la transition démographique.',
+ 'Le modèle résume ce déroulement en quatre étapes. Avant la transition, les deux taux sont élevés. Pendant la phase un, la mortalité baisse, mais la natalité reste élevée : la population augmente très vite. Pendant la phase deux, la natalité baisse aussi, et la croissance ralentit. Après la transition, les deux taux sont faibles. La surface verte entre les courbes est l’accroissement naturel.',
+ 'Une pyramide des âges montre donc trois choses : la structure d’une population, ce qu’elle a vécu et son évolution possible. À vous d’essayer maintenant.']}]};
 
 /* Hinweise & Quellen */
 const SOURCES={
-de:[['So arbeitest du mit dem Labor',['<b>Zeitleiste:</b> ziehen oder abspielen. Blau = Schätzungen aus Zählungen, orange gestreift = Projektion (mittlere Variante der UN), weiße Punkte = Volkszählungen in Luxemburg.','<b>Anzahl / Prozent</b> und <b>5 Jahre / 1 Jahr</b> schaltest du unten um.','<b>Balken antippen:</b> Der Jahrgang wird farbig markiert und wandert beim Abspielen mit.','<b>Hochrücken sehen:</b> „Jahr ›“ stellt genau ein Jahr weiter (bei 5-Jahres-Gruppen fünf Jahre). Bei „1 Jahr“ gleitet jeder Balken eine Stufe nach oben, unten wächst der Balken der Neugeborenen herein. Die helleren und dunkleren Streifen sind je fünf Geburtsjahrgänge. Im Figuren-Modus bleiben die Reihen stehen; es steigen nur die Figuren auf, die eine Altersgrenze überschreiten.','<b>Ansichten</b> (links): Diagramm, Schräg, Zeitgebirge (alle Jahre hintereinander), Alter × Zeit (Jahrgänge als Diagonalen).','<b>Erklärfilm:</b> acht kurze Kapitel. Am Ende jedes Kapitels wartet der Film; weiter mit ›.']],
+de:[['So arbeitest du mit dem Labor',['<b>Zeitleiste:</b> ziehen oder abspielen. Blau = Schätzungen aus Zählungen, orange gestreift = Projektion (mittlere Variante der UN), weiße Punkte = Volkszählungen in Luxemburg.','<b>Anzahl / Prozent</b> und <b>5 Jahre / 1 Jahr</b> schaltest du unten um.','<b>Balken antippen:</b> Der Jahrgang wird farbig markiert und wandert beim Abspielen mit.','<b>Hochrücken sehen:</b> „Jahr ›“ stellt genau ein Jahr weiter (bei 5-Jahres-Gruppen fünf Jahre). Bei „1 Jahr“ gleitet jeder Balken eine Stufe nach oben, unten wächst der Balken der Neugeborenen herein. Die helleren und dunkleren Streifen sind je fünf Geburtsjahrgänge. Im Figuren-Modus bleiben die Reihen stehen; es steigen nur die Figuren auf, die eine Altersgrenze überschreiten.','<b>Ansichten</b> (links): Diagramm, Schräg, Zeitgebirge (alle Jahre hintereinander), Alter × Zeit (Jahrgänge als Diagonalen).','<b>Erklärfilm:</b> neun kurze Kapitel. Am Ende jedes Kapitels wartet der Film; weiter mit ›.']],
  ['Daten',['<b>Alle Länder 1950–2100:</b> Vereinte Nationen, World Population Prospects 2024 (Bevölkerung nach Einzelalter und Geschlecht, Stand 1. Januar; ab 2025 mittlere Variante der Projektion; Geburten- und Sterberate, Wanderungssaldo, Kinder je Frau, Lebenserwartung).','<b>Luxemburg 1880–1947:</b> STATEC, Volkszählungen (LUSTAT, Tabelle „Population par âge et sexe 1880–2021“), 5-Jahres-Gruppen. Zwischen den Zählungen linear geschätzt.','<b>Luxemburg, Geburten und Sterbefälle 1891–2025:</b> STATEC (LUSTAT, „Mouvements naturels et migratoires“). Raten selbst berechnet (je 1 000 Einwohner).','<b>Frankreich 1817–1949:</b> Human Mortality Database (mortality.org), Datensatz Frankreich, Gesamtbevölkerung; übernommen aus dem R-Paket „demography“. Geburten- und Sterberate daraus berechnet (Näherung, an den Jahren 1950–2005 mit den UN-Werten geprüft: Abweichung höchstens 0,2 ‰).','<b>Kontrolle:</b> Luxemburg am 1.1.2024 laut UN 669 200, laut STATEC 672 050 Einwohner. Am 1.1.2026 zählt STATEC 690 959 Einwohner; die UN-Projektion liegt etwas darunter.']],
  ['Vereinfachungen',['<b>Grundform:</b> Das Labor bestimmt sie mit einer einzigen Zahl – Kinder (0–14) je 100 Erwachsene von 30–44 Jahren: ab 150 Pyramide, 90–150 Glocke, unter 90 Urne. Viele echte Diagramme liegen dazwischen oder haben Sonderformen (Luxemburg, Katar).','<b>Phasen des Übergangs:</b> einfache Schwellenwerte (Geburtenrate 28 ‰ und 18 ‰, Sterberate 22 ‰), nie rückwärts. Das Modell hat im Heft vier Abschnitte; „mehr Sterbefälle als Geburten“ ist zusätzlich markiert.','<b>Über 100:</b> Die Daten enthalten nur „100 und älter“. Bei „1 Jahr“ verteilt das Labor diese Gruppe auf einzelne Jahre (100, 101 … 119), jedes Jahr um denselben Anteil weniger – geschätzt aus dem Rückgang von 98 auf 99 Jahre; die Summe bleibt gleich. Die Pyramide läuft so oben spitz aus. Bei „5 Jahre“ bleibt die Gruppe „100+“.','<b>Geburtsjahre:</b> Wer am 1. Januar eines Jahres x Jahre alt ist, wurde im Jahr (Jahr − 1 − x) geboren.','<b>Ereignisse:</b> Es sind nur gut belegte Ursachen beschriftet. Für Deutschland vor 1950 gibt es in diesen Quellen keine Daten.','<b>Projektionen</b> sind Rechnungen unter Annahmen, keine Vorhersagen.']]],
-fr:[['Utiliser le labo',['<b>Frise :</b> déplacer le curseur ou lancer la lecture. Bleu = estimations, hachures orange = projection (variante moyenne de l’ONU), points blancs = recensements au Luxembourg.','<b>Effectifs / Pourcent</b> et <b>5 ans / 1 an</b> se choisissent en bas.','<b>Toucher une barre :</b> la génération est mise en couleur et se déplace pendant la lecture.','<b>Voir les générations monter :</b> « an › » avance d’un an exactement (de cinq ans avec les classes de 5 ans). Avec « 1 an », chaque barre monte d’un cran et la barre des nouveau-nés apparaît en bas. Les bandes plus claires et plus sombres regroupent cinq générations. En mode figurines, les rangées restent en place ; seules montent les figurines qui franchissent une limite d’âge.','<b>Vues</b> (à gauche) : diagramme, oblique, relief du temps (toutes les années), âge × temps (les générations sont des diagonales).','<b>Film explicatif :</b> huit courts chapitres. À la fin de chaque chapitre, le film attend ; continuer avec ›.']],
+fr:[['Utiliser le labo',['<b>Frise :</b> déplacer le curseur ou lancer la lecture. Bleu = estimations, hachures orange = projection (variante moyenne de l’ONU), points blancs = recensements au Luxembourg.','<b>Effectifs / Pourcent</b> et <b>5 ans / 1 an</b> se choisissent en bas.','<b>Toucher une barre :</b> la génération est mise en couleur et se déplace pendant la lecture.','<b>Voir les générations monter :</b> « an › » avance d’un an exactement (de cinq ans avec les classes de 5 ans). Avec « 1 an », chaque barre monte d’un cran et la barre des nouveau-nés apparaît en bas. Les bandes plus claires et plus sombres regroupent cinq générations. En mode figurines, les rangées restent en place ; seules montent les figurines qui franchissent une limite d’âge.','<b>Vues</b> (à gauche) : diagramme, oblique, relief du temps (toutes les années), âge × temps (les générations sont des diagonales).','<b>Film explicatif :</b> neuf courts chapitres. À la fin de chaque chapitre, le film attend ; continuer avec ›.']],
  ['Données',['<b>Tous les pays 1950–2100 :</b> Nations unies, World Population Prospects 2024 (population par année d’âge et sexe au 1er janvier ; dès 2025 variante moyenne de la projection ; taux de natalité et de mortalité, solde migratoire, enfants par femme, espérance de vie).','<b>Luxembourg 1880–1947 :</b> STATEC, recensements (LUSTAT, tableau « Population par âge et sexe 1880–2021 »), classes de 5 ans. Interpolation linéaire entre les recensements.','<b>Luxembourg, naissances et décès 1891–2025 :</b> STATEC (LUSTAT, « Mouvements naturels et migratoires »). Taux calculés (pour 1 000 habitants).','<b>France 1817–1949 :</b> Human Mortality Database (mortality.org), France, population totale ; repris du paquet R « demography ». Taux de natalité et de mortalité calculés (approximation, vérifiée sur 1950–2005 avec les valeurs de l’ONU : écart maximal 0,2 ‰).','<b>Contrôle :</b> Luxembourg au 1.1.2024 : 669 200 habitants selon l’ONU, 672 050 selon le STATEC. Au 1.1.2026, le STATEC compte 690 959 habitants ; la projection de l’ONU est un peu plus basse.']],
  ['Simplifications',['<b>Forme de base :</b> le labo la détermine avec un seul nombre – enfants (0–14 ans) pour 100 adultes de 30–44 ans : dès 150 pyramide, 90–150 cloche, moins de 90 urne. Beaucoup de diagrammes réels sont intermédiaires ou particuliers (Luxembourg, Qatar).','<b>Phases de la transition :</b> seuils simples (natalité 28 ‰ et 18 ‰, mortalité 22 ‰), jamais de retour en arrière. Le modèle du cahier compte quatre étapes ; « plus de décès que de naissances » est signalé en plus.','<b>Au-delà de 100 ans :</b> les données ne donnent que « 100 ans et plus ». Avec « 1 an », le labo répartit ce groupe sur des âges isolés (100, 101 … 119), chaque année un peu moins – estimé à partir de la baisse entre 98 et 99 ans ; le total reste le même. La pyramide s’affine ainsi vers le haut. Avec « 5 ans », la classe « 100+ » est conservée.','<b>Années de naissance :</b> une personne âgée de x ans au 1er janvier d’une année est née en (année − 1 − x).','<b>Événements :</b> seules des causes bien documentées sont indiquées. Pour l’Allemagne avant 1950, ces sources ne contiennent pas de données.','<b>Les projections</b> sont des calculs fondés sur des hypothèses, pas des prévisions.']]]};
 
@@ -4694,7 +4795,7 @@ function buildTimeline(){
   const pxw=Math.max(200,tl.getBoundingClientRect().width||800),need=S.pres?58:46,stp=[10,25,50,100].find(v=>v/span*pxw>=need)||100;let t=`<span style="left:0;transform:none">${c.y0}</span>`;
   for(let y=Math.ceil((c.y0+1)/stp)*stp;y<=c.y1;y+=stp){if((y-c.y0)/span<.07||(y!==c.y1&&(c.y1-y)/span*pxw<need*1.05))continue;t+=`<span style="left:${X(y)}"${y===c.y1?' class="last"':''}>${y}</span>`}
   $('yrs').innerHTML=t}
-$('year').addEventListener('input',e=>{S.playing=false;TW.on=false;S.year=+e.target.value;syncUI()});
+$('year').addEventListener('input',e=>{V.scrub=performance.now();S.playing=false;TW.on=false;S.year=+e.target.value;syncUI()});
 $('year').addEventListener('change',()=>settleYear(false));
 $('play').addEventListener('click',()=>{const c=C();TW.on=false;if(!S.playing&&S.year>=(play.end||c.y1)-.05){S.year=c.y0}play.end=null;S.playing=!S.playing;if(!S.playing)settleYear(true);syncUI()});
 $('step').addEventListener('click',e=>{const b=e.target.closest('button');if(b)stepYear(+b.dataset.step)});
@@ -4823,7 +4924,7 @@ function drawChart(){
   if(!S.rates)return;const cv=$('chCv'),cssW=cv.clientWidth,cssH=cv.clientHeight;if(!cssW||!cssH)return;
   // in der echten Größe zeichnen (vorher wurde eine feste Fläche gestreckt – auf schmalen oder breiten Bildschirmen verzerrt)
   const dpr=Math.min(window.devicePixelRatio||1,2),u=S.pres?.6:.5,key=[cssW,cssH,dpr,u,S.chartMode,S.c,S.year.toFixed(2),S.modelPh,S.theme,S.lang].join('|');
-  if(key===drawChart.k)return;drawChart.k=key;if(S.chartMode!==drawChart.m){drawChart.m=S.chartMode;chartTexts()}
+  if(key===drawChart.k)return;drawChart.k=key;if(S.chartMode!==drawChart.m){if(drawChart.m&&cv.animate)cv.animate([{opacity:0},{opacity:1}],{duration:500,easing:'ease-out'});drawChart.m=S.chartMode;chartTexts()}
   const bw=Math.round(cssW*dpr),bh=Math.round(cssH*dpr);if(cv.width!==bw||cv.height!==bh){cv.width=bw;cv.height=bh}
   const g=cv.getContext('2d'),W=cssW/u,H=cssH/u,c=C(),padL=66,padR=14,padT=40,padB=S.chartMode==='model'?44:34,pw=W-padL-padR,ph=H-padT-padB;
   g.setTransform(dpr*u,0,0,dpr*u,0,0);g.clearRect(0,0,W,H);g.font='500 21px '+(CC.font||'Arial,sans-serif');g.textBaseline='middle';
@@ -4951,7 +5052,7 @@ window.addEventListener('keydown',e=>{if(e.target.matches('input,select,textarea
    Kapitel mit Sprecherstimme (Sprachausgabe des Browsers) und Untertiteln. Am Ende jedes Kapitels wartet der Film.
    Aufgenommene Stimmen: window.__NARR_AUDIO['de_k01'] = Adresse oder Daten-URI einer MP3-Datei (optional).
    ========================================================================== */
-const PARA_GAP=1.9,SENT_GAP=.3,LEAD=1.0,TAIL=1.6,WPS={de:2.2,fr:2.6};
+const PARA_GAP=2.6,SENT_GAP=.45,LEAD=1.3,TAIL=2.4,WPS={de:2.05,fr:2.45};   // ruhiges Tempo: Pausen zwischen Sätzen und Absätzen, damit das Bild wirken kann
 const FILM={i:0,t:0,dur:1,items:[],pS:[],paused:false,atEnd:false,voice:lsGet('geogym-pyr-voice')!=='off',gen:0,spoken:-1,busy:false,para:-1,saved:null,audio:null,useAudio:false,noAudio:{},hasAudio:{},tryAudio:false,utt:null};
 const synthOK=()=>'speechSynthesis' in window&&typeof SpeechSynthesisUtterance!=='undefined';
 function sentences(p,lang){const out=[];let cur='';for(let i=0;i<p.length;i++){const ch=p[i];cur+=ch;if('.!?'.includes(ch)&&p[i+1]===' '&&!(/[0-9]/.test(p[i-1]||'')&&ch==='.')){out.push(cur.trim());cur=''}}if(cur.trim())out.push(cur.trim());return out}
@@ -4973,7 +5074,7 @@ function voiceFail(why){VO.fails++;if(!VO.told){VO.told=true;toast('<b>'+T('voic
 // n: 0 erster Versuch · 1 derselbe Satz noch einmal · 2 mit der Standardstimme des Systems
 function speak(i,n){const it=FILM.items[i];FILM.spoken=i;if(!FILM.voice||FILM.useAudio||!synthOK())return;n=n||0;
   const g=FILM.gen,u=new SpeechSynthesisUtterance(it.text),v=VO.noPick?null:pickVoice(S.lang);let started=false,ended=false;
-  u.lang=S.lang==='fr'?'fr-FR':'de-DE';if(v)u.voice=v;u.rate=.96;u.volume=1;u.pitch=1;FILM.busy=true;FILM.utt=u;   // Verweis halten: Chrome verwirft Äußerungen sonst vorzeitig
+  u.lang=S.lang==='fr'?'fr-FR':'de-DE';if(v)u.voice=v;u.rate=.92;u.volume=1;u.pitch=1;FILM.busy=true;FILM.utt=u;   // Verweis halten: Chrome verwirft Äußerungen sonst vorzeitig
   u.onstart=()=>{started=true;VO.heard=true;VO.fails=0;VO.dead=false};
   u.onend=()=>{ended=true;if(g===FILM.gen&&FILM.utt===u)FILM.busy=false};
   u.onerror=e=>{ended=true;if(g!==FILM.gen||FILM.utt!==u)return;FILM.busy=false;const w=e&&e.error;if(w&&!/interrupted|canceled|cancelled/.test(w))voiceFail(w)};
@@ -4986,26 +5087,30 @@ function speak(i,n){const it=FILM.items[i];FILM.spoken=i;if(!FILM.voice||FILM.us
 const st=p=>setS(p,true);
 const yr=(a,b,k)=>{S.year=lerp(a,b,smooth(clamp(k,0,1)))};
 const hl=c=>{app.classList.remove('hl-age','hl-axis','hl-title');if(c)app.classList.add(c)};
-const BASE={people:false,cmp:null,cmpYear:null,tmpl:null,cohort:null,rates:false,events:false,groups:false,excess:false,birth:false,fixed:true,chartMode:'land'};
+const BASE={people:false,cmp:null,cmpYear:null,tmpl:null,cohort:null,rates:false,events:false,groups:false,excess:false,birth:false,fixed:true,chartMode:'land',modelPh:null};
+const kk=(k,a,b)=>clamp((k-a)/(b-a),0,1);   // Bewegung erst starten, wenn die Kamera angekommen ist, und kurz vor dem Absatzende fertig sein
+// Jedes Kapitel: enter() stellt das Bild ein (unter einer weichen Einblendung), para(p) wechselt mit jedem Absatz, tick(p,k) bewegt innerhalb des Absatzes (k = 0 … 1)
 const SHOTS=[
-{enter(){st(Object.assign({},BASE,{c:'LU',year:2024,mode:'abs',grp:5,people:true,pstage:0,view:'crowd'}));fig.p=0;fig.snap=true},
- para(p){if(p===1)st({pstage:1,view:'floor'});if(p===2)st({pstage:2,view:'oblique'});if(p===3)st({year:1994});if(p===4)st({year:2024,people:false,view:'front'})},
- tick(p,k){if(p===3)yr(1994,2024,k)}},
+{enter(){st(Object.assign({},BASE,{c:'LU',year:1994,mode:'abs',grp:5,people:true,pstage:0,view:'crowd'}));fig.p=0;fig.snap=true},
+ para(p){if(p===1)st({pstage:1,view:'floor'});if(p===2)st({pstage:2,view:'oblique'});if(p===4)st({people:false,grp:5,view:'front'})},
+ tick(p,k){if(p<3)S.year=1994;if(p===3)yr(1994,2024,kk(k,.12,.95));if(p===4)S.year=2024}},
 {enter(){st(Object.assign({},BASE,{c:'LU',year:2024,mode:'abs',grp:5,view:'front'}))},
  para(p){hl(p===0?'hl-age':p===1?'hl-axis':p===3?'hl-title':null);S.hover=p===2?{s:1,i:6}:null;if(p!==2)showTip(null)},
  tick(p){if(p===2){const v=new THREE.Vector3(G.GAP+V.lens[NA+6]+.1,6.5*.5,V.depth/2),o={};project(v,o);const r=stage.getBoundingClientRect();showTip({s:1,i:6},{clientX:r.left+o.x,clientY:r.top+o.y-60})}},leave(){hl(null);S.hover=null;showTip(null)}},
 {enter(){st(Object.assign({},BASE,{c:'LU',year:2024,mode:'abs',grp:5,view:'front'}))},
- para(p){if(p===1)st({cmp:'DE'});if(p===2)st({mode:'pct'});if(p===3)st({cmp:null})}},
+ para(p){if(p===1)st({cmp:'DE'});if(p===2)st({mode:'pct'})},leave(){st({cmp:null})}},
+{enter(){st(Object.assign({},BASE,{c:'LU',year:2024,mode:'pct',grp:5,view:'front',groups:true}))},
+ para(p){if(p===3)st({c:'NE'});if(p===4)st({c:'JP'});if(p===5)st({c:'LU'})}},
 {enter(){st(Object.assign({},BASE,{c:'LU',year:2024,mode:'pct',grp:5,view:'front'}))},
- para(p){if(p===1)st({c:'NE',year:2024,tmpl:'pyr'});if(p===2)st({c:'IN',year:2024,tmpl:'bell'});if(p===3)st({c:'JP',year:2024,tmpl:'urn'})}},
+ para(p){if(p===1)st({c:'NE',tmpl:'pyr'});if(p===2)st({c:'IN',tmpl:'bell'});if(p===3)st({c:'JP',tmpl:'urn'})}},
 {enter(){st(Object.assign({},BASE,{c:'LU',year:1880,mode:'abs',grp:5,view:'front',events:true}))},
- tick(p,k){if(p===0)S.year=1880;if(p===1)yr(1880,1950,k);if(p===2)yr(1950,1985,k);if(p===3)yr(1985,2024,k*1.25)}},
+ tick(p,k){if(p===0)S.year=1880;if(p===1)yr(1880,1950,kk(k,.05,.95));if(p===2)yr(1950,1985,kk(k,.05,.95));if(p===3)yr(1985,2024,kk(k,.05,.85))}},
 {enter(){st(Object.assign({},BASE,{c:'DE',year:1950,mode:'abs',grp:1,view:'front',events:true}))},
- para(p){if(p===2)st({excess:true})},tick(p,k){if(p<3)S.year=1950;if(p===3)yr(1950,1975,k);if(p===4)yr(1975,2024,k)}},
+ para(p){if(p===2)st({excess:true});if(p===3)st({excess:false})},tick(p,k){if(p<3)S.year=1950;if(p===3)yr(1950,1975,kk(k,.1,.95));if(p===4)yr(1975,2024,kk(k,.05,.9))}},
 {enter(){st(Object.assign({},BASE,{c:'DE',year:2024,mode:'abs',grp:1,view:'land'}))},
- para(p){if(p===1)st({cohort:[1964,1964],view:'side'});if(p===2)st({view:'land'})},tick(p,k){if(p<2)S.year=2024;if(p===2)yr(2024,2060,k);if(p===3)S.year=2060}},
+ para(p){if(p===1)st({cohort:[1964,1964],view:'side'});if(p===2)st({view:'land'});if(p===3)st({view:'front'})},tick(p,k){if(p<2)S.year=2024;if(p===2)yr(2024,2060,kk(k,.2,.95));if(p===3)S.year=2060}},
 {enter(){st(Object.assign({},BASE,{c:'FR',year:1820,mode:'pct',grp:5,view:'front',rates:true,tmpl:'auto'}))},
- para(p){if(p===4)st({rates:false,tmpl:null})},tick(p,k){if(p<2)S.year=1820;if(p===2)yr(1820,2024,k);if(p>=3)S.year=2024}}];
+ para(p){if(p===4)st({chartMode:'model',tmpl:null});if(p===5)S.modelPh=null},tick(p,k){if(p<2)S.year=1820;if(p===2)yr(1820,2024,kk(k,.05,.95));if(p>=3)S.year=2024;if(p===4)S.modelPh=k<.12?null:Math.min(3,Math.floor((k-.12)/.88*4.2))}}];   // Phasenmarke wandert mit der Erklärung
 function filmPrep(){
   const ch=(FILM_TXT[S.lang]||FILM_TXT.de)[FILM.i],w=WPS[S.lang]||2.3;narrStop();FILM.items=[];FILM.pS=[];let t=LEAD;
   ch.p.forEach((para,p)=>{if(p)t+=PARA_GAP-SENT_GAP;FILM.pS.push(t);sentences(para,S.lang).forEach(s=>{const len=.4+s.split(/\s+/).length/w;FILM.items.push({text:s,p,t0:t,len});t+=len+SENT_GAP})});
@@ -5021,7 +5126,7 @@ function filmAudio(){
   try{const p=a.play();if(p&&p.then)p.then(()=>{if(g!==FILM.gen){a.pause();return}if(!isFinite(a.duration)||a.duration<2){a.pause();fail();return}
       FILM.useAudio=true;FILM.hasAudio[lang]=true;FILM.tryAudio=false;FILM.busy=false;synthCancel();FILM.aScale=(FILM.dur-LEAD-TAIL)/a.duration}).catch(fail)}catch(e){fail()}
   return !!(own||FILM.hasAudio[lang])}     // true: Aufnahme wird erwartet -> Sprachausgabe wartet
-function filmGo(i,click){const prev=SHOTS[FILM.i];if(prev&&prev.leave)prev.leave();hl(null);FILM.i=clamp(i,0,SHOTS.length-1);S.playing=false;filmPrep();SHOTS[FILM.i].enter();
+function filmGo(i,click){const prev=SHOTS[FILM.i];if(prev&&prev.leave)prev.leave();hl(null);FILM.i=clamp(i,0,SHOTS.length-1);S.playing=false;filmPrep();filmFade();SHOTS[FILM.i].enter();flyTo(S.view,0);fig.snap=true;V.mt=1;V.mk=null;
   FILM.tryAudio=filmAudio();
   // Der erste Satz startet direkt im Klick: Safari und iPad erlauben Ton nur als Antwort auf eine Bedienung
   if(click&&FILM.voice&&!FILM.tryAudio&&synthOK()){FILM.t=FILM.items[0].t0;speak(0)}
@@ -5039,7 +5144,9 @@ function filmNav(){const n=SHOTS.length;let h=`<button data-f="prev" aria-label=
   const vs=voicesFor(S.lang);if(FILM.voice&&vs.length>1&&!FILM.useAudio){const curV=VO.noPick?null:pickVoice(S.lang);
     h+=`<select class="sel" id="cVoiceSel" aria-label="${T('cVoicePick')}"><option value="">${T('cVoiceAuto')}</option>${vs.map(v=>`<option value="${esc(v.name).replace(/"/g,'&quot;')}"${VO.pref[S.lang]===v.name?' selected':''}>${esc(v.name)}${curV&&curV.name===v.name&&!VO.pref[S.lang]?' ✓':''}</option>`).join('')}</select>`}
   h+=`<button data-f="end"${FILM.atEnd&&FILM.i===n-1?' class="next pulse"':''}>${T('cEnd')}</button>`;$('cnav').innerHTML=h}
-function filmCap(){const ch=(FILM_TXT[S.lang]||FILM_TXT.de)[FILM.i],it=FILM.items[Math.max(0,FILM.spoken)];const h=`<small>${T('cChap',FILM.i+1,ch.t)}</small>${FILM.spoken<0?'':esc(it.text)}`;if(filmCap.h!==h){filmCap.h=h;$('cap').innerHTML=h}}
+// Kapitelwechsel: das Bild blendet weich aus dem Hintergrund ein (verdeckt Kamerasprung und Umstellen)
+function filmFade(){const f=$('fade');if(!f||!f.animate)return;f.getAnimations&&f.getAnimations().forEach(a=>a.cancel());f.animate([{opacity:1},{opacity:1,offset:.22},{opacity:0}],{duration:1400,easing:'ease-out'})}
+function filmCap(){const ch=(FILM_TXT[S.lang]||FILM_TXT.de)[FILM.i],it=FILM.items[Math.max(0,FILM.spoken)];const h=`<small>${T('cChap',FILM.i+1,ch.t)}</small>${FILM.spoken<0?'':esc(it.text)}`;if(filmCap.h!==h){filmCap.h=h;const c=$('cap');c.innerHTML=h;if(c.animate)c.animate([{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'none'}],{duration:450,easing:'ease-out'})}}
 function respeak(){const i=Math.max(0,FILM.spoken);narrStop();FILM.t=FILM.items[i].t0;speak(i)}
 $('cnav').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const f=b.dataset.f;
   if(f==='prev')filmGo(FILM.t>4||FILM.i===0?FILM.i:FILM.i-1,true);else if(f==='next'){if(FILM.i<SHOTS.length-1)filmGo(FILM.i+1,true);else filmEnd()}
@@ -5075,7 +5182,7 @@ let last=performance.now(),uiT=0,frames=0;window.__frames=0;
 const PWR={run:false,wake:0,sig:'',touch:-1e9,lastDraw:0,fresh:0};
 function stateSig(){const h=S.hover,co=S.cohort;return [S.c,S.year,S.mode,S.grp,S.view,S.events,S.groups,S.excess,S.rates,S.birth,S.people,S.pstage,S.stripes,S.cmp,S.cmpYear,S.tmpl,co?co[0]+'-'+co[1]:'',S.theme,S.lang,S.fixed,S.chartMode,S.modelPh,h?h.s+'.'+h.i:'',S.film,S.playing,S.pres,VW,VH].join('|')}
 function wake(ms){const now=performance.now();PWR.wake=Math.max(PWR.wake,now+(ms||2500));if(!PWR.run){PWR.run=true;last=now;PWR.lastDraw=0;PWR.fresh=4;requestAnimationFrame(frame)}}
-function busy(){return S.playing||TW.on||!!cam.a||V.moving||(S.film&&(FILM.busy||(!FILM.paused&&!FILM.atEnd)))||(S.people&&((fig.mv||0)>.004||Math.abs(S.pstage-fig.p)>.002))}
+function busy(){return S.playing||TW.on||!!cam.a||V.moving||V.mt<1||V.cmpA<1||V.tmplA<1||Math.abs((S.excess?1:0)-V.exA)>.003||(S.film&&(FILM.busy||(!FILM.paused&&!FILM.atEnd)))||(S.people&&((fig.mv||0)>.004||Math.abs(S.pstage-fig.p)>.002))}
 ['pointerdown','keydown','wheel','input','change','click','touchstart'].forEach(t=>document.addEventListener(t,e=>{if(t==='pointerdown'||t==='touchstart')PWR.touch=performance.now();wake()},{passive:true,capture:true}));
 document.addEventListener('pointermove',e=>{if(e.buttons){PWR.touch=performance.now();wake(800)}else if(e.target===renderer.domElement)wake(600)},{passive:true});
 window.addEventListener('resize',()=>wake());

@@ -66,7 +66,7 @@ function buildTimeline(){
   const pxw=Math.max(200,tl.getBoundingClientRect().width||800),need=S.pres?58:46,stp=[10,25,50,100].find(v=>v/span*pxw>=need)||100;let t=`<span style="left:0;transform:none">${c.y0}</span>`;
   for(let y=Math.ceil((c.y0+1)/stp)*stp;y<=c.y1;y+=stp){if((y-c.y0)/span<.07||(y!==c.y1&&(c.y1-y)/span*pxw<need*1.05))continue;t+=`<span style="left:${X(y)}"${y===c.y1?' class="last"':''}>${y}</span>`}
   $('yrs').innerHTML=t}
-$('year').addEventListener('input',e=>{S.playing=false;TW.on=false;S.year=+e.target.value;syncUI()});
+$('year').addEventListener('input',e=>{V.scrub=performance.now();S.playing=false;TW.on=false;S.year=+e.target.value;syncUI()});
 $('year').addEventListener('change',()=>settleYear(false));
 $('play').addEventListener('click',()=>{const c=C();TW.on=false;if(!S.playing&&S.year>=(play.end||c.y1)-.05){S.year=c.y0}play.end=null;S.playing=!S.playing;if(!S.playing)settleYear(true);syncUI()});
 $('step').addEventListener('click',e=>{const b=e.target.closest('button');if(b)stepYear(+b.dataset.step)});
@@ -195,7 +195,7 @@ function drawChart(){
   if(!S.rates)return;const cv=$('chCv'),cssW=cv.clientWidth,cssH=cv.clientHeight;if(!cssW||!cssH)return;
   // in der echten Größe zeichnen (vorher wurde eine feste Fläche gestreckt – auf schmalen oder breiten Bildschirmen verzerrt)
   const dpr=Math.min(window.devicePixelRatio||1,2),u=S.pres?.6:.5,key=[cssW,cssH,dpr,u,S.chartMode,S.c,S.year.toFixed(2),S.modelPh,S.theme,S.lang].join('|');
-  if(key===drawChart.k)return;drawChart.k=key;if(S.chartMode!==drawChart.m){drawChart.m=S.chartMode;chartTexts()}
+  if(key===drawChart.k)return;drawChart.k=key;if(S.chartMode!==drawChart.m){if(drawChart.m&&cv.animate)cv.animate([{opacity:0},{opacity:1}],{duration:500,easing:'ease-out'});drawChart.m=S.chartMode;chartTexts()}
   const bw=Math.round(cssW*dpr),bh=Math.round(cssH*dpr);if(cv.width!==bw||cv.height!==bh){cv.width=bw;cv.height=bh}
   const g=cv.getContext('2d'),W=cssW/u,H=cssH/u,c=C(),padL=66,padR=14,padT=40,padB=S.chartMode==='model'?44:34,pw=W-padL-padR,ph=H-padT-padB;
   g.setTransform(dpr*u,0,0,dpr*u,0,0);g.clearRect(0,0,W,H);g.font='500 21px '+(CC.font||'Arial,sans-serif');g.textBaseline='middle';

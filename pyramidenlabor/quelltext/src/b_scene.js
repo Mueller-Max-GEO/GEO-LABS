@@ -293,7 +293,7 @@ function placeLabels(){
 
 /* ---------- Anzeige berechnen (jedes Bild) ---------- */
 const cur=new Float32Array(NB),cur5=new Float32Array(42),cmpA=new Float32Array(NB),cmp5=new Float32Array(42);
-const V={lensT:new Float32Array(2*NE),by0T:new Float32Array(NE),ext:null,axMax:1,axShown:0,ticks:[],lens:new Float32Array(NBX),by0:new Float32Array(NBX),bh:new Float32Array(NBX),frac:0,moving:false,n:21,h:.5,tot:1,depth:G.DEPTH,depthT:G.DEPTH,landFade:0,proj:0,st:null,unit:1};
+const V={mt:1,mk:null,my:null,shown:new Float32Array(NBX),mFrom:new Float32Array(NBX),cmpA:1,cmpK:'',tmplA:1,tmplK:'',exA:0,lensT:new Float32Array(2*NE),by0T:new Float32Array(NE),ext:null,axMax:1,axShown:0,ticks:[],lens:new Float32Array(NBX),by0:new Float32Array(NBX),bh:new Float32Array(NBX),frac:0,moving:false,n:21,h:.5,tot:1,depth:G.DEPTH,depthT:G.DEPTH,landFade:0,proj:0,st:null,unit:1};
 const fmtInt=n=>Math.round(n).toLocaleString(S.lang==='fr'?'fr-FR':'de-DE').replace(/[  .]/g,' ');
 const fmtDec=(n,d)=>n.toLocaleString(S.lang==='fr'?'fr-FR':'de-DE',{minimumFractionDigits:d,maximumFractionDigits:d});
 const fmtMax=(n,d)=>n.toLocaleString(S.lang==='fr'?'fr-FR':'de-DE',{maximumFractionDigits:d});
@@ -325,6 +325,11 @@ function computeView(dt){
   if(!g5){popAt(c,yi,pA);popAt(c,yi+1,pB);extend(pA,eA);extend(pB,eB)}extend(cur,eC);V.ext=eC;
   if(V.prevYear!=null&&Math.abs(year-V.prevYear)>1e-5)V.moveT=.7;else V.moveT=Math.max(0,(V.moveT||0)-dt);V.prevYear=year;V.moving=V.moveT>0;
   U_YEAR.value=year;U_STRIPE.value+=((S.stripes?(V.moving?.17:.075):0)-U_STRIPE.value)*Math.min(1,dt*5);
+  // Übergang: wechselt das Bild sprunghaft (anderes Land, Anzahl ↔ Prozent, Jahressprung), gleiten die Balken in 0,9 s in die neue Länge
+  {const mk=S.c+'|'+S.mode+'|'+S.grp+'|'+(S.people?1:0),jump=V.my!=null&&Math.abs(year-V.my)>1.5&&performance.now()-(V.scrub||0)>400;
+    if(V.mk!=null&&(V.mk!==mk||jump)&&V.mk.split('|')[2]===String(S.grp)&&!S.people){V.mFrom.set(V.shown);V.mt=0}
+    V.mk=mk;V.my=year;if(V.mt<1)V.mt=Math.min(1,V.mt+dt/.9)}
+  const me=V.mt<1?ease(V.mt):1;
   for(let s=0;s<2;s++)for(let i=0;i<=NA;i++){                    // i = NA: die Neugeborenen des laufenden Jahres (nur bei einzelnen Jahrgängen)
     const k=i<NA?s*NA+i:NB+s;let len=0,y0=0,h=0,hi=0,age=i;
     if(i<V.n){let v;
@@ -335,6 +340,7 @@ function computeView(dt){
       if(co){const a0=g5?i*5:i,a1=g5?(i===20?100:i*5+4):i;if(byear(a1,year)<=co[1]&&byear(a0,year)>=co[0])hi=1}
       if(hv&&hv.i===i)hi=Math.max(hi,hv.s===s?.75:.35)}
     else if(i===NA&&!g5&&fr>.012){len=clamp(pB[s*NA]/den/V.axMax*G.XW,1e-4,G.XW*1.04);y0=0;h=fr*G.AH-gap;age=0}
+    if(me<1)len=V.mFrom[k]+(len-V.mFrom[k])*me;V.shown[k]=len;
     V.lens[k]=len;V.by0[k]=y0;V.bh[k]=h;
     _m4.makeScale((s?1:-1)*len,Math.max(h,1e-4),V.depth);_m4.setPosition((s?1:-1)*G.GAP,y0+gap/2,0);bars.setMatrixAt(k,_m4);
     barColor(s,age,_c);aCol.array[3*k]=_c.r;aCol.array[3*k+1]=_c.g;aCol.array[3*k+2]=_c.b;aHi.array[k]=hi}
@@ -350,30 +356,31 @@ function computeView(dt){
       barColor(s,100,_c);tCol.array[3*k]=_c.r;tCol.array[3*k+1]=_c.g;tCol.array[3*k+2]=_c.b;tHi.array[k]=hi}
     topBars.instanceMatrix.needsUpdate=true;tCol.needsUpdate=true;tHi.needsUpdate=true}
   // Überschuss
-  exBars.visible=S.excess&&!S.people;
+  V.exA+=((S.excess?1:0)-V.exA)*Math.min(1,dt*3.5);if(Math.abs((S.excess?1:0)-V.exA)<.003)V.exA=S.excess?1:0;exMat.uniforms.uStripe.value=U_STRIPE.value*(1-V.exA);
+  exBars.visible=(S.excess||V.exA>.003)&&!S.people;
   if(exBars.visible){for(let i=0;i<NA;i++){let x0=0,len=0,s=0,y0=0,h=0;
       if(i<V.n){const m=V.lens[i],f=V.lens[NA+i];s=f>m?1:0;x0=Math.min(m,f);len=Math.abs(f-m);y0=V.by0[i];h=V.bh[i];
         if(len>2e-4){const k=s*NA+i;_m4.makeScale((s?1:-1)*Math.max(x0,1e-4),Math.max(h,1e-4),V.depth);_m4.setPosition((s?1:-1)*G.GAP,y0+gap/2,0);bars.setMatrixAt(k,_m4)}}   // längerer Balken: nur bis zum Beginn des Überschusses
       if(len>2e-4&&h>0){_m4.makeScale((s?1:-1)*len,h,V.depth);_m4.setPosition((s?1:-1)*(G.GAP+x0),y0+gap/2,0)}else _m4.makeScale(0,0,0);exBars.setMatrixAt(i,_m4);   // kein Überschuss: nichts zeichnen (sonst läge eine Fläche auf dem Balkenende)
-      const cc=s?COL.fx:COL.mx;exCol.array[3*i]=cc.r;exCol.array[3*i+1]=cc.g;exCol.array[3*i+2]=cc.b}
+      barColor(s,g5?i*5+2:i,_c);_c.lerp(s?COL.fx:COL.mx,V.exA);exCol.array[3*i]=_c.r;exCol.array[3*i+1]=_c.g;exCol.array[3*i+2]=_c.b}
     for(let j=0;j<NT;j++){const i=NA+j;let x0=0,len=0,s=0,y0=0,h=0;
       if(topBars.visible){const m=V.lensT[j],f=V.lensT[NT+j];s=f>m?1:0;x0=Math.min(m,f);len=Math.abs(f-m);y0=V.by0T[j];h=G.AH-gap;
         if(len>2e-4&&x0>0){_m4.makeScale((s?1:-1)*x0,h,V.depth);_m4.setPosition((s?1:-1)*G.GAP,y0+gap/2,0);topBars.setMatrixAt(s*NT+j,_m4)}}
       if(len>2e-4){_m4.makeScale((s?1:-1)*len,h,V.depth);_m4.setPosition((s?1:-1)*(G.GAP+x0),y0+gap/2,0)}else _m4.makeScale(0,0,0);exBars.setMatrixAt(i,_m4);
-      const cc=s?COL.fx:COL.mx;exCol.array[3*i]=cc.r;exCol.array[3*i+1]=cc.g;exCol.array[3*i+2]=cc.b}
+      barColor(s,100,_c);_c.lerp(s?COL.fx:COL.mx,V.exA);exCol.array[3*i]=_c.r;exCol.array[3*i+1]=_c.g;exCol.array[3*i+2]=_c.b}
     exBars.instanceMatrix.needsUpdate=true;exCol.needsUpdate=true;bars.instanceMatrix.needsUpdate=true;topBars.instanceMatrix.needsUpdate=true}
   // Vergleich
   const zf=V.depth/2+.03;
   if(S.cmp){const cc=DATA.by[S.cmp],yy=clamp(S.cmpYear==null?year:S.cmpYear,cc.y0,cc.y1);popAt(cc,yy,cmpA);const tt=total(cmpA),d2=S.mode==='pct'?tt:1;
     let a=cmpA,n=NA;if(g5){group5(cmpA,cmp5);a=cmp5;n=21}
     const vals=new Float32Array(2*n);for(let k=0;k<2*n;k++)vals[k]=a[k]/d2;if(!g5)fix100(vals,n);
-    setOutline(cmpLine,vals,n,V.h,V.axMax,zf);cmpLine.visible=true;V.cmpYear=yy;V.cmpTot=tt}else cmpLine.visible=false;
+    setOutline(cmpLine,vals,n,V.h,V.axMax,zf);cmpLine.visible=true;{const k=S.cmp+S.mode+S.c+S.grp+(S.cmpYear==null?'':S.cmpYear);if(k!==V.cmpK){V.cmpK=k;V.cmpA=0}V.cmpA=Math.min(1,V.cmpA+dt/.7);cmpLine.material.opacity=.95*ease(V.cmpA)}V.cmpYear=yy;V.cmpTot=tt}else cmpLine.visible=false;
   // heller Umriss des aktuellen Jahres (im Zeitgebirge)
   if(V.landFade>.3&&S.view==='land'&&(g5||fr<.03||fr>.97)){const n=V.n,vals=new Float32Array(2*n);for(let k=0;k<2*n;k++)vals[k]=src[k]/den;if(!g5)fix100(vals,n);setOutline(nowLine,vals,n,V.h,V.axMax,zf);nowLine.visible=true}else nowLine.visible=false;
   // Idealform
   if(S.tmpl){const tp=S.tmpl==='auto'?shapeOf(V.st.base):S.tmpl,w=TEMPLATE[tp],n=V.n,vals=new Float32Array(2*n),sc=S.mode==='pct'?1:V.tot;
     for(let i=0;i<n;i++){let v=0;if(g5){if(i<20)for(let a=0;a<5;a++)v+=w[i*5+a];else v=w[100]}else v=w[i];vals[i]=vals[n+i]=v*sc}
-    setOutline(tmplLine,vals,n,V.h,V.axMax,zf+.02);tmplLine.visible=true;V.tmplType=tp}else tmplLine.visible=false;
+    setOutline(tmplLine,vals,n,V.h,V.axMax,zf+.02);tmplLine.visible=true;{const k=tp+S.c+S.mode+S.grp;if(k!==V.tmplK){V.tmplK=k;V.tmplA=0}V.tmplA=Math.min(1,V.tmplA+dt/.7);tmplLine.material.opacity=.95*ease(V.tmplA)}V.tmplType=tp}else tmplLine.visible=false;
   // Zeitgebirge
   const wantLand=(S.view==='land'||S.view==='side')&&!S.people;
   V.landFade+=((wantLand?1:0)-V.landFade)*Math.min(1,dt*4);
@@ -459,7 +466,7 @@ function fitDist(){ // Abstand, bei dem die ganze Pyramide in den freien Bereich
 function flyTo(name,dur){const v=VIEWS[name];if(!v)return;cam.fromP.copy(camera.position);cam.fromT.copy(controls.target);cam.toP.fromArray(v.p);cam.toT.fromArray(v.t);
   const f=fitDist()/29,k={front:f,oblique:f*1.1,side:f*1.2,land:Math.max(1,f*1.12),crowd:Math.max(1,f),floor:Math.max(1,f)}[name]||1;
   cam.toP.sub(cam.toT).multiplyScalar(k).add(cam.toT);
-  cam.a=name;cam.t0=performance.now();cam.dur=(dur==null?1.4:dur)*1000;if(cam.dur<=0){camera.position.copy(cam.toP);controls.target.copy(cam.toT);cam.a=null}}
+  cam.a=name;cam.t0=performance.now();cam.dur=(dur==null?(S.film?2.2:1.4):dur)*1000;if(cam.dur<=0){camera.position.copy(cam.toP);controls.target.copy(cam.toT);cam.a=null}}
 function camStep(now){if(!cam.a)return;const k=clamp((now-cam.t0)/cam.dur,0,1),e=ease(k);camera.position.lerpVectors(cam.fromP,cam.toP,e);controls.target.lerpVectors(cam.fromT,cam.toT,e);if(k>=1)cam.a=null}
 renderer.domElement.addEventListener('pointerdown',()=>{cam.a=null});
 

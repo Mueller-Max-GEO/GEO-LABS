@@ -6,174 +6,210 @@ Acht Kapitel. Jeder Absatz gehört zu einem Bild; nach jedem Absatz folgt eine k
 
 ### Kapitel 1 · Menschen zählen (`de_k01.mp3`)
 
-Luxemburg hat rund 670 000 Einwohner. Wie alt sind sie? Und wie viele sind Männer, wie viele Frauen?
+Luxemburg im Jahr 1994. Damals leben hier rund 400 000 Menschen. Jede Figur steht für etwa 570 von ihnen.
 
-Ein Bevölkerungsdiagramm ordnet alle Menschen eines Landes. Die Männer stehen links, die Frauen rechts. Jede Reihe ist eine Altersgruppe: vorn die Kinder, hinten die ältesten Menschen.
+Nun ordnen sie sich. Die Männer gehen nach links, die Frauen nach rechts. Dann stellen sich alle nach ihrem Alter in Reihen auf: vorn die Kinder, hinten die ältesten Menschen.
 
-Jetzt richtet sich das Bild auf. Die jüngsten Menschen stehen unten, die ältesten oben. Jede Figur steht für mehrere hundert Menschen.
+Jetzt richtet sich das Bild auf. Die jüngsten Menschen stehen unten, die ältesten oben. Jede Reihe ist eine Altersgruppe von fünf Jahren.
 
-Luxemburg von 1994 bis heute: Jedes Jahr werden alle ein Jahr älter. Wer eine Altersgrenze überschreitet, steigt in die nächste Reihe auf. Unten kommen Neugeborene dazu. Oben sterben Menschen.
+Nun läuft die Zeit, bis heute. Jedes Jahr werden alle ein Jahr älter. Wer eine Altersgrenze überschreitet, steigt eine Reihe höher. Unten kommen Neugeborene dazu, oben sterben Menschen. Und weil viele Menschen zuziehen, wächst Luxemburg auf rund 670 000 Einwohner.
 
-Aus den Reihen werden Balken. Je länger ein Balken ist, desto mehr Menschen gehören zu dieser Altersgruppe.
+Zum Schluss werden aus den Reihen Balken. Je länger ein Balken ist, desto mehr Menschen gehören zu dieser Altersgruppe. So entsteht ein Bevölkerungsdiagramm.
 
 ### Kapitel 2 · Das Diagramm lesen (`de_k02.mp3`)
 
-Die senkrechte Achse zeigt das Alter – in Stufen von fünf Jahren, von null bis über hundert.
+Wie liest man ein Bevölkerungsdiagramm? Zuerst die senkrechte Achse in der Mitte. Sie zeigt das Alter: unten null Jahre, oben hundert Jahre und mehr.
 
-Die waagrechte Achse zeigt die Anzahl der Menschen. Gezählt wird von der Mitte aus nach beiden Seiten: nach links die Männer, nach rechts die Frauen.
+Dann die waagrechte Achse. Sie zeigt die Anzahl der Menschen. Gezählt wird von der Mitte nach außen: links für die Männer, rechts für die Frauen.
 
-Ein Beispiel: Dieser Balken zeigt die Frauen zwischen 30 und 34 Jahren. Anfang 2024 sind es in Luxemburg rund 26 000.
+Ein Beispiel. Der markierte Balken zeigt die Frauen von 30 bis 34 Jahren. Wie viele es sind, liest man an der unteren Achse ab, genau dort, wo der Balken endet. Anfang 2024 sind es in Luxemburg rund 26 000.
 
-Zu jedem Bevölkerungsdiagramm gehören drei Angaben: das Land, das Jahr und die Einheit.
+Drei Angaben gehören zu jedem Diagramm: das Land, das Jahr und die Einheit. Erst mit ihnen ist ein Diagramm vollständig.
 
 ### Kapitel 3 · Anzahl und Prozent (`de_k03.mp3`)
 
-Die Balken können absolute Zahlen zeigen: so viele Menschen leben tatsächlich in jeder Altersgruppe.
+Bisher zeigen die Balken absolute Zahlen. Sie sagen, wie viele Menschen tatsächlich in jeder Altersgruppe leben.
 
-Deutschland hat mehr als hundertmal so viele Einwohner wie Luxemburg. Mit absoluten Zahlen passen beide Länder nicht in ein Bild.
+Zum Vergleich kommt Deutschland dazu, als orangefarbener Umriss. Deutschland hat über hundertmal so viele Einwohner. Der Umriss passt nicht einmal ins Bild.
 
-Deshalb gibt es eine zweite Darstellung: Prozent. Jeder Balken zeigt nun den Anteil der Altersgruppe an der gesamten Bevölkerung. Jetzt lassen sich die Formen vergleichen.
+Deshalb gibt es eine zweite Darstellung: Prozent. Jeder Balken zeigt jetzt, welcher Anteil der ganzen Bevölkerung in dieser Altersgruppe lebt. Nun lassen sich die beiden Formen vergleichen.
 
-Absolute Zahlen zeigen die Größe einer Bevölkerung. Prozentwerte zeigen ihren Aufbau.
+Kurz gesagt: Absolute Zahlen zeigen, wie groß eine Bevölkerung ist. Man braucht sie zum Planen, zum Beispiel für die Zahl der Schulplätze. Prozentwerte zeigen, wie eine Bevölkerung aufgebaut ist. Man braucht sie, um Länder unterschiedlicher Größe oder verschiedene Jahre zu vergleichen.
 
-### Kapitel 4 · Drei Grundformen (`de_k04.mp3`)
+### Kapitel 4 · Drei Altersgruppen (`de_k04.mp3`)
 
-Bevölkerungsdiagramme haben sehr unterschiedliche Formen. Drei Grundformen kommen immer wieder vor.
+Oft teilt man eine Bevölkerung in drei große Altersgruppen. Unten die Kinder und Jugendlichen unter 15 Jahren. In der Mitte die Menschen im erwerbsfähigen Alter, von 15 bis 64 Jahren. Oben die älteren Menschen ab 65 Jahren.
 
-Die Pyramide: eine breite Basis und eine schmale Spitze. Es werden viele Kinder geboren. Die Bevölkerung ist jung und wächst schnell. Ein Beispiel ist Niger.
+Warum ist diese Einteilung wichtig? Die mittlere Gruppe arbeitet und trägt den größten Teil von Steuern und Beiträgen. Damit werden auch Kinder und ältere Menschen versorgt: mit Schulen, Renten und Pflege.
 
-Die Glocke: Die Basis ist kaum breiter als die Mitte. Es werden weniger Kinder geboren, die Bevölkerung wächst nur noch langsam. Ein Beispiel ist Indien.
+Den Anteil einer Gruppe liest man in der Prozent-Darstellung ab. Dafür zählt man die Balken dieser Gruppe auf beiden Seiten zusammen. In Luxemburg ist etwa jeder Sechste jünger als 15 Jahre, das sind rund 16 Prozent.
 
-Die Urne: Die Basis ist schmaler als die Mitte. Es werden wenige Kinder geboren, und viele Menschen sind alt. Die Bevölkerung altert und kann schrumpfen. Ein Beispiel ist Japan.
+Hat ein Land außergewöhnlich viele Kinder, wie Niger, ist fast die Hälfte der Menschen jünger als 15 Jahre. Das Land braucht viele Schulen, Ärztinnen und Ärzte und später sehr viele Arbeitsplätze. Die Bevölkerung wächst schnell, denn die vielen Kinder bekommen später selbst Kinder.
 
-### Kapitel 5 · Luxemburg im Wandel (`de_k05.mp3`)
+Hat ein Land außergewöhnlich viele ältere Menschen, spricht man von Überalterung. In Japan ist fast jeder Dritte 65 Jahre oder älter. Es gibt mehr Menschen in Rente und mehr Pflegebedarf, aber immer weniger Menschen im erwerbsfähigen Alter, die dafür aufkommen.
 
-Luxemburg im Jahr 1880: eine Pyramide. In den Familien werden viele Kinder geboren, aber nur wenige Menschen werden alt.
+Die drei Altersgruppen zeigen also, wofür ein Land sorgen muss: für Schulen und Arbeitsplätze, oder für Renten und Pflege.
 
-Im zwanzigsten Jahrhundert wird die Basis schmaler: Es werden weniger Kinder geboren. Zwei Weltkriege und eine Wirtschaftskrise hinterlassen Kerben.
+### Kapitel 5 · Drei Grundformen (`de_k05.mp3`)
 
-Um 1960 folgt ein Babyboom. Danach sinkt die Zahl der Geburten wieder.
+In jedem Land sieht das Diagramm anders aus. Trotzdem lassen sich drei Grundformen unterscheiden. Entscheidend ist der Vergleich der Basis, also der Kinder, mit der Mitte des Diagramms.
 
-Seit den 1990er-Jahren wächst Luxemburg vor allem durch Zuwanderung. Viele Zugezogene sind junge Erwachsene. Deshalb ist das Diagramm heute in der Mitte am breitesten.
+Die erste Form ist die Pyramide. Die gestrichelte Linie zeigt ihre ideale Form: unten breit, oben schmal. Es werden viele Kinder geboren. Die Bevölkerung ist jung und wächst schnell. Ein Beispiel ist Niger in Westafrika.
 
-### Kapitel 6 · Spuren der Geschichte (`de_k06.mp3`)
+Die zweite Form ist die Glocke. Die Basis ist kaum breiter als die Mitte. Es werden weniger Kinder geboren. Die Bevölkerung wächst langsamer. Ein Beispiel ist Indien.
 
-Ein Bevölkerungsdiagramm ist auch ein Geschichtsbuch. Deutschland im Jahr 1950, jetzt mit einzelnen Jahrgängen.
+Die dritte Form ist die Urne. Die Basis ist schmaler als die Mitte. Es werden wenige Kinder geboren, und viele Menschen sind alt. Die Bevölkerung altert und kann schrumpfen. Ein Beispiel ist Japan.
 
-Diese Kerben zeigen Jahre, in denen wenige Kinder geboren wurden: im Ersten Weltkrieg, in der Weltwirtschaftskrise und am Ende des Zweiten Weltkriegs.
+Pyramide, Glocke, Urne: Die Form zeigt, ob eine Bevölkerung jung ist und wächst, oder alt ist und schrumpft.
 
-Auf der Männerseite fehlen viele Männer. Sie sind im Zweiten Weltkrieg gefallen.
+### Kapitel 6 · Luxemburg im Wandel (`de_k06.mp3`)
 
-Mit jedem Jahr rücken alle Jahrgänge eine Stufe nach oben. Die Kerben wandern mit. Unten wächst der Babyboom heran.
+Nun zurück nach Luxemburg, diesmal fast 150 Jahre in die Vergangenheit. Im Jahr 1880 ist das Diagramm eine Pyramide: viele Kinder, wenige alte Menschen.
 
-Nicht jede Kerbe ist die Spur eines Krieges. Auch Wirtschaftskrisen, politische Entscheidungen und Wanderungen verändern die Form.
+Im zwanzigsten Jahrhundert werden weniger Kinder geboren. Die Basis wird schmaler. Die beiden Weltkriege und eine Wirtschaftskrise hinterlassen Kerben.
 
-### Kapitel 7 · Jahrgänge und Zukunft (`de_k07.mp3`)
+Um 1960 werden wieder mehr Kinder geboren. Man spricht vom Babyboom. Danach sinkt die Zahl der Geburten erneut.
 
-Stellt man die Diagramme aller Jahre hintereinander, entsteht ein Gebirge aus Zeit.
+Seit etwa 1990 wächst Luxemburg vor allem durch Zuwanderung. Viele Zugezogene sind junge Erwachsene. Deshalb ist das Diagramm heute in der Mitte am breitesten.
 
-Die hellen, schrägen Linien sind Jahrgänge. Gelb markiert ist der Jahrgang 1964, der stärkste in Deutschland.
+### Kapitel 7 · Spuren der Geschichte (`de_k07.mp3`)
+
+Bisher stand jeder Balken für fünf Jahrgänge. Jetzt steht jeder Balken für einen einzigen Jahrgang. So werden feine Spuren sichtbar. Das Beispiel ist Deutschland im Jahr 1950.
+
+Die Kerben zeigen Jahrgänge mit wenigen Geburten: im Ersten Weltkrieg, in der Weltwirtschaftskrise und am Ende des Zweiten Weltkriegs.
+
+Bei den älteren Männern fehlt ein großer Teil. Viele Männer sind im Zweiten Weltkrieg gestorben. Der farblich abgesetzte Teil zeigt, wo die Frauen in der Überzahl sind.
+
+Nun läuft die Zeit weiter. Jedes Jahr rücken alle Jahrgänge eine Stufe nach oben, und die Kerben wandern mit. Unten wächst der Babyboom heran.
+
+Nicht jede Kerbe stammt von einem Krieg. Auch Krisen, politische Entscheidungen und Wanderungen verändern die Form.
+
+### Kapitel 8 · Jahrgänge und Zukunft (`de_k08.mp3`)
+
+Stellt man die Diagramme aller Jahre hintereinander, entsteht ein Gebirge aus Zeit. Vorn steht das Jahr 2024, dahinter die Vergangenheit.
+
+Von der Seite gesehen werden die Jahrgänge zu schrägen Linien. Hervorgehoben ist der Jahrgang 1964, der geburtenstärkste in Deutschland.
 
 Alle Menschen, die heute leben, werden jedes Jahr ein Jahr älter. Deshalb lässt sich die Zukunft ein Stück weit berechnen. Das Ergebnis heißt Projektion.
 
 Eine Projektion ist keine Vorhersage. Sie zeigt, was geschieht, wenn sich Geburten, Sterbefälle und Wanderungen so entwickeln wie angenommen.
 
-### Kapitel 8 · Der demografische Übergang (`de_k08.mp3`)
+### Kapitel 9 · Der demografische Übergang (`de_k09.mp3`)
 
-Warum verändern sich die Formen? Entscheidend sind zwei Größen: die Geburtenrate und die Sterberate.
+Warum verändern sich die Formen? Entscheidend sind zwei Werte: die Geburtenrate und die Sterberate, jeweils je tausend Einwohner. Die Grafik zeigt beide Kurven.
 
-Frankreich um 1820: Beide Raten sind hoch. Viele Kinder werden geboren, aber viele Menschen sterben früh. Das Diagramm ist eine Pyramide.
+Frankreich um 1820. Beide Raten sind hoch. Es werden viele Kinder geboren, aber viele Menschen sterben früh. Das Diagramm ist eine Pyramide.
 
-In zweihundert Jahren sinken beide Raten: die Sterberate durch bessere Ernährung, Hygiene und Medizin, die Geburtenrate, weil die Familien weniger Kinder bekommen. Die Basis wird schmaler.
+In den folgenden zweihundert Jahren sinken beide Raten. Zuerst die Sterberate, dank besserer Ernährung, Hygiene und Medizin. Später die Geburtenrate, weil die Familien weniger Kinder bekommen. Die Basis wird schmaler.
 
-Heute sind beide Raten niedrig. Die Bevölkerung wächst kaum noch und wird älter. Diesen Wandel nennt man demografischen Übergang.
+Heute sind beide Raten niedrig. Die Bevölkerung wächst kaum noch und wird älter. Diesen Wandel nennt man den demografischen Übergang.
 
-Ein Bevölkerungsdiagramm zeigt also drei Dinge: den Aufbau einer Bevölkerung, ihre Geschichte und einen Blick in ihre Zukunft. Probier es jetzt selbst aus.
+Das Modell fasst den Ablauf in vier Abschnitte. Vor dem Übergang sind beide Raten hoch. In Phase eins sinkt die Sterberate, die Geburtenrate bleibt aber hoch: Die Bevölkerung wächst sehr schnell. In Phase zwei sinkt auch die Geburtenrate, und das Wachstum wird kleiner. Nach dem Übergang sind beide Raten niedrig. Die grüne Fläche zwischen den Kurven ist das natürliche Wachstum.
+
+Ein Bevölkerungsdiagramm zeigt also drei Dinge: wie eine Bevölkerung aufgebaut ist, was sie erlebt hat und wohin sie sich entwickeln könnte. Probier es jetzt selbst aus.
 
 ## Français
 
 ### Chapitre 1 · Compter une population (`fr_k01.mp3`)
 
-Le Luxembourg compte environ 670 000 habitants. Quel âge ont-ils ? Combien sont des hommes, combien des femmes ?
+Le Luxembourg en 1994. Environ 400 000 personnes y vivent alors. Chaque figurine en représente environ 570.
 
-Une pyramide des âges range tous les habitants d’un pays. Les hommes sont à gauche, les femmes à droite. Chaque rangée est une classe d’âge : devant les enfants, derrière les personnes les plus âgées.
+Elles se rangent maintenant. Les hommes vont à gauche, les femmes à droite. Puis chacun se place en rangées selon son âge : devant les enfants, derrière les personnes les plus âgées.
 
-L’image se redresse. Les plus jeunes sont en bas, les plus âgés en haut. Chaque figurine représente plusieurs centaines de personnes.
+L’image se redresse. Les plus jeunes sont en bas, les plus âgés en haut. Chaque rangée est une classe d’âge de cinq ans.
 
-Le Luxembourg de 1994 à aujourd’hui : chaque année, tout le monde vieillit d’un an. Ceux qui franchissent une limite d’âge montent dans la rangée suivante. En bas arrivent les nouveau-nés. En haut, des personnes meurent.
+Le temps passe, jusqu’à aujourd’hui. Chaque année, tout le monde vieillit d’un an. Celui qui franchit une limite d’âge monte d’une rangée. En bas arrivent les nouveau-nés, en haut des personnes meurent. Et comme beaucoup de personnes s’installent au pays, le Luxembourg atteint environ 670 000 habitants.
 
-Les rangées deviennent des barres. Plus une barre est longue, plus cette classe d’âge est nombreuse.
+Pour finir, les rangées deviennent des barres. Plus une barre est longue, plus cette classe d’âge est nombreuse. Voilà une pyramide des âges.
 
 ### Chapitre 2 · Lire le diagramme (`fr_k02.mp3`)
 
-L’axe vertical indique l’âge, par tranches de cinq ans, de zéro à plus de cent ans.
+Comment lire une pyramide des âges ? D’abord l’axe vertical, au milieu. Il indique l’âge : en bas zéro an, en haut cent ans et plus.
 
-L’axe horizontal indique le nombre de personnes. On compte à partir du centre : à gauche les hommes, à droite les femmes.
+Ensuite l’axe horizontal. Il indique le nombre de personnes. On compte à partir du centre vers l’extérieur : à gauche les hommes, à droite les femmes.
 
-Un exemple : cette barre représente les femmes de 30 à 34 ans. Début 2024, elles sont environ 26 000 au Luxembourg.
+Un exemple. La barre marquée représente les femmes de 30 à 34 ans. Leur nombre se lit sur l’axe du bas, exactement là où la barre s’arrête. Début 2024, elles sont environ 26 000 au Luxembourg.
 
-Toute pyramide des âges comporte trois indications : le pays, l’année et l’unité.
+Trois indications accompagnent chaque diagramme : le pays, l’année et l’unité. Sans elles, un diagramme n’est pas complet.
 
 ### Chapitre 3 · Effectifs et pourcentages (`fr_k03.mp3`)
 
-Les barres peuvent représenter des effectifs : le nombre réel de personnes de chaque classe d’âge.
+Jusqu’ici, les barres montrent des effectifs. Elles indiquent combien de personnes vivent réellement dans chaque classe d’âge.
 
-L’Allemagne compte plus de cent fois plus d’habitants que le Luxembourg. En valeurs absolues, les deux pays ne tiennent pas sur la même image.
+Pour comparer, l’Allemagne apparaît en contour orange. Elle compte plus de cent fois plus d’habitants. Son contour ne tient même pas dans l’image.
 
-Il existe donc une seconde représentation : les pourcentages. Chaque barre indique la part de la classe d’âge dans la population totale. On peut alors comparer les formes.
+Il existe donc une seconde représentation : les pourcentages. Chaque barre indique maintenant la part de la population totale qui vit dans cette classe d’âge. On peut alors comparer les deux formes.
 
-Les effectifs montrent la taille d’une population. Les pourcentages montrent sa structure.
+En bref : les effectifs montrent la taille d’une population. On en a besoin pour planifier, par exemple le nombre de places dans les écoles. Les pourcentages montrent la structure d’une population. On en a besoin pour comparer des pays de tailles différentes ou des années différentes.
 
-### Chapitre 4 · Trois formes de base (`fr_k04.mp3`)
+### Chapitre 4 · Trois grands groupes d’âge (`fr_k04.mp3`)
 
-Les pyramides des âges ont des formes très différentes. Trois formes de base reviennent souvent.
+On divise souvent une population en trois grands groupes d’âge. En bas, les enfants et les jeunes de moins de 15 ans. Au milieu, les personnes en âge de travailler, de 15 à 64 ans. En haut, les personnes âgées de 65 ans et plus.
 
-La pyramide : une base large et un sommet étroit. Les naissances sont nombreuses. La population est jeune et augmente vite. Le Niger en est un exemple.
+Pourquoi cette division est-elle importante ? Le groupe du milieu travaille et paie la plus grande partie des impôts et des cotisations. Cela permet aussi de prendre en charge les enfants et les personnes âgées : écoles, pensions et soins.
 
-La cloche : la base est à peine plus large que le milieu. Les naissances diminuent, la population augmente lentement. L’Inde en est un exemple.
+La part d’un groupe se lit en pourcentages. Il suffit d’additionner les barres de ce groupe des deux côtés. Au Luxembourg, environ une personne sur six a moins de 15 ans, soit environ 16 pour cent.
 
-L’urne : la base est plus étroite que le milieu. Les naissances sont peu nombreuses et les personnes âgées nombreuses. La population vieillit et peut diminuer. Le Japon en est un exemple.
+Quand un pays a exceptionnellement beaucoup d’enfants, comme le Niger, presque la moitié de la population a moins de 15 ans. Le pays a besoin de nombreuses écoles, de médecins et plus tard de très nombreux emplois. La population augmente vite, car ces enfants auront à leur tour des enfants.
 
-### Chapitre 5 · Le Luxembourg change (`fr_k05.mp3`)
+Quand un pays a exceptionnellement beaucoup de personnes âgées, on parle de vieillissement de la population. Au Japon, presque une personne sur trois a 65 ans ou plus. Il y a plus de retraités et plus de besoins en soins, mais de moins en moins de personnes en âge de travailler pour les financer.
 
-Le Luxembourg en 1880 : une pyramide. Les familles ont beaucoup d’enfants, mais peu de personnes atteignent un âge élevé.
+Les trois grands groupes d’âge montrent donc à quoi un pays doit pourvoir : aux écoles et aux emplois, ou aux pensions et aux soins.
 
-Au vingtième siècle, la base se rétrécit : les naissances diminuent. Deux guerres mondiales et une crise économique laissent des creux.
+### Chapitre 5 · Trois formes de base (`fr_k05.mp3`)
 
-Vers 1960 arrive un baby-boom. Ensuite, les naissances diminuent de nouveau.
+Dans chaque pays, le diagramme a une autre allure. On distingue pourtant trois formes de base. Ce qui compte, c’est la comparaison entre la base, c’est-à-dire les enfants, et le milieu du diagramme.
 
-Depuis les années 1990, le Luxembourg grandit surtout grâce à l’immigration. Beaucoup d’arrivants sont de jeunes adultes. C’est pourquoi le diagramme est aujourd’hui le plus large au milieu.
+La première forme est la pyramide. La ligne pointillée montre sa forme idéale : large en bas, étroite en haut. Les naissances sont nombreuses. La population est jeune et augmente vite. Le Niger, en Afrique de l’Ouest, en est un exemple.
 
-### Chapitre 6 · Les traces de l’histoire (`fr_k06.mp3`)
+La deuxième forme est la cloche. La base est à peine plus large que le milieu. Les naissances diminuent. La population augmente plus lentement. L’Inde en est un exemple.
 
-Une pyramide des âges est aussi un livre d’histoire. L’Allemagne en 1950, cette fois année d’âge par année d’âge.
+La troisième forme est l’urne. La base est plus étroite que le milieu. Les naissances sont peu nombreuses et beaucoup de personnes sont âgées. La population vieillit et peut diminuer. Le Japon en est un exemple.
 
-Ces creux indiquent des années où les naissances ont été peu nombreuses : pendant la Première Guerre mondiale, pendant la crise économique mondiale et à la fin de la Seconde Guerre mondiale.
+Pyramide, cloche, urne : la forme montre si une population est jeune et augmente, ou âgée et diminue.
 
-Du côté des hommes, beaucoup manquent. Ils sont morts pendant la Seconde Guerre mondiale.
+### Chapitre 6 · Le Luxembourg change (`fr_k06.mp3`)
 
-Chaque année, toutes les générations montent d’un cran. Les creux se déplacent avec elles. En bas, le baby-boom grandit.
+Retour au Luxembourg, cette fois près de 150 ans en arrière. En 1880, le diagramme est une pyramide : beaucoup d’enfants, peu de personnes âgées.
 
-Un creux n’est pas toujours la trace d’une guerre. Les crises économiques, les décisions politiques et les migrations modifient aussi la forme.
+Au vingtième siècle, les naissances diminuent. La base se rétrécit. Les deux guerres mondiales et une crise économique laissent des creux.
 
-### Chapitre 7 · Générations et avenir (`fr_k07.mp3`)
+Vers 1960, les naissances augmentent de nouveau. On parle de baby-boom. Ensuite, elles diminuent encore.
 
-Si l’on place les diagrammes de toutes les années les uns derrière les autres, on obtient un relief du temps.
+Depuis 1990 environ, le Luxembourg grandit surtout grâce à l’immigration. Beaucoup d’arrivants sont de jeunes adultes. C’est pourquoi le diagramme est aujourd’hui le plus large au milieu.
 
-Les lignes claires obliques sont des générations. En jaune : la génération 1964, la plus nombreuse d’Allemagne.
+### Chapitre 7 · Les traces de l’histoire (`fr_k07.mp3`)
+
+Jusqu’ici, chaque barre représentait cinq générations. Maintenant, chaque barre représente une seule année de naissance. Des traces fines apparaissent. L’exemple est l’Allemagne en 1950.
+
+Les creux montrent des générations peu nombreuses : pendant la Première Guerre mondiale, pendant la crise économique mondiale et à la fin de la Seconde Guerre mondiale.
+
+Chez les hommes âgés, une grande partie manque. Beaucoup d’hommes sont morts pendant la Seconde Guerre mondiale. La partie de couleur différente montre où les femmes sont plus nombreuses.
+
+Le temps continue. Chaque année, toutes les générations montent d’un cran, et les creux se déplacent avec elles. En bas, le baby-boom grandit.
+
+Un creux n’est pas toujours la trace d’une guerre. Les crises, les décisions politiques et les migrations modifient aussi la forme.
+
+### Chapitre 8 · Générations et avenir (`fr_k08.mp3`)
+
+Si l’on place les diagrammes de toutes les années les uns derrière les autres, on obtient un relief du temps. Devant se trouve l’année 2024, derrière le passé.
+
+Vues de côté, les générations deviennent des lignes obliques. En évidence : la génération 1964, la plus nombreuse d’Allemagne.
 
 Toutes les personnes qui vivent aujourd’hui vieillissent d’un an chaque année. On peut donc calculer une partie de l’avenir. Le résultat s’appelle une projection.
 
 Une projection n’est pas une prévision. Elle montre ce qui se passe si les naissances, les décès et les migrations évoluent comme supposé.
 
-### Chapitre 8 · La transition démographique (`fr_k08.mp3`)
+### Chapitre 9 · La transition démographique (`fr_k09.mp3`)
 
-Pourquoi les formes changent-elles ? Deux grandeurs sont décisives : le taux de natalité et le taux de mortalité.
+Pourquoi les formes changent-elles ? Deux valeurs sont décisives : le taux de natalité et le taux de mortalité, chacun pour mille habitants. Le graphique montre les deux courbes.
 
-La France vers 1820 : les deux taux sont élevés. Les naissances sont nombreuses, mais beaucoup de personnes meurent jeunes. Le diagramme est une pyramide.
+La France vers 1820. Les deux taux sont élevés. Les naissances sont nombreuses, mais beaucoup de personnes meurent jeunes. Le diagramme est une pyramide.
 
-En deux cents ans, les deux taux baissent : la mortalité grâce à une meilleure alimentation, à l’hygiène et à la médecine, la natalité parce que les familles ont moins d’enfants. La base se rétrécit.
+Pendant les deux cents années suivantes, les deux taux baissent. D’abord la mortalité, grâce à une meilleure alimentation, à l’hygiène et à la médecine. Ensuite la natalité, parce que les familles ont moins d’enfants. La base se rétrécit.
 
 Aujourd’hui, les deux taux sont faibles. La population n’augmente presque plus et vieillit. Ce changement s’appelle la transition démographique.
 
-Une pyramide des âges montre donc trois choses : la structure d’une population, son histoire et un regard vers son avenir. À vous d’essayer maintenant.
+Le modèle résume ce déroulement en quatre étapes. Avant la transition, les deux taux sont élevés. Pendant la phase un, la mortalité baisse, mais la natalité reste élevée : la population augmente très vite. Pendant la phase deux, la natalité baisse aussi, et la croissance ralentit. Après la transition, les deux taux sont faibles. La surface verte entre les courbes est l’accroissement naturel.
+
+Une pyramide des âges montre donc trois choses : la structure d’une population, ce qu’elle a vécu et son évolution possible. À vous d’essayer maintenant.

@@ -3,7 +3,7 @@
 3D-Labor für den Geographieunterricht (4C, auch 7e/6e): Wie liest man ein Bevölkerungsdiagramm, welche
 Grundformen gibt es (Pyramide, Glocke, Urne) und was bedeuten sie? Echte Daten für Luxemburg ab 1880 und
 15 weitere Länder bis 2100, Jahre stufenlos verstellbar, Anzahl oder Prozent, 5-Jahres-Gruppen oder einzelne
-Jahrgänge. Mit Lernweg (10 Stationen + freier Modus), Erklärfilm in 8 Kapiteln (Untertitel, Sprecherstimme
+Jahrgänge. Mit Lernweg (10 Stationen + freier Modus), Erklärfilm in 9 Kapiteln (Untertitel, Sprecherstimme
 des Browsers), Quiz, Figuren-Modus, Zeitgebirge, Diagramm der Geburten- und Sterberate mit Modell des
 demografischen Übergangs. Deutsch und Französisch.
 

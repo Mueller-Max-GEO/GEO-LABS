@@ -3,7 +3,7 @@
    Kapitel mit Sprecherstimme (Sprachausgabe des Browsers) und Untertiteln. Am Ende jedes Kapitels wartet der Film.
    Aufgenommene Stimmen: window.__NARR_AUDIO['de_k01'] = Adresse oder Daten-URI einer MP3-Datei (optional).
    ========================================================================== */
-const PARA_GAP=1.9,SENT_GAP=.3,LEAD=1.0,TAIL=1.6,WPS={de:2.2,fr:2.6};
+const PARA_GAP=2.6,SENT_GAP=.45,LEAD=1.3,TAIL=2.4,WPS={de:2.05,fr:2.45};   // ruhiges Tempo: Pausen zwischen Sätzen und Absätzen, damit das Bild wirken kann
 const FILM={i:0,t:0,dur:1,items:[],pS:[],paused:false,atEnd:false,voice:lsGet('geogym-pyr-voice')!=='off',gen:0,spoken:-1,busy:false,para:-1,saved:null,audio:null,useAudio:false,noAudio:{},hasAudio:{},tryAudio:false,utt:null};
 const synthOK=()=>'speechSynthesis' in window&&typeof SpeechSynthesisUtterance!=='undefined';
 function sentences(p,lang){const out=[];let cur='';for(let i=0;i<p.length;i++){const ch=p[i];cur+=ch;if('.!?'.includes(ch)&&p[i+1]===' '&&!(/[0-9]/.test(p[i-1]||'')&&ch==='.')){out.push(cur.trim());cur=''}}if(cur.trim())out.push(cur.trim());return out}
@@ -25,7 +25,7 @@ function voiceFail(why){VO.fails++;if(!VO.told){VO.told=true;toast('<b>'+T('voic
 // n: 0 erster Versuch · 1 derselbe Satz noch einmal · 2 mit der Standardstimme des Systems
 function speak(i,n){const it=FILM.items[i];FILM.spoken=i;if(!FILM.voice||FILM.useAudio||!synthOK())return;n=n||0;
   const g=FILM.gen,u=new SpeechSynthesisUtterance(it.text),v=VO.noPick?null:pickVoice(S.lang);let started=false,ended=false;
-  u.lang=S.lang==='fr'?'fr-FR':'de-DE';if(v)u.voice=v;u.rate=.96;u.volume=1;u.pitch=1;FILM.busy=true;FILM.utt=u;   // Verweis halten: Chrome verwirft Äußerungen sonst vorzeitig
+  u.lang=S.lang==='fr'?'fr-FR':'de-DE';if(v)u.voice=v;u.rate=.92;u.volume=1;u.pitch=1;FILM.busy=true;FILM.utt=u;   // Verweis halten: Chrome verwirft Äußerungen sonst vorzeitig
   u.onstart=()=>{started=true;VO.heard=true;VO.fails=0;VO.dead=false};
   u.onend=()=>{ended=true;if(g===FILM.gen&&FILM.utt===u)FILM.busy=false};
   u.onerror=e=>{ended=true;if(g!==FILM.gen||FILM.utt!==u)return;FILM.busy=false;const w=e&&e.error;if(w&&!/interrupted|canceled|cancelled/.test(w))voiceFail(w)};
@@ -38,26 +38,30 @@ function speak(i,n){const it=FILM.items[i];FILM.spoken=i;if(!FILM.voice||FILM.us
 const st=p=>setS(p,true);
 const yr=(a,b,k)=>{S.year=lerp(a,b,smooth(clamp(k,0,1)))};
 const hl=c=>{app.classList.remove('hl-age','hl-axis','hl-title');if(c)app.classList.add(c)};
-const BASE={people:false,cmp:null,cmpYear:null,tmpl:null,cohort:null,rates:false,events:false,groups:false,excess:false,birth:false,fixed:true,chartMode:'land'};
+const BASE={people:false,cmp:null,cmpYear:null,tmpl:null,cohort:null,rates:false,events:false,groups:false,excess:false,birth:false,fixed:true,chartMode:'land',modelPh:null};
+const kk=(k,a,b)=>clamp((k-a)/(b-a),0,1);   // Bewegung erst starten, wenn die Kamera angekommen ist, und kurz vor dem Absatzende fertig sein
+// Jedes Kapitel: enter() stellt das Bild ein (unter einer weichen Einblendung), para(p) wechselt mit jedem Absatz, tick(p,k) bewegt innerhalb des Absatzes (k = 0 … 1)
 const SHOTS=[
-{enter(){st(Object.assign({},BASE,{c:'LU',year:2024,mode:'abs',grp:5,people:true,pstage:0,view:'crowd'}));fig.p=0;fig.snap=true},
- para(p){if(p===1)st({pstage:1,view:'floor'});if(p===2)st({pstage:2,view:'oblique'});if(p===3)st({year:1994});if(p===4)st({year:2024,people:false,view:'front'})},
- tick(p,k){if(p===3)yr(1994,2024,k)}},
+{enter(){st(Object.assign({},BASE,{c:'LU',year:1994,mode:'abs',grp:5,people:true,pstage:0,view:'crowd'}));fig.p=0;fig.snap=true},
+ para(p){if(p===1)st({pstage:1,view:'floor'});if(p===2)st({pstage:2,view:'oblique'});if(p===4)st({people:false,grp:5,view:'front'})},
+ tick(p,k){if(p<3)S.year=1994;if(p===3)yr(1994,2024,kk(k,.12,.95));if(p===4)S.year=2024}},
 {enter(){st(Object.assign({},BASE,{c:'LU',year:2024,mode:'abs',grp:5,view:'front'}))},
  para(p){hl(p===0?'hl-age':p===1?'hl-axis':p===3?'hl-title':null);S.hover=p===2?{s:1,i:6}:null;if(p!==2)showTip(null)},
  tick(p){if(p===2){const v=new THREE.Vector3(G.GAP+V.lens[NA+6]+.1,6.5*.5,V.depth/2),o={};project(v,o);const r=stage.getBoundingClientRect();showTip({s:1,i:6},{clientX:r.left+o.x,clientY:r.top+o.y-60})}},leave(){hl(null);S.hover=null;showTip(null)}},
 {enter(){st(Object.assign({},BASE,{c:'LU',year:2024,mode:'abs',grp:5,view:'front'}))},
- para(p){if(p===1)st({cmp:'DE'});if(p===2)st({mode:'pct'});if(p===3)st({cmp:null})}},
+ para(p){if(p===1)st({cmp:'DE'});if(p===2)st({mode:'pct'})},leave(){st({cmp:null})}},
+{enter(){st(Object.assign({},BASE,{c:'LU',year:2024,mode:'pct',grp:5,view:'front',groups:true}))},
+ para(p){if(p===3)st({c:'NE'});if(p===4)st({c:'JP'});if(p===5)st({c:'LU'})}},
 {enter(){st(Object.assign({},BASE,{c:'LU',year:2024,mode:'pct',grp:5,view:'front'}))},
- para(p){if(p===1)st({c:'NE',year:2024,tmpl:'pyr'});if(p===2)st({c:'IN',year:2024,tmpl:'bell'});if(p===3)st({c:'JP',year:2024,tmpl:'urn'})}},
+ para(p){if(p===1)st({c:'NE',tmpl:'pyr'});if(p===2)st({c:'IN',tmpl:'bell'});if(p===3)st({c:'JP',tmpl:'urn'})}},
 {enter(){st(Object.assign({},BASE,{c:'LU',year:1880,mode:'abs',grp:5,view:'front',events:true}))},
- tick(p,k){if(p===0)S.year=1880;if(p===1)yr(1880,1950,k);if(p===2)yr(1950,1985,k);if(p===3)yr(1985,2024,k*1.25)}},
+ tick(p,k){if(p===0)S.year=1880;if(p===1)yr(1880,1950,kk(k,.05,.95));if(p===2)yr(1950,1985,kk(k,.05,.95));if(p===3)yr(1985,2024,kk(k,.05,.85))}},
 {enter(){st(Object.assign({},BASE,{c:'DE',year:1950,mode:'abs',grp:1,view:'front',events:true}))},
- para(p){if(p===2)st({excess:true})},tick(p,k){if(p<3)S.year=1950;if(p===3)yr(1950,1975,k);if(p===4)yr(1975,2024,k)}},
+ para(p){if(p===2)st({excess:true});if(p===3)st({excess:false})},tick(p,k){if(p<3)S.year=1950;if(p===3)yr(1950,1975,kk(k,.1,.95));if(p===4)yr(1975,2024,kk(k,.05,.9))}},
 {enter(){st(Object.assign({},BASE,{c:'DE',year:2024,mode:'abs',grp:1,view:'land'}))},
- para(p){if(p===1)st({cohort:[1964,1964],view:'side'});if(p===2)st({view:'land'})},tick(p,k){if(p<2)S.year=2024;if(p===2)yr(2024,2060,k);if(p===3)S.year=2060}},
+ para(p){if(p===1)st({cohort:[1964,1964],view:'side'});if(p===2)st({view:'land'});if(p===3)st({view:'front'})},tick(p,k){if(p<2)S.year=2024;if(p===2)yr(2024,2060,kk(k,.2,.95));if(p===3)S.year=2060}},
 {enter(){st(Object.assign({},BASE,{c:'FR',year:1820,mode:'pct',grp:5,view:'front',rates:true,tmpl:'auto'}))},
- para(p){if(p===4)st({rates:false,tmpl:null})},tick(p,k){if(p<2)S.year=1820;if(p===2)yr(1820,2024,k);if(p>=3)S.year=2024}}];
+ para(p){if(p===4)st({chartMode:'model',tmpl:null});if(p===5)S.modelPh=null},tick(p,k){if(p<2)S.year=1820;if(p===2)yr(1820,2024,kk(k,.05,.95));if(p>=3)S.year=2024;if(p===4)S.modelPh=k<.12?null:Math.min(3,Math.floor((k-.12)/.88*4.2))}}];   // Phasenmarke wandert mit der Erklärung
 function filmPrep(){
   const ch=(FILM_TXT[S.lang]||FILM_TXT.de)[FILM.i],w=WPS[S.lang]||2.3;narrStop();FILM.items=[];FILM.pS=[];let t=LEAD;
   ch.p.forEach((para,p)=>{if(p)t+=PARA_GAP-SENT_GAP;FILM.pS.push(t);sentences(para,S.lang).forEach(s=>{const len=.4+s.split(/\s+/).length/w;FILM.items.push({text:s,p,t0:t,len});t+=len+SENT_GAP})});
@@ -73,7 +77,7 @@ function filmAudio(){
   try{const p=a.play();if(p&&p.then)p.then(()=>{if(g!==FILM.gen){a.pause();return}if(!isFinite(a.duration)||a.duration<2){a.pause();fail();return}
       FILM.useAudio=true;FILM.hasAudio[lang]=true;FILM.tryAudio=false;FILM.busy=false;synthCancel();FILM.aScale=(FILM.dur-LEAD-TAIL)/a.duration}).catch(fail)}catch(e){fail()}
   return !!(own||FILM.hasAudio[lang])}     // true: Aufnahme wird erwartet -> Sprachausgabe wartet
-function filmGo(i,click){const prev=SHOTS[FILM.i];if(prev&&prev.leave)prev.leave();hl(null);FILM.i=clamp(i,0,SHOTS.length-1);S.playing=false;filmPrep();SHOTS[FILM.i].enter();
+function filmGo(i,click){const prev=SHOTS[FILM.i];if(prev&&prev.leave)prev.leave();hl(null);FILM.i=clamp(i,0,SHOTS.length-1);S.playing=false;filmPrep();filmFade();SHOTS[FILM.i].enter();flyTo(S.view,0);fig.snap=true;V.mt=1;V.mk=null;
   FILM.tryAudio=filmAudio();
   // Der erste Satz startet direkt im Klick: Safari und iPad erlauben Ton nur als Antwort auf eine Bedienung
   if(click&&FILM.voice&&!FILM.tryAudio&&synthOK()){FILM.t=FILM.items[0].t0;speak(0)}
@@ -91,7 +95,9 @@ function filmNav(){const n=SHOTS.length;let h=`<button data-f="prev" aria-label=
   const vs=voicesFor(S.lang);if(FILM.voice&&vs.length>1&&!FILM.useAudio){const curV=VO.noPick?null:pickVoice(S.lang);
     h+=`<select class="sel" id="cVoiceSel" aria-label="${T('cVoicePick')}"><option value="">${T('cVoiceAuto')}</option>${vs.map(v=>`<option value="${esc(v.name).replace(/"/g,'&quot;')}"${VO.pref[S.lang]===v.name?' selected':''}>${esc(v.name)}${curV&&curV.name===v.name&&!VO.pref[S.lang]?' ✓':''}</option>`).join('')}</select>`}
   h+=`<button data-f="end"${FILM.atEnd&&FILM.i===n-1?' class="next pulse"':''}>${T('cEnd')}</button>`;$('cnav').innerHTML=h}
-function filmCap(){const ch=(FILM_TXT[S.lang]||FILM_TXT.de)[FILM.i],it=FILM.items[Math.max(0,FILM.spoken)];const h=`<small>${T('cChap',FILM.i+1,ch.t)}</small>${FILM.spoken<0?'':esc(it.text)}`;if(filmCap.h!==h){filmCap.h=h;$('cap').innerHTML=h}}
+// Kapitelwechsel: das Bild blendet weich aus dem Hintergrund ein (verdeckt Kamerasprung und Umstellen)
+function filmFade(){const f=$('fade');if(!f||!f.animate)return;f.getAnimations&&f.getAnimations().forEach(a=>a.cancel());f.animate([{opacity:1},{opacity:1,offset:.22},{opacity:0}],{duration:1400,easing:'ease-out'})}
+function filmCap(){const ch=(FILM_TXT[S.lang]||FILM_TXT.de)[FILM.i],it=FILM.items[Math.max(0,FILM.spoken)];const h=`<small>${T('cChap',FILM.i+1,ch.t)}</small>${FILM.spoken<0?'':esc(it.text)}`;if(filmCap.h!==h){filmCap.h=h;const c=$('cap');c.innerHTML=h;if(c.animate)c.animate([{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'none'}],{duration:450,easing:'ease-out'})}}
 function respeak(){const i=Math.max(0,FILM.spoken);narrStop();FILM.t=FILM.items[i].t0;speak(i)}
 $('cnav').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const f=b.dataset.f;
   if(f==='prev')filmGo(FILM.t>4||FILM.i===0?FILM.i:FILM.i-1,true);else if(f==='next'){if(FILM.i<SHOTS.length-1)filmGo(FILM.i+1,true);else filmEnd()}
@@ -127,7 +133,7 @@ let last=performance.now(),uiT=0,frames=0;window.__frames=0;
 const PWR={run:false,wake:0,sig:'',touch:-1e9,lastDraw:0,fresh:0};
 function stateSig(){const h=S.hover,co=S.cohort;return [S.c,S.year,S.mode,S.grp,S.view,S.events,S.groups,S.excess,S.rates,S.birth,S.people,S.pstage,S.stripes,S.cmp,S.cmpYear,S.tmpl,co?co[0]+'-'+co[1]:'',S.theme,S.lang,S.fixed,S.chartMode,S.modelPh,h?h.s+'.'+h.i:'',S.film,S.playing,S.pres,VW,VH].join('|')}
 function wake(ms){const now=performance.now();PWR.wake=Math.max(PWR.wake,now+(ms||2500));if(!PWR.run){PWR.run=true;last=now;PWR.lastDraw=0;PWR.fresh=4;requestAnimationFrame(frame)}}
-function busy(){return S.playing||TW.on||!!cam.a||V.moving||(S.film&&(FILM.busy||(!FILM.paused&&!FILM.atEnd)))||(S.people&&((fig.mv||0)>.004||Math.abs(S.pstage-fig.p)>.002))}
+function busy(){return S.playing||TW.on||!!cam.a||V.moving||V.mt<1||V.cmpA<1||V.tmplA<1||Math.abs((S.excess?1:0)-V.exA)>.003||(S.film&&(FILM.busy||(!FILM.paused&&!FILM.atEnd)))||(S.people&&((fig.mv||0)>.004||Math.abs(S.pstage-fig.p)>.002))}
 ['pointerdown','keydown','wheel','input','change','click','touchstart'].forEach(t=>document.addEventListener(t,e=>{if(t==='pointerdown'||t==='touchstart')PWR.touch=performance.now();wake()},{passive:true,capture:true}));
 document.addEventListener('pointermove',e=>{if(e.buttons){PWR.touch=performance.now();wake(800)}else if(e.target===renderer.domElement)wake(600)},{passive:true});
 window.addEventListener('resize',()=>wake());
