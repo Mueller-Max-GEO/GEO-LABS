@@ -13,7 +13,7 @@ const XL=-16, XR=12, ZD=6, YB=-10, XT=-7, XC=7.0, ZR=2.0;
 const XU=-5.6;            // Mitte der Hebung (nahe dem Graben, weit vor der Küste)
 const XSUB=-0.5;          // Mitte der Senkung
 const YOP=-5.2;           // Unterkante der kontinentalen Platte
-const LOCK0=0.4, LOCK1=4.4, DH=2.6, LOCKDRAG=0.9;   // blockierter Abschnitt / Herd (Abstand ab Graben entlang der Platte)
+const LOCK0=0.4, LOCK1=3.6, DH=2.0, LOCKDRAG=1.3;   // blockierter Abschnitt / Herd (Abstand ab Graben entlang der Platte)
 const SIM_G=1.0;          // Schwerebeschleunigung in Modelleinheiten: Wellentempo = Wurzel(Tiefe)
 const RISE=1.0;           // Dauer der Hebung des Meeresbodens in Simulationszeit (entspricht rund 3–4 Minuten)
 

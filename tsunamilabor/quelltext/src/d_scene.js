@@ -35,7 +35,7 @@ const fill=new THREE.DirectionalLight(0xdfe8ff,0.45); fill.position.set(-14,6,16
 const world=new THREE.Group(); scene.add(world);
 
 /* ---------- gemeinsame Shader-Bausteine ---------- */
-const U={uK:{value:0},uTau:{value:0},uTime:{value:0},uR:{value:1}};
+const U={uK:{value:0},uTau:{value:0},uTime:{value:0},uR:{value:1},uSlide:{value:0}};
 const NOISE=`
 float hash3(vec3 p){ p=fract(p*0.3183099+vec3(0.71,0.113,0.419)); p*=17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
 float vnoise(vec3 x){ vec3 i=floor(x), f=fract(x); f=f*f*(3.0-2.0*f);
@@ -44,30 +44,44 @@ float vnoise(vec3 x){ vec3 i=floor(x), f=fract(x); f=f*f*(3.0-2.0*f);
 float fbm(vec3 p){ float a=0.5,s=0.0; for(int i=0;i<3;i++){ s+=a*vnoise(p); p=p*2.03+vec3(1.7,9.2,3.1); a*=0.5; } return s*1.14; }
 float sst(float a,float b,float x){ float t=clamp((x-a)/(b-a),0.0,1.0); return t*t*(3.0-2.0*t); }
 `;
+const DTIP=(-0.267+Math.sqrt(0.267*0.267-0.08*(3.4+YOP)))/0.04;   // dort endet die Unterseite der kontinentalen Platte auf der abtauchenden Platte
 const DEFGLSL=`
 float DpF(float x){ float a=(x-(${fl(XU)}))/${fl(DPW)}; float b=(x-(${fl(XSUB)}))/${fl(DPV)}; return (${fl(DPA)}*exp(-a*a)-${fl(DPB)}*exp(-b*b))*sst(-7.0,-6.3,x); }
 float HpF(float x){ float a=(x+5.2)/2.6; return 0.25*exp(-a*a)*sst(-7.0,-6.6,x); }
 float TzF(float z){ return 0.5+0.5*sst(${fl(-ZR-2.5)},${fl(-ZR)},z); }
 /* Mitziehen der Plattenunterseite im blockierten Abschnitt (entlang der Plattengrenze nach unten) */
-vec2 dragF(float x,float g){ float d=x-(${fl(XT)}); float w=sst(${fl(LOCK0-0.7)},${fl(LOCK0+0.2)},d)*(1.0-sst(${fl(LOCK1-0.2)},${fl(LOCK1+1.4)},d));
-  float fall=exp(-g*3.2); float s=-(0.267+0.04*max(d,0.0)); return vec2(1.0,s)*w*fall; }
+vec2 dragF(float x,float g,float k){ float d=x-(${fl(XT)}); float w=sst(${fl(LOCK0-0.7)},${fl(LOCK0+0.2)},d)*(1.0-clamp((d-${fl(LOCK1)})/${fl(DTIP-LOCK1+0.05)},0.0,1.0));
+  float dl=k*${fl(LOCKDRAG)}*w*exp(-g*3.2); float dd=max(d,0.0); return vec2(dl,-dl*(0.267+0.02*(2.0*dd+dl))); }   /* entlang der gekrümmten Plattengrenze */
 `;
-const COL={SEAF1:'#7F7B70',SEAF2:'#9A9384',SED1:'#CFC3A6',SED2:'#B3A587',BAS1:'#2F383F',BAS2:'#4E5A62',DIK1:'#46525B',DIK2:'#5E6A73',GAB1:'#5F6B72',GAB2:'#7B878D',
+const COL={SEAF1:'#7F7B70',SEAF2:'#9A9384',SED1:'#CFC3A6',SED2:'#B3A587',BAS1:'#38434B',BAS2:'#66747D',DIK1:'#46525B',DIK2:'#5E6A73',GAB1:'#5F6B72',GAB2:'#7B878D',
   PER1:'#66756A',PER2:'#83907F',PER3:'#3E4A42',AST1:'#DDB59A',AST2:'#C98466',
   SAND:'#C9B993',MUD:'#857C6C',BEACH:'#E6D8AE',DUNE1:'#4D6A3A',DUNE2:'#6A834C',F1:'#7FA150',F2:'#97B562',F3:'#6E9246',F4:'#BDB264',F5:'#9C8962',PATH:'#B9AD88',FOR1:'#3F5E33',FOR2:'#5D7A43',WET:'#4E473A',WET2:'#62584A',
   SD1:'#D7C6A1',SD2:'#B9A47C',GR1:'#C4B099',GR2:'#AE9A84',GR3:'#4E4843',LC1:'#9E8C7B',LC2:'#877565',AMB:'#E8960F'};
 const COLDEF=Object.entries(COL).map(([k,v])=>`#define C_${k} ${lin(v)}`).join('\n');
 const ROCKFRAG=`
-vec3 col; vec3 p=vWp; float up=vNw.y;
+vec3 col; float up=vNw.y;
+#if KIND<2
+ vec3 p=vec3(vS-uSlide,-vDB,vWp.z);     /* das Muster wandert mit der Platte zum Graben und in die Tiefe */
+#else
+ vec3 p=vWp;
+#endif
 #if KIND==0
- if(up>0.55){ float n=fbm(p*2.0); col=mix(C_SEAF1,C_SEAF2,n); col*=0.88+0.24*vnoise(p*14.0); }
+ if(up>0.55){ float n=fbm(p*2.0); col=mix(C_SEAF1,C_SEAF2,n); col*=0.88+0.24*vnoise(p*14.0);
+   col*=0.86+0.26*smoothstep(-0.3,0.3,sin(p.x*3.9+1.6*sin(p.x*1.3)+0.5*sin(p.z*0.7))); }   /* Tiefseehügel: Streifen quer zur Bewegung, wandern mit */
  else { float d=vDB; float n=fbm(p*3.0);
    if(d<0.05){ col=mix(C_SED1,C_SED2,0.5+0.5*sin((d+n*0.015)*300.0)); }
    else if(d<0.17){ float bl=fbm(p*vec3(10.0,14.0,10.0)); col=mix(C_BAS1,C_BAS2,smoothstep(0.42,0.58,bl)); col*=0.86+0.28*vnoise(p*30.0); }
    else if(d<0.25){ col=mix(C_DIK1,C_DIK2,0.5+0.5*sin(p.x*38.0+n*7.0)); }
-   else { col=mix(C_GAB1,C_GAB2,vnoise(p*26.0)); } }
+   else { col=mix(C_GAB1,C_GAB2,vnoise(p*26.0)); }
+   /* Schollen und Klüfte der ozeanischen Kruste: machen die Bewegung der ganzen Platte sichtbar */
+   float blk=sin(p.x*3.9+1.6*sin(p.x*1.3)); col*=0.82+0.32*smoothstep(-0.25,0.25,blk);
+   float fr=abs(fract(p.x*1.15+0.06*sin(d*11.0))-0.5); col*=1.0-0.5*smoothstep(0.02,0.0,fr)*step(0.05,d); }
 #elif KIND==1
- { float n=fbm(p*2.4); col=mix(C_PER1,C_PER2,n); col=mix(col,C_PER3,smoothstep(0.78,0.9,vnoise(p*22.0))*0.6); }
+ { float n=fbm(p*2.4); col=mix(C_PER1,C_PER2,n); col=mix(col,C_PER3,smoothstep(0.78,0.9,vnoise(p*22.0))*0.6);
+   col=mix(col,C_PER3,smoothstep(0.56,0.68,fbm(p*vec3(1.5,5.0,1.5)+3.0))*0.42);                    /* dunkle Linsen */
+   col*=0.93+0.1*sin(p.y*10.0+fbm(p*vec3(0.7,2.0,0.7))*6.0);                                        /* feine Bänderung */
+   col*=0.84+0.3*smoothstep(-0.2,0.2,sin(p.x*2.6+1.1*p.y+1.2*sin(p.x*0.9)));                          /* schräg stehende Schollen */
+   float vn=abs(fract(p.x*0.8+0.22*fbm(p*1.3)+0.12*p.y)-0.5); col=mix(col,C_PER2*1.35,smoothstep(0.03,0.0,vn)*0.75); } /* helle Adern */
 #elif KIND==2
  { float n=fbm(p*vec3(0.6,1.3,0.6)); col=mix(C_AST1,C_AST2,sst(-4.5,-10.0,p.y)); col*=0.92+0.16*n; }
 #else
@@ -96,11 +110,11 @@ function rockMat(kind,deform){
   const m=new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.94,metalness:0,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1});
   m.defines={KIND:kind,DEFORM:deform?1:0};
   m.onBeforeCompile=sh=>{
-    sh.uniforms.uK=U.uK; sh.uniforms.uTau=U.uTau;
+    sh.uniforms.uK=U.uK; sh.uniforms.uTau=U.uTau; sh.uniforms.uSlide=U.uSlide;
     sh.vertexShader=sh.vertexShader.replace('#include <common>',`#include <common>
-attribute float aDB; attribute float aG; attribute float aWet;
+attribute float aDB; attribute float aG; attribute float aWet; attribute float aS;
 uniform float uK; uniform float uTau;
-varying vec3 vWp; varying vec3 vNw; varying float vDB; varying float vStrain; varying float vWet;
+varying vec3 vWp; varying vec3 vNw; varying float vDB; varying float vStrain; varying float vWet; varying float vS;
 ${NOISE}${DEFGLSL}`)
     .replace('#include <beginnormal_vertex>',`#include <beginnormal_vertex>
 #if DEFORM==1
@@ -108,21 +122,27 @@ ${NOISE}${DEFGLSL}`)
 #endif`)
     .replace('#include <begin_vertex>',`#include <begin_vertex>
 #if DEFORM==1
- { float tz=TzF(position.z); transformed.x+=uK*HpF(position.x)*aG*tz*0.8; transformed.y-=uK*DpF(position.x)*aG*tz; transformed.xy+=uK*0.9*dragF(position.x,aG)*tz;
+ { float tz=TzF(position.z); transformed.x+=uK*HpF(position.x)*aG*tz*0.8; transformed.y-=uK*DpF(position.x)*aG*tz; transformed.xy+=dragF(position.x,aG,uK)*tz;
    float sa=(position.x-(${fl(XU+1.0)}))/2.6; vStrain=uK*0.62*exp(-sa*sa)*(0.35+0.65*aG)*tz; vWet=clamp((uTau-aWet)/1.5,0.0,1.0); }
 #else
  vStrain=0.0; vWet=0.0;
 #endif
- vDB=aDB;`)
+ vDB=aDB; vS=aS;`)
     .replace('#include <project_vertex>',`#include <project_vertex>
  vWp=(modelMatrix*vec4(transformed,1.0)).xyz; vNw=normalize(mat3(modelMatrix)*objectNormal);`);
     sh.fragmentShader=sh.fragmentShader.replace('#include <common>',`#include <common>
-varying vec3 vWp; varying vec3 vNw; varying float vDB; varying float vStrain; varying float vWet;
+uniform float uSlide;
+varying vec3 vWp; varying vec3 vNw; varying float vDB; varying float vStrain; varying float vWet; varying float vS;
 ${NOISE}
 ${COLDEF}`).replace('#include <color_fragment>',`#include <color_fragment>
 { ${ROCKFRAG} }`).replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
   { /* feines Relief der Gesteinsoberfläche (Höhe aus Rauschen, wie eine Bump-Map) */
-    float hb=fbm(vWp*7.0)*0.6+vnoise(vWp*27.0)*0.4;
+    #if KIND<2
+    vec3 pb=vec3(vS-uSlide,-vDB,vWp.z);
+    #else
+    vec3 pb=vWp;
+    #endif
+    float hb=fbm(pb*7.0)*0.6+vnoise(pb*27.0)*0.4;
     vec3 sx=dFdx(-vViewPosition), sy=dFdy(-vViewPosition); vec3 r1=cross(sy,normal), r2=cross(normal,sx); float det=dot(sx,r1);
     vec3 grad=sign(det)*(dFdx(hb)*r1+dFdy(hb)*r2); normal=normalize(abs(det)*normal-(KIND==2?0.012:0.03)*grad); }`);
   };
@@ -131,6 +151,9 @@ ${COLDEF}`).replace('#include <color_fragment>',`#include <color_fragment>
 }
 
 /* ---------- Körper aus Querschnittsprofilen (hohe Auflösung) ---------- */
+/* Weg entlang der Oberkante der ozeanischen Platte (Bogenlänge) – Koordinate für die mitwandernden Gesteinsmuster */
+const SARC=(()=>{ const n=Math.round((XR-XL)/0.01), a=new Float32Array(n+1); for(let i=1;i<=n;i++){ const x=XL+(i-0.5)*0.01; a[i]=a[i-1]+0.01*Math.sqrt(1+slabSlope(x)**2); } return a; })();
+const sArc=x=>{ const f=clamp((x-XL)/0.01,0,SARC.length-1.001), i=Math.floor(f); return SARC[i]+(SARC[i+1]-SARC[i])*(f-i); };
 function makeBody({x0,x1,nx,top,bottom,ny=6,nz=1,kind,deform=false}){
   const pos=[],aDB=[],aG=[],idx=[];
   function grid(nu,nv,fn,flip){ const start=pos.length/3;
@@ -147,6 +170,7 @@ function makeBody({x0,x1,nx,top,bottom,ny=6,nz=1,kind,deform=false}){
   geo.setAttribute('aDB',new THREE.Float32BufferAttribute(aDB,1));
   geo.setAttribute('aG',new THREE.Float32BufferAttribute(aG,1));
   geo.setAttribute('aWet',new THREE.Float32BufferAttribute(new Float32Array(aG.length).fill(1e9),1));
+  { const aS=new Float32Array(aG.length); if(kind<2) for(let v=0;v<aS.length;v++) aS[v]=sArc(pos[v*3]); geo.setAttribute('aS',new THREE.Float32BufferAttribute(aS,1)); }
   geo.setIndex(idx); geo.computeVertexNormals();
   const mesh=new THREE.Mesh(geo,rockMat(kind,deform)); mesh.receiveShadow=true; mesh.frustumCulled=false; world.add(mesh);
   return {mesh,geo};
@@ -210,7 +234,7 @@ const PL=pathLen[pathLen.length-1];
 function pathAt(u){ u=((u%PL)+PL)%PL; let lo=0,hi=pathLen.length-1; while(hi-lo>1){const m=(lo+hi)>>1; if(pathLen[m]<u)lo=m;else hi=m;}
   const f=(u-pathLen[lo])/Math.max(1e-9,pathLen[hi]-pathLen[lo]); const x=lerp(pathPts[lo][0],pathPts[hi][0],f); return {x,y:slabTop(x),a:Math.atan(slabSlope(x))}; }
 const markers=[]; const MSP=1.6;
-for(let i=0;i<Math.ceil(PL/MSP);i++){ const m=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.9,0.02),new THREE.MeshBasicMaterial({color:0xe9edf0,transparent:true,opacity:0.7}));
+for(let i=0;i<0;i++){ const m=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.9,0.02),new THREE.MeshBasicMaterial({color:0xe9edf0,transparent:true,opacity:0.7}));
   m.userData.u0=i*MSP; world.add(m); markers.push(m); }
 
 /* ---------- Pfeile ---------- */

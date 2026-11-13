@@ -61,10 +61,8 @@ function update(){
       if(released){ const dist=Math.abs(d-DH); const reach=big?9:0.5; if(dist<Math.min(rr,reach)) c=(rr-dist<1.4)?cRup:cDone; }
       a[v*3]=c.r;a[v*3+1]=c.g;a[v*3+2]=c.b; }
     lockGeo.attributes.color.needsUpdate=true; }
-  /* Marker auf der abtauchenden Platte */
-  const moff=LOCKDRAG*clamp(t/T1E,0,1);
-  for(const m of markers){ const p=pathAt(m.userData.u0+moff); const nx=-Math.sin(p.a), ny=Math.cos(p.a);
-    m.position.set(p.x-nx*0.95,p.y-ny*0.95,ZD+0.012); m.rotation.z=p.a; m.visible=p.y-1.5>YB&&p.x<4.8; m.material.opacity=0.7*sstep(XL,XL+0.6,p.x); }
+  /* Die ganze ozeanische Platte wandert: ihre Gesteinsmuster verschieben sich entlang der Platte (in Phase 1 so weit, wie der blockierte Abschnitt mitgezogen wird) */
+  U.uSlide.value=LOCKDRAG*clamp(t/T1E,0,1);
   updateStrips();
   /* Land */
   updateDamage(tau,live); updateFloaters(tau,live); updateSeaBoats();
