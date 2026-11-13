@@ -34,10 +34,10 @@ function waterAt(x,z){
   let e=0,h=0,u=0,v=0; for(let q=0;q<4;q++){ const o=4*nn[q]; e+=w[q]*(B[o]+(A[o]-B[o])*m); h+=w[q]*(B[o+1]+(A[o+1]-B[o+1])*m); u+=w[q]*bufV[2*nn[q]]; v+=w[q]*bufV[2*nn[q]+1]; }
   _ws[0]=e; _ws[1]=h; _ws[2]=u; _ws[3]=v; return _ws; }
 
-const WCOL={DEEP:'#0A3560',MID:'#1B69A8',SHAL:'#45B5C9',CREST:'#BFE3F2',MUD:'#7F775C',MUD2:'#B3A078',FOAM:'#F5F8F9'};
+const WCOL={ABYSS:'#041C3C',DEEP:'#0A3560',MID:'#1B69A8',SHAL:'#45B5C9',CREST:'#BFE3F2',MUD:'#7F775C',MUD2:'#B3A078',FOAM:'#F5F8F9'};
 const waterMat=new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,roughness:0.1,metalness:0,side:THREE.FrontSide,depthWrite:false,envMapIntensity:0.62});
 waterMat.onBeforeCompile=sh=>{
-  Object.assign(sh.uniforms,WU,{uTime:U.uTime});
+  Object.assign(sh.uniforms,WU,{uTime:U.uTime,uNz:U.uNz});
   sh.vertexShader=sh.vertexShader.replace('#include <common>',`#include <common>
 uniform sampler2D uA0; uniform sampler2D uA1; uniform sampler2D uV; uniform float uMix;
 attribute float aI; attribute float aFz; attribute float aDx;
@@ -61,7 +61,10 @@ vec4 sA(int i,float fz){ fz=clamp(fz,0.0,${fl(NZW-1)}); int k0=int(floor(fz)); i
 uniform float uTime;
 varying vec4 vA; varying vec2 vVel; varying vec3 vWp2;
 float gFoam=0.0; vec2 gQ1; vec2 gQ2; float gWq;
-${NOISE}
+uniform sampler2D uNz;
+${SSTGLSL}
+/* bewegtes Rauschen aus der Rauschtextur: zwei gegeneinander wandernde Lagen */
+vec4 wn(vec2 q,float t){ vec4 a=texture2D(uNz,q*0.015625+vec2(0.012,0.008)*t), b=texture2D(uNz,q*0.0207-vec2(0.006,-0.010)*t+0.37); return clamp((0.5*(a+b)-0.5)*1.4+0.5,0.0,1.0); }
 ${Object.entries(WCOL).map(([k,v])=>`#define W_${k} ${lin(v)}`).join('\n')}`)
   .replace('#include <color_fragment>',`#include <color_fragment>
   { float dep=vA.g, turb=clamp(vA.b,0.0,1.0), foam=clamp(vA.a,0.0,1.0), eta=vA.r;
@@ -69,10 +72,10 @@ ${Object.entries(WCOL).map(([k,v])=>`#define W_${k} ${lin(v)}`).join('\n')}`)
     /* Muster wandern mit der Strömung (zwei versetzte Phasen, weich überblendet) */
     vec2 fv=clamp(vVel,-1.5,1.5)*0.7; float p1=fract(uTime*0.35), p2=fract(p1+0.5); gWq=abs(1.0-2.0*p1);
     gQ1=vWp2.xz-fv*p1; gQ2=vWp2.xz-fv*p2+vec2(3.7,1.9);
-    float nA=mix(fbm(vec3(gQ1*3.0,uTime*0.12)),fbm(vec3(gQ2*3.0,uTime*0.12)),gWq);
-    float nF=mix(vnoise(vec3(gQ1*16.0,uTime*0.45)),vnoise(vec3(gQ2*16.0,uTime*0.45)),gWq);
+    float nA=mix(wn(gQ1*3.0,uTime).g,wn(gQ2*3.0,uTime).g,gWq);
+    vec4 f1=wn(gQ1*16.0,uTime*3.0), f2=wn(gQ2*16.0,uTime*3.0); float nF=mix(0.6*f1.r+0.4*f1.a,0.6*f2.r+0.4*f2.a,gWq);
     float sea=1.0-sst(${fl(XC-0.4)},${fl(XC+0.1)},vWp2.x);
-    vec3 col=mix(W_SHAL,W_MID,sst(0.03,0.75,dep)); col=mix(col,W_DEEP,sst(0.75,3.0,dep));
+    vec3 col=mix(W_SHAL,W_MID,sst(0.03,0.75,dep)); col=mix(col,W_DEEP,sst(0.75,2.9,dep)); col=mix(col,W_ABYSS,sst(3.05,3.85,dep));   /* über der Tiefseerinne am dunkelsten */
     col=mix(col,W_CREST,clamp(eta*1.3,0.0,0.32)*sea); col=mix(col,W_DEEP*0.72,clamp(-eta*2.2,0.0,0.4)*sea);
     vec3 mud=mix(W_MUD,W_MUD2,0.25+0.6*nA);
     col=mix(col,mud,turb*mix(0.8,0.9,sea));
@@ -86,9 +89,9 @@ ${Object.entries(WCOL).map(([k,v])=>`#define W_${k} ${lin(v)}`).join('\n')}`)
   .replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
   roughnessFactor=mix(roughnessFactor,0.85,gFoam); roughnessFactor=mix(roughnessFactor,0.34,clamp(vA.b,0.0,1.0));`)
   .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
-  { float tt=uTime*0.6, e1=0.05; vec2 qa=mix(gQ1,gQ2,gWq)*7.0, qb=mix(gQ1,gQ2,gWq)*19.0;
-    float a0=vnoise(vec3(qa,tt)), ax=vnoise(vec3(qa+vec2(e1,0.0),tt)), az=vnoise(vec3(qa+vec2(0.0,e1),tt));
-    float b0=vnoise(vec3(qb,tt*1.7)), bx=vnoise(vec3(qb+vec2(e1,0.0),tt*1.7)), bz=vnoise(vec3(qb+vec2(0.0,e1),tt*1.7));
+  { float tt=uTime*2.2, e1=0.14; vec2 qa=mix(gQ1,gQ2,gWq)*7.0, qb=mix(gQ1,gQ2,gWq)*19.0;
+    float a0=wn(qa,tt).r, ax=wn(qa+vec2(e1,0.0),tt).r, az=wn(qa+vec2(0.0,e1),tt).r;
+    float b0=wn(qb,tt*1.7).a, bx=wn(qb+vec2(e1,0.0),tt*1.7).a, bz=wn(qb+vec2(0.0,e1),tt*1.7).a;
     float amp=0.02*(1.0+1.6*clamp(length(vVel),0.0,1.0));
     vec3 pert=vec3(-(ax-a0)-(bx-b0)*0.5,0.0,-(az-a0)-(bz-b0)*0.5)/e1*amp;
     normal=normalize(normal+(viewMatrix*vec4(pert,0.0)).xyz); }`);
@@ -110,7 +113,7 @@ function stripMesh(n,matOpts){ const g=new THREE.BufferGeometry(); g.setAttribut
   const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,side:THREE.DoubleSide,depthWrite:false,...matOpts})); m.frustumCulled=false; m.renderOrder=2; world.add(m); return m; }
 const NXS=NXW+1;
 const fStrip=stripMesh(NXS), bStrip=stripMesh(NXS), lStrip=stripMesh(NZW+1), rim=stripMesh(NXS); rim.renderOrder=4;
-const cTop=new THREE.Color('#5FA8DC'), cBot=new THREE.Color('#123A64'), cMud=new THREE.Color('#7A705B'), cRim=new THREE.Color('#E8F5FF');
+const cAby=new THREE.Color('#06213F'), cTop=new THREE.Color('#5FA8DC'), cBot=new THREE.Color('#123A64'), cMud=new THREE.Color('#7A705B'), cRim=new THREE.Color('#E8F5FF');
 const FRONT_H=new Float32Array(NXS+1), FRONT_G=new Float32Array(NXS+1), FRONT_X=new Float32Array(NXS+1);
 for(let c=0;c<=NXS;c++){ const i=clamp(c-1,0,NXW-1); FRONT_X[c]=c===0?XL:(c===NXS?XR:S0.xs[i]); }
 function updateStrips(){
@@ -120,7 +123,7 @@ function updateStrips(){
     for(let q=0;q<=count;q++){ const [x,z,n]=get(q); const e=val(n,0), h=val(n,1), tb=clamp(val(n,2),0,1), g=e-h, wet=h>0.004, top=wet?e:g;
       P[q*6]=x;P[q*6+1]=g;P[q*6+2]=z;P[q*6+3]=x;P[q*6+4]=top;P[q*6+5]=z;
       const al=wet?0.9:0, r=lerp(cTop.r,cMud.r,tb), gg=lerp(cTop.g,cMud.g,tb), bb=lerp(cTop.b,cMud.b,tb), k2=tb*0.75;
-      C[q*8]=lerp(cBot.r,cMud.r,k2);C[q*8+1]=lerp(cBot.g,cMud.g,k2);C[q*8+2]=lerp(cBot.b,cMud.b,k2);C[q*8+3]=al;
+      const ab=sstep(2.2,3.9,h); C[q*8]=lerp(lerp(cBot.r,cAby.r,ab),cMud.r,k2);C[q*8+1]=lerp(lerp(cBot.g,cAby.g,ab),cMud.g,k2);C[q*8+2]=lerp(lerp(cBot.b,cAby.b,ab),cMud.b,k2);C[q*8+3]=al;
       C[q*8+4]=r;C[q*8+5]=gg;C[q*8+6]=bb;C[q*8+7]=wet?lerp(0.6,0.88,tb):0; if(store) store(q,top,g); }
     strip.geometry.attributes.position.needsUpdate=true; strip.geometry.attributes.color.needsUpdate=true; };
   put(fStrip,NXS,c=>[FRONT_X[c],ZD+0.003,(NZW-1)*NXW+clamp(c-1,0,NXW-1)],(c,h,g)=>{FRONT_H[c]=h;FRONT_G[c]=g;});

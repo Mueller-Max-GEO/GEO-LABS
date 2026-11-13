@@ -152,7 +152,9 @@ function updateFloaters(tau,active){
   debris.instanceMatrix.needsUpdate=true;
 }
 /* Schäden: aus der bisher größten Belastung E (Wassertiefe + Staudruck) an jedem Gegenstand */
+let dmgKey=null;
 function updateDamage(tau,active){
+  { const key=active?Math.floor(tau/DS):-1; if(key===dmgKey) return; dmgKey=key; }
   const E=o=>active?rec.maxAt(rec.probes[o].E,tau):0;
   for(const o of houses){ const u=o.userData, e=E(u.pi); let dmg=sstep(E_DAMAGE,E_DESTROY,e), col=sstep(E_DESTROY,E_DESTROY*1.22,e);
     if(u.type==='apt'){ dmg*=0.0; col=0; } else if(u.type==='ware'){ col=sstep(E_DESTROY*1.25,E_DESTROY*1.5,e); }

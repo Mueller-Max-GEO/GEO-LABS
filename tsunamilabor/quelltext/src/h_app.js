@@ -7,12 +7,13 @@ const surfY=x=>gRest(x,ZD)-KK()*Dpat(x);
 addLabel('Ozeanische Platte<small>Beispiel Japan: Pazifische Platte</small>','r',[-12.5,-3.85,ZD],[1,2],{point:false,prio:()=>T()<T1E?6:4});
 addLabel('Kontinentale Platte<small>Beispiel Japan: Nordamerikanische Platte</small>','',[2.8,-3.2,ZD],[1,2],{point:false,prio:()=>T()<T1E?6:4});
 addLabel('Erdmantel<small>heiß und zähplastisch</small>','g',[-7,-8.2,ZD],[1],{point:false,prio:2});
-addLabel('Tiefseegraben<small>Japangraben</small>','',()=>[XT,slabTop(XT)+0.05,ZD],[1,2],{prio:()=>T()<T1E?6:4,cond:()=>T()<TQ+0.4});
+addLabel('Tiefseerinne<small>Japangraben, rund 8000 m tief</small>','',()=>[XT,slabTop(XT)+0.05,ZD],[1,2],{prio:()=>T()<T1E?6:4,cond:()=>T()<TQ+0.4});
 addLabel('Subduktion: Platte taucht ab','r',()=>[2.6,slabTop(2.6)-0.85,ZD],[1],{point:false,prio:3});
 addLabel('Plattenbewegung<small>rund 8 cm pro Jahr</small>','r',[-11.9,-3.9,ZD+0.16],[1],{prio:4,cond:()=>state.arrows});
 addLabel('Blockierter Abschnitt<small>Platten durch Reibung verhakt</small>','a',()=>{const x=midLockX(); return [x,slabTop(x),ZD+0.05];},[1,2],{prio:9,cond:()=>T()<TQ+0.3||scen.deep});
 addLabel('Spannung wird abgebaut<small>Platten gleiten ruckartig</small>','a',()=>{const x=midLockX(); return [x,slabTop(x),ZD+0.05];},[2],{prio:9,cond:()=>T()>=TQ+0.3&&!scen.deep});
-addLabel('Rand wird nach unten gezogen','a',()=>[XU,surfY(XU),ZD],[1],{prio:7,cond:()=>T()>2});
+addLabel('Rand sinkt ab','a',()=>[XU,surfY(XU),ZD],[1],{prio:6,cond:()=>T()>2});
+addLabel('Kontinentale Platte wird mitgezogen<small>Schichten und Klüfte verbiegen sich</small>','a',()=>{ const k=clamp(KK(),0,1); return [-4.9+LOCKDRAG*0.8*k,-3.55-LOCKDRAG*0.3*k,ZD+0.02]; },[1],{prio:8,cond:()=>T()>3});
 addLabel('Platte wölbt sich auf','a',()=>[XSUB,surfY(XSUB),ZD],[1],{prio:5,cond:()=>T()>4});
 addLabel('Ausgangslage','k',()=>[XSUB+2.2,gRest(XSUB+2.2,ZD),ZD+0.06],[1],{prio:3,cond:()=>state.ghost&&T()>1});
 addLabel('Wassersäule wird höher<small>Der Meeresboden sinkt langsam ab</small>','w',()=>[XU+0.4,gRest(XU+0.4,ZD)-KK()*Dpat(XU+0.4)*0.5,ZD+0.02],[1],{prio:8,cond:()=>T()>3});
@@ -22,7 +23,7 @@ const Lhypo=addLabel('Erdbebenherd','k',()=>{const hx=scen.hx; return [hx,scen.d
 addLabel('Epizentrum','k',()=>[scen.hx,surfY(scen.hx),0],[2],{prio:8,icon:'dot',cond:()=>T()>=TQ-0.2&&!scen.deep});
 addLabel('Hebung des Meeresbodens','k',()=>[XU,surfY(XU)-0.5,ZD+0.16],[2],{prio:9,cond:()=>T()>=TQ+0.8&&BIG()});
 addLabel('Senkung','k',()=>[XSUB,surfY(XSUB)-0.45,ZD+0.16],[2],{prio:7,cond:()=>T()>=TQ+0.8&&BIG()});
-addLabel('federt zurück','a',[-5.2,-3.25,ZD+0.16],[2],{prio:5,cond:()=>T()>=TQ+0.8&&BIG()});
+addLabel('federt zurück','a',[-5.1,-3.6,ZD+0.16],[2],{prio:5,cond:()=>T()>=TQ+0.8&&BIG()});
 addLabel('Erdbebenwellen','',()=>{const hx=scen.hx,hy=scen.deep?slabTop(hx)-0.6:slabTop(hx); const r=0.2+clamp(T()-TQ,0,3.2)*2.6; return [hx+r*0.7,hy-r*0.7,ZD+0.07];},[2],{prio:3,cond:()=>T()>TQ+0.3&&T()<TQ+2.6});
 const LwR=addLabel('Welle Richtung Küste','w',[0,0,ZD],[3,4],{prio:9});
 const LwL=addLabel('Welle Richtung offenes Meer','w',[0,0,ZD],[3,4],{prio:8});
@@ -53,7 +54,7 @@ function update(){
   const reached=simFrame(tau,kk,state.playing?10:18);
   /* blockierter Abschnitt */
   { const off=LOCKDRAG*clamp(kk,-0.3,1.3);
-    if(Math.abs(off-lockOff)>1e-4){ lockOff=off; lockGeo.dispose(); lockGeo=lockGeoFor(off); lockMesh.geometry=lockGeo; placeTeeth(off); }
+    if(Math.abs(off-lockOff)>1e-4){ lockOff=off; setLock(off); placeTeeth(off); }
     teeth.visible=!(t>=TQ&&!scen.deep&&big);
     const a=lockGeo.attributes.color.array, uv=lockGeo.attributes.uv.array, n=lockGeo.attributes.position.count;
     const rr=t<TQ?-1:(t-TQ)*2.2, released=!scen.deep&&t>=TQ; _cl.copy(cLockA).lerp(cLockB,clamp(kk,0,1));
@@ -98,11 +99,11 @@ function update(){
     if(ph===0&&kk>0.08){ const s=0.25+0.75*kk; const yt=surfY(XU);
       setArrow(A.defDown,[XU,yt+0.95,zf],[XU,yt+0.95-0.8*s,zf],sstep(0.08,0.2,kk));
       const yb=surfY(XSUB); setArrow(A.defUp,[XSUB,yb+0.08,zf],[XSUB,yb+0.08+0.55*s,zf],sstep(0.15,0.3,kk));
-      setArrow(A.defPush,[-6.0,-3.3,zf],[-6.0+0.9*s,-3.36,zf],sstep(0.1,0.25,kk)); }
+      setArrow(A.defPush,[-5.9,-3.62,zf],[-5.9+1.0*s,-3.62-0.3*s,zf],sstep(0.1,0.25,kk)); }
     if(ph===1&&t>=TQ&&!scen.deep){ const op=sstep(TQ,TQ+0.4,t);
       const a0=xAtDist(DH-0.7),a1=xAtDist(DH+0.7); const sl=Math.atan(slabSlope(xAtDist(DH))); const nx=-Math.sin(sl)*0.22, ny=Math.cos(sl)*0.22;
       setArrow(A.slipOP,[a1+nx,slabTop(a1)+ny,zf],[a0+nx,slabTop(a0)+ny,zf],op); setArrow(A.slipSl,[a0-nx,slabTop(a0)-ny,zf],[a1-nx,slabTop(a1)-ny,zf],op);
-      if(big){ setArrow(A.spring,[-4.3,-3.35,zf],[-5.7,-3.2,zf],op);
+      if(big){ setArrow(A.spring,[-4.4,-3.85,zf],[-5.7,-3.45,zf],op);
         const yu=surfY(XU); setArrow(A.floorUp,[XU,yu-0.95,zf],[XU,yu-0.06,zf],op);
         const yd=surfY(XSUB); setArrow(A.floorDn,[XSUB,yd-0.05,zf],[XSUB,yd-0.85,zf],op); } }
     if(big){
@@ -135,7 +136,7 @@ function update(){
 }
 
 /* ===================== Anzeige ===================== */
-const DMAP=[[0.04,2],[0.1,10],[0.35,50],[0.85,200],[1.5,1000],[2.3,2500],[3.0,4000],[3.5,5500]];
+const DMAP=[[0.04,2],[0.1,10],[0.35,50],[0.85,200],[1.5,1000],[2.3,2500],[3.0,4000],[3.9,7500]];
 function realDepth(dm){ if(dm<=DMAP[0][0]) return DMAP[0][1]; for(let i=1;i<DMAP.length;i++){ if(dm<=DMAP[i][0]){ const [a,ra]=DMAP[i-1],[b,rb]=DMAP[i]; const u=(dm-a)/(b-a); return Math.exp(lerp(Math.log(ra),Math.log(rb),u)); } } return DMAP[DMAP.length-1][1]; }
 const de=(v,d=0)=>v.toLocaleString('de-DE',{maximumFractionDigits:d,minimumFractionDigits:d});
 function updateHUD(t,ph,kk,tau,xr){
@@ -281,7 +282,7 @@ function setScen(key,quiet){
 function prepare(){
   pause(); preparing=true; simN=-2;
   const veil=$('loading'), first=!veil.classList.contains('soft');
-  const finish=()=>{ preparing=false; applyWetMap(); buildGauge(); state.dirty=true; veil.classList.add('hide'); setTimeout(()=>{ veil.classList.add('soft'); },600); };
+  const finish=()=>{ preparing=false; dmgKey=null; applyWetMap(); buildGauge(); state.dirty=true; veil.classList.add('hide'); setTimeout(()=>{ veil.classList.add('soft'); },600); };
   if(recCache[scen.key]){ rec=recCache[scen.key]; finish(); return Promise.resolve(); }
   rec=makeRecorder(scen,probes,floatSpecs,SIMQ);
   if(scen.R<=0){ rec.work(1); recCache[scen.key]=rec; finish(); return Promise.resolve(); }

@@ -44,11 +44,18 @@ Adresszusätze: `?film` startet direkt den Erklärfilm, `?low` erzwingt die einf
 | Teil | Umsetzung |
 |---|---|
 | Platten | Querschnitt mit ozeanischer Platte, kontinentaler Platte und Erdmantel. Der blockierte Abschnitt haftet an der kontinentalen Platte; sie verformt sich elastisch und federt beim Beben zurück. |
+| Platten | Die ozeanische Platte wandert als Ganzes (ihre Gesteinsmuster laufen mit) und biegt sich vor der Tiefseerinne nach unten (Außenschwelle, Rinne bei −3,9 gegenüber −3,0 der Tiefseeebene). Die kontinentale Platte wird im blockierten Abschnitt entlang der Plattengrenze mitgeschleppt: Ihre Schichten und steilen Klüfte liegen im unverformten Gestein fest und verbiegen sich sichtbar; die Stauchung klingt landwärts allmählich ab. |
 | Meeresboden | Hebung nahe dem Tiefseegraben, Senkung weiter landwärts (USGS Circular 1187). |
 | Wasser | Flachwassergleichungen (Masse und Impuls), Finite-Volumen-Verfahren mit HLL-Fluss und hydrostatischer Rekonstruktion (Audusse u. a. 2004), in Laufrichtung 2. Ordnung (MUSCL-Hancock); Gitter 368 × 64, auf dem Schelf und an Land verfeinert. Reibung je nach Untergrund (Meer, Felder, Ort, Wald). |
 | Schäden | Für jedes Objekt wird die größte Belastung E = Wassertiefe + Staudruck der Strömung gespeichert. |
 | Treibgut | Bewegt sich mit der Strömung, solange das Wasser tief genug ist; bleibt sonst liegen. |
 | Ablauf | Der ganze Lauf wird beim Laden einmal vorausberechnet (einige Sekunden). Stützstellen erlauben freies Vor- und Zurückspulen. |
+
+## Leistung
+
+- Alle Gesteins- und Wassermuster lesen eine einmal berechnete, kachelbare Rauschtextur (statt Rauschformeln je Bildpunkt): deutlich weniger Rechenlast für die Grafikkarte, kein Flimmern in der Ferne.
+- Die Seite zeichnet nur, wenn sich etwas ändert; Schäden und Schatten werden nur bei neuen Messwerten aktualisiert; die Bildauflösung beginnt maßvoll (1,5-fach) und passt sich dem Gerät an.
+- Rechenzeit je Bild für Simulation und Szene: wenige Millisekunden.
 
 ## Didaktische Vereinfachungen (auch im Modell unter „Hintergrund“)
 

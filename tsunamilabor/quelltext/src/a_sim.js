@@ -12,7 +12,7 @@
 const XL=-16, XR=12, ZD=6, YB=-10, XT=-7, XC=7.0, ZR=2.0;
 const XU=-5.6;            // Mitte der Hebung (nahe dem Graben, weit vor der Küste)
 const XSUB=-0.5;          // Mitte der Senkung
-const YOP=-5.2;           // Unterkante der kontinentalen Platte
+const YOP=-5.9;           // Unterkante der kontinentalen Platte
 const LOCK0=0.4, LOCK1=3.6, DH=2.0, LOCKDRAG=1.3;   // blockierter Abschnitt / Herd (Abstand ab Graben entlang der Platte)
 const SIM_G=1.0;          // Schwerebeschleunigung in Modelleinheiten: Wellentempo = Wurzel(Tiefe)
 const RISE=1.0;           // Dauer der Hebung des Meeresbodens in Simulationszeit (entspricht rund 3–4 Minuten)
@@ -33,9 +33,12 @@ function monotone(pts){
     return (2*t3-3*t2+1)*ys[i]+(t3-2*t2+t)*h*m[i]+(-2*t3+3*t2)*ys[i+1]+(t3-t2)*h*m[i+1];};
 }
 /* Oberfläche der kontinentalen Platte: Graben → Kontinentalhang → Schelfkante → breiter Schelf → Küste → Küstenebene → Hügel */
-const ySurf=monotone([[-7,-3.4],[-6.2,-3.05],[-5,-2.62],[-3.5,-2.15],[-2.2,-1.78],[-1.1,-1.42],[0.5,-1.08],[2,-0.82],[3.5,-0.6],[5,-0.38],[6,-0.21],[6.6,-0.09],[7,0],[7.3,0.03],[8,0.058],[9,0.1],[10,0.145],[10.6,0.27],[11,0.6],[11.6,1.02],[12,1.15]]);
-function slabTop(x){ if(x<=XT){ if(x<=-10) return -3; const u=(x+10)/3; return -3-0.4*u*u; } const d=x-XT; return -3.4-0.267*d-0.02*d*d; }
-function slabSlope(x){ if(x<=XT) return x<=-10?0:-0.2667*(x+10)/3; return -(0.267+0.04*(x-XT)); }
+const ySurf=monotone([[-7,-3.9],[-6.6,-3.45],[-6.1,-3.1],[-5,-2.64],[-3.5,-2.15],[-2.2,-1.78],[-1.1,-1.42],[0.5,-1.08],[2,-0.82],[3.5,-0.6],[5,-0.38],[6,-0.21],[6.6,-0.09],[7,0],[7.3,0.03],[8,0.058],[9,0.1],[10,0.145],[10.6,0.27],[11,0.6],[11.6,1.02],[12,1.15]]);
+/* Oberkante der ozeanischen Platte: Tiefseeebene (-3,0), flache Aufwölbung vor dem Graben (Außenschwelle), dann biegt sich die Platte
+   sanft nach unten bis zur Tiefseerinne (-3,9) und taucht danach immer steiler ab. Der Hang auf der Landseite ist deutlich steiler. */
+const YAB=-3.0, YTR=-3.9, SL0=0.267, SLQ=0.02, XBEND=XT-2*(YAB-YTR)/SL0, RISE_X=XBEND+0.4, RISE_W=1.5, RISE_A=0.06;
+function slabTop(x){ if(x<=XT){ const u=clamp((x-XBEND)/(XT-XBEND),0,1); return YAB-(YAB-YTR)*u*u+RISE_A*gauss(x,RISE_X,RISE_W); } const d=x-XT; return YTR-SL0*d-SLQ*d*d; }
+function slabSlope(x){ if(x<=XT){ const u=clamp((x-XBEND)/(XT-XBEND),0,1); return -2*(YAB-YTR)*u/(XT-XBEND)-RISE_A*gauss(x,RISE_X,RISE_W)*2*(x-RISE_X)/(RISE_W*RISE_W); } return -(SL0+2*SLQ*(x-XT)); }
 const xAtDist=d=>XT+d;
 function yS(x){ return x<=XT ? slabTop(x) : ySurf(x); }
 /* Muster der senkrechten Verschiebung beim Beben: Hebung nahe dem Graben, Senkung weiter landwärts (USGS Circular 1187) */
