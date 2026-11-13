@@ -1,0 +1,186 @@
+<div class="app" id="app">
+<main class="stage" id="stage">
+  <div id="viewport" aria-label="3D-Modell einer Subduktionszone mit Küste. Mit Maus oder Finger drehen, mit Mausrad oder zwei Fingern vergrößern.">
+    <canvas id="leaders" aria-hidden="true"></canvas>
+    <div id="labels" aria-hidden="true"></div>
+  </div>
+
+  <header class="hud">
+    <div class="titlebox" data-avoid>
+      <p class="eyebrow">GEO-LABS · Tsunami-Labor</p>
+      <h1 id="clockTitle">Phase 1 · Verhaken</h1>
+      <p class="sub"><span id="clockTime">Jahr 0</span> <span class="pill slow" id="clockPill">Zeitraffer</span></p>
+      <div class="meter" id="meter">
+        <div class="mrow"><span id="meterLab">Spannung in der Platte</span></div>
+        <div class="mbar"><i id="meterBar"></i></div>
+        <p class="mnote" id="wcolTxt"></p>
+      </div>
+    </div>
+    <div class="tools" data-avoid>
+      <button class="tool accent" id="bFilm" type="button" title="Erklärfilm: Die Animation läuft mit Untertiteln von selbst"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg><span>Erklärfilm</span></button>
+      <button class="tool" id="bPanel" type="button" aria-pressed="true" title="Bedienfeld ein- oder ausblenden"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM14 5v14" fill="none" stroke="currentColor" stroke-width="2"/></svg><span>Bedienfeld</span></button>
+      <button class="tool" id="bFull" type="button" title="Vollbild"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2"/></svg><span>Vollbild</span></button>
+    </div>
+  </header>
+
+  <nav class="viewrail" aria-label="Ansicht" data-avoid>
+    <button type="button" data-view="oblique" aria-pressed="true" title="Schrägansicht – frei drehbar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12L4 7.5" fill="none" stroke="currentColor" stroke-width="1.7"/></svg><span>Schräg</span></button>
+    <button type="button" data-view="section" aria-pressed="false" title="Feste Querschnittsansicht von der Seite"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v12H3zM3 11c5-1 8 5 18 2" fill="none" stroke="currentColor" stroke-width="1.7"/></svg><span>Querschnitt</span></button>
+    <button type="button" data-view="top" aria-pressed="false" title="Ansicht von oben"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM9 4c2 5 2 11 0 16M15 4c2 5 2 11 0 16" fill="none" stroke="currentColor" stroke-width="1.7"/></svg><span>Von oben</span></button>
+    <button type="button" data-view="coast" aria-pressed="false" title="Nahansicht der Küste"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17c3-2 5 2 8 0s5-2 10 0M13 13V7l4 3-4 0M5 21h14" fill="none" stroke="currentColor" stroke-width="1.7"/></svg><span>Küste</span></button>
+    <i class="sep"></i>
+    <button type="button" id="zin" title="Vergrößern" aria-label="Vergrößern"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+    <button type="button" id="zout" title="Verkleinern" aria-label="Verkleinern"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+  </nav>
+
+  <section class="wcard" id="wcard" hidden data-avoid aria-label="Messkarte der Welle">
+    <h2>Welle Richtung Küste <small>in echten Größen</small></h2>
+    <div class="wrow"><span>Meerestiefe</span><b id="wvD">–</b><div class="wbar"><i id="wbD"></i></div></div>
+    <div class="wrow"><span>Geschwindigkeit</span><b id="wvV">–</b><div class="wbar"><i id="wbV"></i></div></div>
+    <div class="wrow"><span>Wellenlänge</span><b id="wvL">–</b><div class="wbar"><i id="wbL"></i></div></div>
+    <div class="wrow hi"><span>Wellenhöhe</span><b id="wvH">–</b><div class="wbar"><i id="wbH"></i></div></div>
+    <p class="wnote">Je flacher das Meer, desto langsamer, kürzer und höher die Welle.</p>
+  </section>
+
+  <p class="simp" id="simp" data-avoid>Modell: Höhen stark überhöht · Entfernungen verkürzt · Zeit gerafft</p>
+  <div class="viewnote" id="viewnote" hidden data-avoid role="status"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <div class="cap" id="cap" hidden data-avoid aria-live="polite">
+    <p class="capch" id="capCh"></p>
+    <p class="captx" id="capTx"></p>
+  </div>
+  <div class="cinenav" id="cinenav" hidden data-avoid>
+    <div class="chapters" id="chapters"></div>
+    <div class="cinebtn">
+      <button class="btn" id="fPrev" type="button" title="Voriges Kapitel">◀</button>
+      <button class="btn pri" id="fPlay" type="button">Pause</button>
+      <button class="btn" id="fNext" type="button" title="Nächstes Kapitel">▶</button>
+      <label class="chk"><input type="checkbox" id="fStop" checked> nach jedem Kapitel anhalten</label>
+      <label class="chk"><input type="checkbox" id="fVoice"> vorlesen</label>
+      <button class="btn" id="fEnd" type="button">Film beenden ✕</button>
+    </div>
+  </div>
+
+  <footer class="dock" id="dock" data-avoid>
+    <div class="transport">
+      <button class="ibtn" id="bPrev" type="button" title="Zurück: an den Anfang der Phase" aria-label="Zurück"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+      <button class="ibtn play" id="bPlay" type="button" title="Start / Pause (Leertaste)" aria-label="Start"><svg viewBox="0 0 24 24" aria-hidden="true"><path id="playIcon" d="M8 5v14l11-7z"/></svg></button>
+      <button class="ibtn" id="bNext" type="button" title="Weiter: nächste Phase" aria-label="Weiter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+      <button class="ibtn" id="bReset" type="button" title="Zurücksetzen" aria-label="Zurücksetzen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12a7 7 0 1 0 2.2-5.1M5 4v4h4" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+      <label class="speed">Tempo <select id="speed"><option value="0.5">½×</option><option value="1" selected>1×</option><option value="2">2×</option></select></label>
+    </div>
+    <div class="track">
+      <div class="ticks" id="ticks"></div>
+      <input type="range" id="time" min="0" max="1000" value="0" step="1" aria-label="Zeit im Ablauf">
+    </div>
+  </footer>
+
+  <div class="veil" id="loading"><div class="veilbox"><p class="eyebrow">GEO-LABS</p><h2>Tsunami-Labor</h2><p id="loadTxt">Modell wird aufgebaut …</p><div class="lbar"><i id="loadBar"></i></div></div></div>
+</main>
+
+<aside class="panel" id="panel" aria-label="Bedienfeld">
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tab-ex" aria-controls="pane-ex" aria-selected="true" type="button">Erklärung</button>
+    <button role="tab" id="tab-task" aria-controls="pane-task" aria-selected="false" type="button">Vorhersage</button>
+    <button role="tab" id="tab-view" aria-controls="pane-view" aria-selected="false" type="button">Anzeige</button>
+    <button role="tab" id="tab-info" aria-controls="pane-info" aria-selected="false" type="button">Hintergrund</button>
+  </div>
+
+  <div class="pane" id="pane-ex" role="tabpanel" aria-labelledby="tab-ex">
+    <ol class="phases" id="phases"></ol>
+    <article class="explain" aria-live="polite">
+      <h2 id="exTitle"></h2>
+      <p id="exText"></p>
+      <p class="look"><b>Achte auf:</b> <span id="exLook"></span></p>
+    </article>
+    <fieldset class="group">
+      <legend>Was wäre, wenn …?</legend>
+      <label class="radio"><input type="radio" name="scen" value="big" checked><span><b>Starkes, flaches Beben</b> (Magnitude 9, Herd rund 30 km tief)</span></label>
+      <label class="radio"><input type="radio" name="scen" value="small"><span><b>Schwächeres Beben</b> (Magnitude 6, gleicher Ort)</span></label>
+      <label class="radio"><input type="radio" name="scen" value="deep"><span><b>Tiefes Beben</b> (Herd rund 300 km tief)</span></label>
+      <p class="hint">Nicht jedes Seebeben löst einen Tsunami aus. Entscheidend ist, ob sich der Meeresboden schnell und auf großer Fläche senkrecht verschiebt.</p>
+    </fieldset>
+  </div>
+
+  <div class="pane" id="pane-task" role="tabpanel" aria-labelledby="tab-task" hidden>
+    <div class="taskintro" id="taskIntro">
+      <h2>Erst vorhersagen, dann prüfen</h2>
+      <p>Vor jeder Phase sagst du vorher, was passiert. Danach zeigt die Animation, ob deine Vorhersage stimmt. Am Ende folgt eine Transferfrage.</p>
+      <button class="btn pri" id="taskStart" type="button">Vorhersage-Modus starten</button>
+    </div>
+    <div class="qcard" id="qcard" hidden>
+      <p class="score"><span id="score">0 von 0 richtig</span> <button class="link" id="taskEnd" type="button">Modus beenden</button></p>
+      <p class="qtext" id="qText"></p>
+      <fieldset class="qopts" id="qOpts"><legend class="sr">Antworten</legend></fieldset>
+      <div class="qbtns"><button class="btn pri" id="qSubmit" type="button" disabled>Vorhersage prüfen ▶</button><button class="btn" id="qReplay" type="button" hidden>Noch einmal ansehen</button><button class="btn pri" id="qNext" type="button" hidden>Weiter</button></div>
+      <div class="fb" id="qFb" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <div class="pane" id="pane-view" role="tabpanel" aria-labelledby="tab-view" hidden>
+    <fieldset class="group"><legend>Beschriftungen</legend>
+      <div class="seg" role="radiogroup" aria-label="Beschriftungen">
+        <label><input type="radio" name="lvl" value="off"><span>Aus</span></label>
+        <label><input type="radio" name="lvl" value="imp" checked><span>Wichtige</span></label>
+        <label><input type="radio" name="lvl" value="all"><span>Alle</span></label>
+      </div>
+    </fieldset>
+    <fieldset class="group"><legend>Einblenden</legend>
+      <label class="chk"><input type="checkbox" id="tArrows" checked> Bewegungspfeile</label>
+      <label class="chk"><input type="checkbox" id="tGhost" checked> Ausgangslage (gestrichelt)</label>
+      <label class="chk"><input type="checkbox" id="tSimp" checked> Hinweis auf Vereinfachungen</label>
+    </fieldset>
+    <fieldset class="group"><legend>Ablauf</legend>
+      <label class="chk"><input type="checkbox" id="stopEach" checked> nach jeder Phase anhalten</label>
+      <label class="chk"><input type="checkbox" id="tCam" checked> Kamera folgt der Phase</label>
+    </fieldset>
+    <fieldset class="group"><legend>Pfeilfarben</legend>
+      <ul class="legend">
+        <li><i style="background:#D2432F"></i>Plattenbewegung</li>
+        <li><i style="background:#E8960F"></i>Verformung und Spannung</li>
+        <li><i style="background:#1E2320;outline:1px solid #fff5"></i>Hebung und Senkung des Meeresbodens</li>
+        <li><i style="background:#2F7FE0"></i>Bewegung des Wassers</li>
+        <li><i style="background:#FFC83D"></i>Spur des Wellenbergs</li>
+      </ul>
+    </fieldset>
+    <fieldset class="group"><legend>Tasten</legend>
+      <p class="hint"><kbd>Leertaste</kbd> Start / Pause · <kbd>←</kbd> <kbd>→</kbd> Phase zurück / weiter · <kbd>1</kbd>–<kbd>5</kbd> Phase wählen · <kbd>F</kbd> Vollbild · <kbd>B</kbd> Bedienfeld</p>
+    </fieldset>
+  </div>
+
+  <div class="pane" id="pane-info" role="tabpanel" aria-labelledby="tab-info" hidden>
+    <article class="info">
+      <h2>Was das Modell zeigt</h2>
+      <p>Einen Schnitt durch eine Subduktionszone nach dem Vorbild des Tōhoku-Bebens vom 11. März 2011 (Japan). Das Wasser wird nicht „gezeichnet“, sondern berechnet: Das Modell löst die Flachwassergleichungen, mit denen auch Tsunami-Warnzentren rechnen. Die Welle entsteht wie in der Natur – der Meeresboden hebt sich und hebt das Wasser mit. Tempo, Aufsteilen, Überflutung und Rückstrom ergeben sich daraus von selbst.</p>
+      <h2>Didaktische Vereinfachungen</h2>
+      <ul>
+        <li><b>Überhöhung:</b> In Wirklichkeit hebt sich der Meeresboden um wenige Meter, das Meer ist mehrere Kilometer tief. Im Modell sind Hebung und Welle stark überhöht, sonst wären sie unsichtbar.</li>
+        <li><b>Entfernungen:</b> Vom Tiefseegraben bis zur Küste sind es vor Japan rund 200 km. Im Modell ist die Strecke stark verkürzt, Küste und Ort sind dagegen vergrößert.</li>
+        <li><b>Zeit:</b> Phase 1 dauert Jahrhunderte, das Beben wenige Minuten, der Weg zur Küste etwa eine Stunde, die Überflutung Stunden.</li>
+        <li><b>Wellenform:</b> Weil die Welle überhöht ist, steilt sie sich im Modell früher und stärker auf als ein echter Tsunami. Im tiefen Wasser ist ein echter Tsunami kaum zu sehen.</li>
+        <li><b>Weitere Wellen:</b> Ein Tsunami besteht aus mehreren Wellen, die über Stunden eintreffen können. Im Modell ist nur die erste gut zu sehen.</li>
+        <li><b>Bruchfläche:</b> 2011 war sie rund 400 km lang – viel länger als der Block. Treibgut und Schäden sind vereinfacht dargestellt.</li>
+      </ul>
+      <h2>Berichtigt gegenüber vielen Schulbuch-Grafiken</h2>
+      <ul>
+        <li>Ein Tsunami rollt sich an der Küste nicht wie eine Surfwelle ein. Er kommt als schnell steigende, strömende Flut oder als Wasserwand.</li>
+        <li>Die „4000 m“ in vielen Grafiken sind die Meerestiefe, nicht die Tiefe des Erdbebenherds (2011: rund 30 km unter dem Meeresboden).</li>
+        <li>Nicht die Stärke allein entscheidet, sondern die schnelle senkrechte Verschiebung des Meeresbodens auf großer Fläche.</li>
+      </ul>
+      <h2>Warnzeichen und richtiges Verhalten</h2>
+      <p>Starkes oder langes Beben an der Küste, ein lautes Grollen vom Meer oder ein plötzlicher Rückzug oder Anstieg des Wassers: sofort auf höheres Gelände oder weiter ins Land – nicht auf eine Warnung warten und nicht zurückkehren, bevor die Behörden Entwarnung geben.</p>
+      <h2>Quellen</h2>
+      <ul class="src">
+        <li><a href="https://www.usgs.gov/media/images/earthquake-starts-tsunami" target="_blank" rel="noopener">USGS: Earthquake starts tsunami</a> (USGS Circular 1187)</li>
+        <li><a href="https://www.noaa.gov/jetstream/tsunamis/tsunami-generation-earthquakes" target="_blank" rel="noopener">NOAA JetStream: Tsunami Generation – Earthquakes</a></li>
+        <li><a href="https://www.weather.gov/safety/tsunami-about" target="_blank" rel="noopener">NOAA / National Weather Service: About Tsunamis</a></li>
+        <li><a href="https://www.usgs.gov/faqs/what-it-about-earthquake-causes-tsunami" target="_blank" rel="noopener">USGS: What is it about an earthquake that causes a tsunami?</a></li>
+        <li>Rechenverfahren: Flachwassergleichungen, Finite-Volumen-Verfahren mit hydrostatischer Rekonstruktion (Audusse u. a. 2004).</li>
+        <li>Grundlage der Phasen: Schulbuch S. 138–139 (M2, M3, M5, M6).</li>
+      </ul>
+      <p class="hint">Tsunami-Labor, Version 2 · GEO-LABS · für den Unterricht frei nutzbar.</p>
+    </article>
+  </div>
+</aside>
+</div>

@@ -1,0 +1,1597 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tsunami-Labor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;500&family=Atkinson+Hyperlegible+Next:wght@400;500;700&display=swap">
+<style>
+/* GEO GYM · gleiches Layout wie San-Andreas-, Fluss- und Föhn-Labor */
+:root{
+  --bg:#EDF0EE; --surface:#FFFFFF; --ink:#17201B; --muted:#56625B; --line:#D3D9D5;
+  --accent:#D2232A; --focus:#1F5FD1; --ok:#1E7B3A; --ok-bg:#E6F3E9; --bad:#B42318; --bad-bg:#FCEBEA;
+  --stage-a:#F4F7F8; --stage-b:#D5DEE3; --water:#2F6DB5; --amber:#C77700; --inset:#F4F6F4;
+  --sel:color-mix(in srgb,var(--water) 9%,var(--surface));
+  --font:"Atkinson Hyperlegible Next","Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Atkinson Hyperlegible Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --r:6px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1311; --surface:#161B18; --ink:#E5EBE7; --muted:#97A39C; --line:#29312D;
+    --accent:#FF4E57; --focus:#7FA8FF; --ok:#5CC27A; --ok-bg:#15301E; --bad:#FF7B6E; --bad-bg:#3A1714;
+    --stage-a:#1C2428; --stage-b:#0B0F11; --water:#7FB0F0; --amber:#F2A93B; --inset:#1C2420; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1311; --surface:#161B18; --ink:#E5EBE7; --muted:#97A39C; --line:#29312D;
+  --accent:#FF4E57; --focus:#7FA8FF; --ok:#5CC27A; --ok-bg:#15301E; --bad:#FF7B6E; --bad-bg:#3A1714;
+  --stage-a:#1C2428; --stage-b:#0B0F11; --water:#7FB0F0; --amber:#F2A93B; --inset:#1C2420; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.45}
+.app{max-width:1400px;margin:0 auto;padding-block:20px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px}
+.eyebrow{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500}
+h1{margin:2px 0 0;font-size:clamp(24px,3.2vw,32px);line-height:1.1;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+.src{font-size:12px;color:var(--muted);max-width:450px;text-align:right;margin:0}
+.task{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--ink);border-radius:var(--r);padding:12px 16px;display:flex;flex-direction:column;gap:4px}
+.task b{font-size:15px}
+.task p{margin:0;font-size:14.5px}
+
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 350px;gap:16px;align-items:start}
+.leftcol{display:flex;flex-direction:column;gap:12px;min-width:0}
+.viewport{position:relative;height:clamp(480px,66vh,740px);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;
+  background:linear-gradient(180deg,var(--stage-a) 0%,var(--stage-b) 100%);touch-action:none}
+.viewport canvas{display:block}
+.labels{position:absolute;inset:0;pointer-events:none;z-index:2;overflow:hidden}
+.leaders{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+.leaders line{stroke:#17201B;stroke-opacity:.75;stroke-width:1.3}
+.leaders line.halo{stroke:#fff;stroke-opacity:.85;stroke-width:3.6}
+.lvl{grid-column:1/-1;display:flex;flex-direction:column;gap:4px;margin-bottom:4px}
+.lvl>span{font-size:13.5px}
+.seg.seg3{grid-template-columns:repeat(3,1fr)}
+.leaders circle.d{fill:#17201B;stroke:#fff;stroke-width:1.5}
+.leaders circle.epi{fill:#D2232A;stroke:#fff;stroke-width:2}
+.leaders path.star{fill:#D2232A;stroke:#fff;stroke-width:1.5}
+.hud{position:absolute;display:flex;gap:6px;align-items:center;z-index:3}
+.hud-tl{top:12px;left:12px;flex-direction:column;align-items:flex-start;pointer-events:none;max-width:46%}
+.hud-tr{top:12px;right:12px;flex-wrap:wrap;justify-content:flex-end;max-width:52%}
+.hud-bl{bottom:12px;left:12px;flex-direction:column;align-items:flex-start;gap:6px;pointer-events:none}
+.hud-br{bottom:12px;right:12px;font-size:11.5px;color:var(--muted);pointer-events:none;text-align:right;max-width:40%;line-height:1.3}
+.clock{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:6px 10px;display:flex;flex-direction:column;gap:1px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.clock b{font-size:13.5px}
+.clock span{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:2px 8px;border:1px solid currentColor}
+.pill.slow{color:var(--amber)} .pill.fast{color:var(--accent)} .pill.mid{color:var(--water)}
+.vbtn{font:inherit;font-size:13px;font-weight:500;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:6px 10px;cursor:pointer;min-height:32px}
+.vbtn[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.vbtn.sq{width:34px;padding:0;font-size:18px;line-height:1}
+.vbtn:focus-visible,.btn:focus-visible,.phase:focus-visible,.opt:focus-within,.tick:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.meter{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:6px 10px;font-size:12.5px;display:flex;flex-direction:column;gap:4px;min-width:190px}
+.meter .bar{height:8px;border-radius:4px;background:var(--inset);border:1px solid var(--line);overflow:hidden}
+.meter .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#F2C46B,#E08A00)}
+.wcol{display:flex;align-items:center;gap:6px;font-weight:700;font-variant-numeric:tabular-nums;border-top:1px solid var(--line);padding-top:4px;margin-top:1px}
+.sw2{display:inline-block;width:12px;height:12px;border-radius:2px;background:#22A9E6}
+/* Messkarte: Welle auf dem Weg zur Küste */
+.wcard{background:var(--surface);border:1px solid var(--line);border-top:3px solid #1C5FB8;border-radius:var(--r);padding:8px 10px 9px;font-size:12.5px;display:grid;grid-template-columns:auto 96px auto;gap:4px 8px;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.08);width:300px}
+.wcard b.h{grid-column:1/-1;font-size:13px}
+.wcard span{color:var(--muted)}
+.wcard .wb{display:block;height:8px;border-radius:4px;background:var(--inset);border:1px solid var(--line);overflow:hidden}
+.wcard .wb i{display:block;height:100%;width:0;background:#7FA9D8;transition:width .15s linear}
+.wcard .wb.up i{background:#1C5FB8}
+.wcard em{font-style:normal;font-weight:700;font-variant-numeric:tabular-nums;text-align:right;min-width:68px}
+.wcard p{grid-column:1/-1;margin:3px 0 0;font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:5px}
+.wcard p b{color:var(--ink)}
+.viewport.shake{animation:vpshake 1.1s cubic-bezier(.36,.07,.19,.97)}
+@keyframes vpshake{10%,90%{transform:translate(-2px,1px)}20%,80%{transform:translate(4px,-2px)}30%,50%,70%{transform:translate(-7px,3px)}40%,60%{transform:translate(7px,-3px)}}
+.toast{position:absolute;left:50%;top:14px;transform:translateX(-50%);z-index:6;background:var(--ink);color:var(--surface);font-size:14px;font-weight:500;padding:8px 14px;border-radius:var(--r);max-width:min(92%,560px);text-align:center;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+.viewnote{position:absolute;left:50%;top:64px;transform:translateX(-50%);z-index:5;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--water);border-radius:var(--r);padding:8px 12px;font-size:13.5px;max-width:min(92%,520px);box-shadow:0 2px 10px rgba(0,0,0,.12)}
+.loading{position:absolute;inset:0;display:grid;place-items:center;z-index:5;font-size:14px;color:var(--muted);pointer-events:none}
+
+/* Beschriftungen im 3D-Modell (fester heller Grund, in beiden Themen lesbar) */
+.lab{position:absolute;left:0;top:0;opacity:0;transition:opacity .25s;font:700 12.5px var(--font);color:#17201B;background:rgba(255,255,255,.95);border:1px solid rgba(23,32,27,.2);border-left-width:4px;border-radius:5px;padding:2px 7px;white-space:nowrap;line-height:1.25;box-shadow:0 1px 4px rgba(0,0,0,.16);will-change:transform}
+.lab small{display:block;font-weight:500;color:#56625B;font-size:11px}
+.lab.r{border-left-color:#A61B1B}.lab.a{border-left-color:#D98300}.lab.k{border-left-color:#1E2320}.lab.w{border-left-color:#1C5FB8}.lab.g{border-left-color:#7C8A80}.lab.y{border-left-color:#E0A800}
+.lab.big{font-size:13.5px}
+.lab.tag{font-size:11.5px;font-weight:700;padding:1px 6px;border-left-width:1px;color:#0F3F80;background:rgba(240,247,255,.95)}
+
+/* Animationsband */
+.anim{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.arow{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.btn{font:inherit;font-size:14px;font-weight:700;color:var(--ink);background:transparent;border:1.5px solid var(--ink);border-radius:var(--r);padding:7px 12px;cursor:pointer;display:inline-flex;gap:6px;align-items:center;justify-content:center;min-height:38px}
+.btn.solid{background:var(--ink);color:var(--surface)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.spacer{flex:1}
+.speed{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.speed select{font:inherit;font-size:13.5px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:6px 8px;min-height:36px}
+.chk{display:flex;align-items:center;gap:7px;font-size:13.5px;cursor:pointer;min-height:32px}
+.chk input{width:18px;height:18px;accent-color:var(--ink);margin:0}
+.timebox{display:flex;flex-direction:column;gap:2px}
+.timebox label{font-size:12px;color:var(--muted);font-weight:500}
+input[type=range]{width:100%;accent-color:var(--ink);margin:2px 0 0;height:28px}
+.ticks{position:relative;height:40px}
+.tick{position:absolute;top:0;height:40px;border:0;border-left:2px solid var(--line);background:transparent;padding:2px 0 0 6px;font:inherit;font-size:12px;color:var(--muted);text-align:left;cursor:pointer;line-height:1.2;overflow:hidden}
+.tick b{display:block;font-family:var(--mono);font-size:12px;color:var(--ink)}
+.tick.cur{border-left-color:var(--ink);color:var(--ink)}
+.tick.cur b{color:var(--accent)}
+
+/* Seitenleiste */
+.panel{display:flex;flex-direction:column;gap:12px}
+.group{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.group h2{margin:0;font-size:15px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.group h2 small{font-size:12px;color:var(--muted);font-weight:500}
+.seg{display:grid;grid-template-columns:repeat(2,1fr);border:1px solid var(--line);border-radius:var(--r);padding:2px;gap:2px}
+.seg label{position:relative;display:flex}
+.seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.seg span{flex:1;text-align:center;font-size:13.5px;font-weight:500;padding:7px 6px;border-radius:4px;color:var(--muted)}
+.seg input:checked+span{background:var(--ink);color:var(--surface);font-weight:700}
+.seg input:focus-visible+span{outline:3px solid var(--focus);outline-offset:1px}
+.phases{display:flex;flex-direction:column;gap:4px;margin:0;padding:0;list-style:none}
+.phase{width:100%;display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:center;text-align:left;font:inherit;font-size:14px;color:var(--ink);background:transparent;border:1px solid transparent;border-radius:var(--r);padding:6px 8px;cursor:pointer}
+.phase .n{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:5px;border:1.5px solid var(--ink);font-family:var(--mono);font-size:13px;font-weight:500}
+.phase[aria-current="step"]{background:var(--sel);border-color:var(--line);font-weight:700}
+.phase[aria-current="step"] .n{background:var(--ink);color:var(--surface)}
+.phase:disabled{cursor:default;opacity:.55}
+.explain h3{margin:0;font-size:16px}
+.explain p{margin:0;font-size:14.5px}
+.explain .look{font-size:13.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:8px}
+.qcard p{margin:0;font-size:14.5px}
+.qcard .q{font-weight:700}
+.opts{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;border:0}
+.opt{display:grid;grid-template-columns:20px 1fr;gap:8px;align-items:start;border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;font-size:14px;cursor:pointer}
+.opt input{margin:2px 0 0;width:17px;height:17px;accent-color:var(--ink)}
+.opt.ok{border-color:var(--ok);background:var(--ok-bg)}
+.opt.bad{border-color:var(--bad);background:var(--bad-bg)}
+.opt.dis{cursor:default}
+.fb{font-size:14px;border-radius:var(--r);padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+.fb:empty{display:none}
+.fb.ok{background:var(--ok-bg);border:1px solid var(--ok)}
+.fb.bad{background:var(--bad-bg);border:1px solid var(--bad)}
+.fb.info{background:var(--inset);border:1px solid var(--line)}
+.fb p{margin:0}
+.score{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.toggles{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px}
+.legend{display:grid;grid-template-columns:30px 1fr;gap:6px 8px;align-items:center;font-size:13px}
+.sw{width:26px;height:14px;border-radius:3px;border:1px solid rgba(0,0,0,.15)}
+.arw{width:28px;height:14px;display:block}
+.note{font-size:12.5px;color:var(--muted);margin:0}
+.scen{display:flex;flex-direction:column;gap:6px}
+.scen label{display:grid;grid-template-columns:20px 1fr;gap:8px;align-items:start;font-size:13.5px;cursor:pointer}
+.scen input{margin:2px 0 0;width:17px;height:17px;accent-color:var(--ink)}
+
+.info{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+details{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px}
+details summary{cursor:pointer;font-weight:700;font-size:15px}
+details p,details li{font-size:14px}
+details ul{padding-left:18px;margin:8px 0 0;display:flex;flex-direction:column;gap:8px}
+details a{color:var(--focus)}
+.foot{font-size:12px;color:var(--muted);margin:0}
+
+@media (max-width:1060px){
+  .stage{grid-template-columns:minmax(0,1fr)}
+  .viewport{height:clamp(400px,62vh,600px)}
+  .src{text-align:left}
+  .info{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:560px){
+  .hud-tr{max-width:100%;left:12px;justify-content:flex-start;top:auto;bottom:12px;flex-wrap:nowrap;gap:4px}
+  .vbtn.sq{display:none}
+  .hud-tl{max-width:78%}
+  .hud-bl{bottom:54px}
+  .hud-br{display:none}
+  .meter{display:none}
+  .wcard{width:220px;grid-template-columns:auto 50px auto;font-size:11px;padding:6px 8px}
+  .wcard p{display:none}
+  .vbtn{font-size:12px;padding:5px 7px}
+  .lab{font-size:11px;padding:1px 5px}.lab small{display:none}
+  .tick{font-size:0}.tick b{font-size:12px}
+  .toggles{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <div class="eyebrow">GEO GYM · Endogene Kräfte · Subduktionszone</div>
+      <h1>Wie ein Tsunami entsteht – das 3D-Modell</h1>
+    </div>
+    <p class="src">Grundlage: Buch S. 138–139 (M2, M6, Info) und M3/M5. Fachlich geprüft mit USGS und NOAA. Das Modell ist nicht maßstabsgetreu.</p>
+  </header>
+
+  <section class="task" aria-labelledby="task-h">
+    <b id="task-h">Auftrag</b>
+    <p>Spiele die fünf Phasen nacheinander ab. Beobachte, wie Plattenbewegung, Seebeben, Wasserverdrängung und Überflutung zusammenhängen. Drehe und vergrößere das Modell oder wähle die Querschnittsansicht. Im Modus „Vorhersagen“ überlegst du zuerst, was als Nächstes passiert, und prüfst es dann mit der Animation.</p>
+  </section>
+
+  <div class="stage">
+    <div class="leftcol">
+      <div class="viewport" id="viewport">
+        <div class="loading" id="loading">3D-Modell wird geladen …</div>
+        <div class="labels" id="labels"></div>
+        <canvas class="leaders" id="leaders" aria-hidden="true"></canvas>
+        <div class="hud hud-tl" id="hudTL">
+          <div class="clock" aria-live="polite"><b id="clockTitle">Phase 1 · Verhaken</b><span id="clockTime">Jahr 0</span><span><span class="pill slow" id="clockPill">Zeitraffer</span></span></div>
+        </div>
+        <div class="hud hud-tr" id="hudTR" role="group" aria-label="Ansicht">
+          <button class="vbtn" data-view="oblique" aria-pressed="true">Schrägansicht</button>
+          <button class="vbtn" data-view="section" aria-pressed="false">Querschnitt</button>
+          <button class="vbtn" data-view="top" aria-pressed="false">Von oben</button>
+          <button class="vbtn sq" id="zin" aria-label="Vergrößern">+</button>
+          <button class="vbtn sq" id="zout" aria-label="Verkleinern">−</button>
+        </div>
+        <div class="hud hud-bl" id="hudBL">
+          <div class="meter" id="meter"><span id="meterLab">Spannung in der Platte</span><div class="bar"><i id="meterBar"></i></div>
+            <span class="wcol" id="wcol"><i class="sw2"></i><span id="wcolTxt">Wassersäule über dem Plattenrand: +0 m</span></span></div>
+          <div class="wcard" id="wcard" hidden>
+            <b class="h">Welle auf dem Weg zur Küste</b>
+            <span>Meerestiefe</span><i class="wb"><i id="wbD"></i></i><em id="wvD">–</em>
+            <span>Geschwindigkeit</span><i class="wb"><i id="wbV"></i></i><em id="wvV">–</em>
+            <span>Länge der Welle</span><i class="wb"><i id="wbL"></i></i><em id="wvL">–</em>
+            <span>Höhe der Welle</span><i class="wb up"><i id="wbH"></i></i><em id="wvH">–</em>
+            <p>Flacheres Wasser → Welle wird <b>langsamer</b> → Wasser staut sich → Welle wird <b>kürzer und höher</b></p>
+          </div>
+        </div>
+        <div class="hud hud-br" id="simp">Didaktische Vereinfachung: Höhen und Wellen stark überhöht · Entfernungen verkürzt · Zeit gerafft</div>
+        <div class="toast" id="toast" role="status" aria-live="polite"></div>
+        <div class="viewnote" id="viewnote" hidden></div>
+      </div>
+
+      <section class="anim" aria-label="Steuerung der Animation">
+        <div class="arow">
+          <button class="btn solid" id="bStart">▶ Start</button>
+          <button class="btn" id="bPause" disabled>❚❚ Pause</button>
+          <button class="btn" id="bPrev">◀ Zurück</button>
+          <button class="btn" id="bNext">Weiter ▶</button>
+          <button class="btn" id="bReset">↺ Zurücksetzen</button>
+          <span class="spacer"></span>
+          <label class="speed">Tempo
+            <select id="speed"><option value="0.5">langsam</option><option value="1" selected>normal</option><option value="1.6">schnell</option></select>
+          </label>
+        </div>
+        <div class="timebox">
+          <label for="time">Gesamter Ablauf (Regler ziehen)</label>
+          <input type="range" id="time" min="0" max="1000" step="1" value="0">
+          <div class="ticks" id="ticks"></div>
+        </div>
+        <div class="arow">
+          <label class="chk"><input type="checkbox" id="stopEach" checked> Nach jeder Phase anhalten</label>
+        </div>
+      </section>
+    </div>
+
+    <aside class="panel">
+      <div class="group">
+        <div class="seg" role="radiogroup" aria-label="Modus">
+          <label><input type="radio" name="mode" value="explore" checked><span>Erkunden</span></label>
+          <label><input type="radio" name="mode" value="task"><span>Vorhersagen</span></label>
+        </div>
+        <ul class="phases" id="phases" aria-label="Phasen"></ul>
+      </div>
+
+      <div class="group explain" id="explain" aria-live="polite">
+        <h3 id="exTitle"></h3>
+        <p id="exText"></p>
+        <p class="look" id="exLook"></p>
+      </div>
+
+      <div class="group qcard" id="qcard" hidden>
+        <h2>Vorhersage <small class="score" id="score"></small></h2>
+        <p class="q" id="qText"></p>
+        <fieldset class="opts" id="qOpts"><legend class="note" style="padding:0;margin-bottom:4px">Wähle eine Antwort:</legend></fieldset>
+        <div class="actions">
+          <button class="btn solid" id="qSubmit" disabled>Vorhersage prüfen ▶</button>
+          <button class="btn" id="qNext" hidden>Nächste Vorhersage</button>
+          <button class="btn" id="qReplay" hidden>Phase noch einmal</button>
+        </div>
+        <div class="fb" id="qFb" aria-live="polite"></div>
+      </div>
+
+      <div class="group">
+        <h2>Anzeigen</h2>
+        <div class="toggles">
+          <div class="lvl"><span>Beschriftungen</span><div class="seg seg3" role="radiogroup" aria-label="Beschriftungen"><label><input type="radio" name="lvl" value="off"><span>Aus</span></label><label><input type="radio" name="lvl" value="imp" checked><span>Wichtige</span></label><label><input type="radio" name="lvl" value="all"><span>Alle</span></label></div></div>
+          <label class="chk"><input type="checkbox" id="tArrows" checked> Bewegungspfeile</label>
+          <label class="chk"><input type="checkbox" id="tGhost" checked> Ausgangslage</label>
+          <label class="chk"><input type="checkbox" id="tCam" checked> Kamera führt mit</label>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2>Was wäre, wenn …?</h2>
+        <p class="note" style="margin-top:-4px">Nicht jedes Seebeben löst einen Tsunami aus. Wähle ein anderes Beben und spiele ab Phase 2 ab.</p>
+        <div class="scen" role="radiogroup" aria-label="Erdbeben">
+          <label><input type="radio" name="scen" value="big" checked><span><b>Starkes, flaches Beben</b> – Magnitude 9, Erdbebenherd rund 30 km tief (wie 2011)</span></label>
+          <label><input type="radio" name="scen" value="small"><span><b>Schwächeres Beben</b> – Magnitude 6 an derselben Stelle</span></label>
+          <label><input type="radio" name="scen" value="deep"><span><b>Tiefes Beben</b> – in der abtauchenden Platte, rund 300 km tief</span></label>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2>Legende</h2>
+        <div class="legend">
+          <span class="sw" style="background:linear-gradient(180deg,#C8BBA0 0 18%,#3F4A52 18% 55%,#6F7D6C 55%)"></span><span>Ozeanische Platte (Kruste und Mantelanteil)</span>
+          <span class="sw" style="background:linear-gradient(180deg,#D3C29E 0 20%,#BCA890 20%)"></span><span>Kontinentale Platte</span>
+          <span class="sw" style="background:#D6A68B"></span><span>Erdmantel (heiß, zähplastisch)</span>
+          <span class="sw" style="background:#4C93D3;opacity:.75"></span><span>Wasser</span>
+          <span class="sw" style="background:#22A9E6"></span><span>Zusätzliches Wasser über dem abgesenkten Meeresboden – wird beim Beben nach oben gedrückt</span>
+          <span class="sw" style="background:#E59A1C"></span><span>Blockierter Abschnitt / Spannung</span>
+          <svg class="arw" viewBox="0 0 28 14" aria-hidden="true"><path d="M2 7H20" stroke="#A61B1B" stroke-width="3"/><path d="M18 2L27 7L18 12Z" fill="#A61B1B"/></svg><span>Plattenbewegung</span>
+          <svg class="arw" viewBox="0 0 28 14" aria-hidden="true"><path d="M2 7H20" stroke="#E08A00" stroke-width="3"/><path d="M18 2L27 7L18 12Z" fill="#E08A00"/></svg><span>Verformung der Platte</span>
+          <svg class="arw" viewBox="0 0 28 14" aria-hidden="true"><path d="M2 7H20" stroke="#1E2320" stroke-width="3"/><path d="M18 2L27 7L18 12Z" fill="#1E2320"/></svg><span>Hebung / Senkung des Meeresbodens</span>
+          <svg class="arw" viewBox="0 0 28 14" aria-hidden="true"><path d="M2 7H20" stroke="#1C5FB8" stroke-width="3"/><path d="M18 2L27 7L18 12Z" fill="#1C5FB8"/></svg><span>Wasserbewegung</span>
+          <svg class="arw" viewBox="0 0 28 14" aria-hidden="true"><path d="M1 7H27" stroke="#F0B90B" stroke-width="3"/></svg><span>Spur des Wellenbergs (Phase 4)</span>
+          <svg class="arw" viewBox="0 0 28 14" aria-hidden="true"><path d="M1 7H27" stroke="#17201B" stroke-width="2" stroke-dasharray="4 3"/></svg><span>Ausgangslage / normaler Meeresspiegel</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <section class="info">
+    <details open>
+      <summary>Warum wird der Wellenberg im flachen Wasser höher?</summary>
+      <p>Wie schnell ein Tsunami läuft, hängt nur von der <b>Meerestiefe</b> ab: Je tiefer das Wasser, desto schneller die Welle. Kommt die Welle in flacheres Wasser, wird ihr <b>vorderer Teil zuerst abgebremst</b>. Der hintere Teil ist noch im tieferen Wasser und schneller – er holt auf. Das Wasser staut sich, ähnlich wie Autos, die auf einen Stau auffahren.</p>
+      <p>Die Energie der Welle steckt danach in einer <b>kürzeren</b> Welle und in <b>weniger tiefem</b> Wasser. Deshalb wächst der Wellenberg: im Buch (M2) von weniger als 1 m auf dem offenen Meer auf rund 10 m an der Küste. Die Zeit zwischen zwei Wellenbergen bleibt dabei gleich (rund 18 Minuten).</p>
+    </details>
+    <details>
+      <summary>Warum löst nicht jedes Seebeben einen Tsunami aus?</summary>
+      <p>Ein Tsunami entsteht vor allem dann, wenn sich der <b>Meeresboden plötzlich senkrecht</b> hebt oder senkt – und zwar auf einer riesigen Fläche. Dann wird die ganze Wassersäule darüber angehoben. Das gelingt meist nur bei Beben, die</p>
+      <ul>
+        <li><b>stark</b> sind (meist Magnitude über 7; für Tsunamis über ganze Ozeane über 8),</li>
+        <li><b>flach</b> liegen (Erdbebenherd weniger als rund 100 km tief),</li>
+        <li>unter dem Meer oder an der Küste liegen und</li>
+        <li>an einer Bruchfläche entstehen, an der sich Gestein <b>nach oben oder unten</b> verschiebt – wie an Subduktionszonen.</li>
+      </ul>
+      <p>Bei einer <b>Blattverschiebung</b> (z. B. San-Andreas-Verwerfung) gleiten die Platten waagerecht aneinander vorbei. Der Meeresboden hebt sich dabei kaum, deshalb entstehen dort selten Tsunamis. Tsunamis können auch durch Vulkanausbrüche oder Erdrutsche entstehen (Buch, Info).</p>
+    </details>
+    <details>
+      <summary>Didaktische Vereinfachungen im Modell</summary>
+      <ul>
+        <li><b>Überhöht:</b> Wellen, Meerestiefe, Hebung und Senkung des Meeresbodens sind viel höher dargestellt als in Wirklichkeit. Auf dem offenen Meer ist ein Tsunami weniger als 1 m hoch, aber über 200 km lang. Die Messkarte zeigt die echten Größenordnungen.</li>
+        <li><b>Verkürzt:</b> Vom Tiefseegraben bis zur Küste sind es vor Japan rund 200 km. Das Modell zeigt diese Strecke stark verkürzt; Häuser und Bäume sind viel zu groß.</li>
+        <li><b>Zeitraffer:</b> Die Spannung baut sich über Jahrhunderte auf (Phase 1). Das Gleiten dauert nur Sekunden bis wenige Minuten (Phase 2). Bis die Welle die Küste erreicht, vergehen Minuten bis über eine Stunde (2011 bei Sendai: rund 70 Minuten).</li>
+        <li><b>Folgewellen:</b> Im Modell entstehen sie vereinfacht im Entstehungsgebiet. In Wirklichkeit entstehen mehrere Wellen durch die unregelmäßige Form des Meeresbodens und durch Reflexionen an Schelf und Küste.</li>
+        <li><b>Wellenform:</b> Das Modell berechnet eine lange Flachwasserwelle, die im flachen Wasser kürzer, höher und an der Front steiler wird. Brandung, Strudel und einzelne Trümmer sind nicht berechnet.</li>
+      </ul>
+    </details>
+    <details>
+      <summary>Fachlich genauer hingeschaut: Abweichungen in den Buchabbildungen</summary>
+      <ul>
+        <li><b>Keine Surfwelle.</b> M2 und M5 zeigen einen Brecher, der sich einrollt. Laut NOAA rollt sich ein Tsunami nicht wie eine Windwelle ein. Er wirkt eher wie eine sehr schnell steigende Flut oder eine Wasserwand, die weit ins Land strömt.</li>
+        <li><b>„Beben in 4000 m Tiefe“ (M2).</b> Die 4000 m sind die Meerestiefe. Der Erdbebenherd lag 2011 rund 30 km unter dem Meeresboden (Buch M6: 32 km).</li>
+        <li><b>Uhrzeit der ersten Welle.</b> In einer Fassung von M6 steht „14:44 erste Tsunamiwelle“ – das wäre vor dem Beben um 14:46 Uhr. Die Buchseite nennt 14:55. Tatsächlich erreichte die Flut die Küste bei Natori/Sendai erst gegen 15:55 Uhr, rund 70 Minuten nach dem Beben.</li>
+        <li><b>Mehr als eine Bewegung.</b> Das Seebeben hebt den Meeresboden vor allem nahe dem Graben. Weiter zur Küste hin senkt sich der Boden (USGS). Deshalb kann sich das Meer vor der ersten Flut zurückziehen.</li>
+        <li><b>Kein Punkt, sondern eine Fläche.</b> M2 zeigt den Bebenherd als Punkt. Der Bruch begann zwar an einem Punkt, riss dann aber auf einer Fläche von rund 400 km Länge auf.</li>
+        <li><b>Die Zahlen in M2 stimmen.</b> 4000 m → rund 713 km/h, 200 m → 159 km/h, 10 m → 36 km/h. Das passt genau zur Regel, dass die Geschwindigkeit nur von der Meerestiefe abhängt.</li>
+        <li><b>Stärke 2011.</b> Das Buch nennt 9,0; der USGS gibt heute 9,1 an.</li>
+      </ul>
+    </details>
+    <details>
+      <summary>Quellen</summary>
+      <ul>
+        <li><a href="https://www.usgs.gov/media/images/earthquake-starts-tsunami" target="_blank" rel="noopener">USGS: Earthquake starts tsunami</a> (aus USGS Circular 1187) – Rand der oberen Platte federt zurück, hebt Meeresboden und Wasser; die Aufwölbung dahinter sinkt.</li>
+        <li><a href="https://www.noaa.gov/jetstream/tsunamis/tsunami-generation-earthquakes" target="_blank" rel="noopener">NOAA JetStream: Tsunami Generation – Earthquakes</a> – senkrechte Verschiebung des Meeresbodens; nicht jedes Beben erzeugt einen Tsunami.</li>
+        <li><a href="https://www.weather.gov/safety/tsunami-about" target="_blank" rel="noopener">NOAA / National Weather Service: About Tsunamis</a> – Tempo im tiefen und flachen Wasser, Wellen werden höher, mehrere Wellen über Stunden, Rückzug des Meeres, keine sich einrollende Welle.</li>
+        <li><a href="https://www.iitk.ac.in/nicee/wcee/article/WCEE2012_1587.pdf" target="_blank" rel="noopener">15th World Conference on Earthquake Engineering (2012)</a> – Ankunft der Flut in Natori/Yuriage gegen 15:55 Uhr, 69 Minuten nach dem Beben.</li>
+      </ul>
+    </details>
+  </section>
+  <p class="foot">GEO GYM · Tsunami-Labor · Modell vereinfacht und nicht maßstabsgetreu. Beispiel Japan 2011: Pazifische Platte taucht unter die Nordamerikanische Platte (Bezeichnungen wie im Buch); Küstenebene mit Reisfeldern und Kiefernwald wie bei Sendai.</p>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
+/* ===================== Koordinaten =====================
+   x = Querschnitt: links offenes Meer, rechts Küste und Land (wie Buch M2/M5)
+   y = oben (0 = normaler Meeresspiegel)
+   z = entlang der Plattengrenze; vorne (z = +ZD) liegt die Schnittfläche. */
+const XL=-16, XR=12, ZD=6, YB=-10, XT=-7, XC=7.0, XS=6.85, ZR=2.0;
+const XU=-5.6;           // Mitte der Hebung (nahe dem Graben, weit vor der Küste)
+const XSUB=-0.5;         // Mitte der Senkung
+const YOP=-5.2;          // Unterkante der kontinentalen Platte
+const LOCK0=0.4, LOCK1=4.4, DH=2.6; // blockierter Abschnitt / Herd (Abstand entlang der Platte ab Graben)
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const LOWQ = new URLSearchParams(location.search).has('low');
+
+const sstep=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t);};
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const gauss=(x,m,w)=>Math.exp(-(((x-m)/w)**2));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const fl=v=>{const s=String(+(+v).toFixed(5)); return /[.e]/.test(s)?s:s+'.0';};
+const lin=hex=>{const c=new THREE.Color(hex); return `vec3(${fl(c.r)},${fl(c.g)},${fl(c.b)})`;};
+
+function monotone(pts){
+  const n=pts.length,xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]),d=[],m=new Array(n);
+  for(let i=0;i<n-1;i++)d.push((ys[i+1]-ys[i])/(xs[i+1]-xs[i]));
+  m[0]=d[0];m[n-1]=d[n-2];
+  for(let i=1;i<n-1;i++)m[i]=d[i-1]*d[i]<=0?0:(d[i-1]+d[i])/2;
+  for(let i=0;i<n-1;i++){if(d[i]===0){m[i]=m[i+1]=0;continue;}const a=m[i]/d[i],b=m[i+1]/d[i],h=a*a+b*b;if(h>9){const t=3/Math.sqrt(h);m[i]=t*a*d[i];m[i+1]=t*b*d[i];}}
+  return x=>{if(x<=xs[0])return ys[0];if(x>=xs[n-1])return ys[n-1];let i=0;while(x>xs[i+1])i++;
+    const h=xs[i+1]-xs[i],t=(x-xs[i])/h,t2=t*t,t3=t2*t;
+    return (2*t3-3*t2+1)*ys[i]+(t3-2*t2+t)*h*m[i]+(-2*t3+3*t2)*ys[i+1]+(t3-t2)*h*m[i+1];};
+}
+/* Oberfläche der kontinentalen Platte: Graben → Kontinentalhang → breiter Schelf → Küste → Küstenebene → Hügel */
+const ySurf=monotone([[-7,-3.4],[-6.2,-3.05],[-5,-2.62],[-3.5,-2.1],[-2,-1.55],[-0.5,-1.0],[0.8,-0.62],[2.5,-0.42],[4.5,-0.24],[6,-0.1],[7,0],[8,0.1],[9,0.2],[10,0.36],[11,0.75],[11.6,1.05],[12,1.15]]);
+function slabTop(x){ if(x<=XT){ if(x<=-10) return -3; const u=(x+10)/3; return -3-0.4*u*u; } const d=x-XT; return -3.4-0.267*d-0.02*d*d; }
+function slabSlope(x){ if(x<=XT) return x<=-10?0:-0.2667*(x+10)/3; return -(0.267+0.04*(x-XT)); }
+const xAtDist=d=>XT+d;
+function yS(x){ return x<=XT ? slabTop(x) : ySurf(x); }
+/* Muster der senkrechten Verschiebung beim Beben (Hebung nahe Graben, Senkung weiter landwärts) */
+function Dpat(x){ return (0.36*gauss(x,XU,1.4) - 0.14*gauss(x,XSUB,2.0))*sstep(-7,-6.3,x); }
+function Hpat(x){ return 0.25*gauss(x,-5.2,2.6)*sstep(-7,-6.6,x); }
+function Tz(z){ return sstep(-ZR-1.5,-ZR,z); }
+function depthRest(x){ return Math.max(0.04, -yS(x)); }
+/* Kleinräumiges Relief (Tiefseehügel, Hang, Küstenebene, Düne) */
+function hash2(x,y){ const h=Math.sin(x*127.1+y*311.7)*43758.5453; return h-Math.floor(h); }
+function vnoise2(x,y){ const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf);
+  const a=hash2(xi,yi),b=hash2(xi+1,yi),c=hash2(xi,yi+1),d=hash2(xi+1,yi+1); return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v; }
+function fbm2(x,y){ let s=0,a=0.5; for(let i=0;i<4;i++){ s+=a*vnoise2(x,y); x=x*2.03+1.7; y=y*2.03+9.2; a*=0.5; } return s-0.47; }
+function reliefOcean(x,z){ return 0.09*(1-sstep(XT-1.8,XT-0.5,x))*fbm2(x*0.8,z*0.8); }
+function reliefOP(x,z){ return fbm2(x*1.1+3,z*1.1)*(0.05*sstep(XT+0.3,XT+1.3,x)*(1-sstep(XC-1.3,XC-0.3,x))+0.06*sstep(XC+1.0,XC+2.0,x)) + 0.06*gauss(x,XC+0.78,0.22)*(0.8+0.4*vnoise2(z*1.5,3)); }
+function gRest(x,z){ return x<=XT ? slabTop(x)+reliefOcean(x,z) : yS(x)+reliefOP(x,z); }
+
+/* ===================== Szenarien ===================== */
+const SCEN={
+  big:{R:1, hx:xAtDist(DH), deep:false},
+  small:{R:0.03, hx:xAtDist(DH), deep:false},
+  deep:{R:0, hx:4.6, deep:true}
+};
+let scen=SCEN.big;
+
+/* ===================== Wellenmodell =====================
+   Lineare Flachwasserwelle: Geschwindigkeit ~ Wurzel(Meerestiefe). Laufzeit-Koordinate s(x).
+   Der Anfangsbuckel (= Hebung des Meeresbodens) teilt sich in zwei Richtungen.
+   Im flachen Wasser: Höhe ~ (Tiefe)^-0,6 (begrenzt); Front wird steiler (Wellenberg läuft schneller als das Wellental). */
+const P_EXP=0.6, CAP=5, T_ARR=18, LAG=6, AMP=[1,0.85,0.55], KAP=0.7;
+const NX=2801, sTab=new Float64Array(NX);
+{ let acc=0; const dx=(XR-XL)/(NX-1);
+  for(let i=1;i<NX;i++){ const xa=XL+(i-1)*dx, xb=XL+i*dx; acc+=0.5*dx*(1/Math.sqrt(depthRest(xa))+1/Math.sqrt(depthRest(xb))); sTab[i]=acc; } }
+function sUnit(x){ const f=(clamp(x,XL,XR)-XL)/(XR-XL)*(NX-1); const i=Math.min(NX-2,Math.floor(f)); return lerp(sTab[i],sTab[i+1],f-i); }
+const CSPEED=(sUnit(XS)-sUnit(XU))/T_ARR;
+const sOf=x=>sUnit(x)/CSPEED;
+const dsdx=x=>1/(CSPEED*Math.sqrt(depthRest(x)));
+const S_MIN=sOf(XL), S_MAX=sOf(XR), SM=2048, DS=(S_MAX-S_MIN)/(SM-1);
+const Ftab=new Float32Array(SM), DPtab=new Float32Array(SM), XofS=new Float32Array(SM);
+{ let j=0; const dx=(XR-XL)/(NX-1);
+  for(let m=0;m<SM;m++){ const sig=(S_MIN+m*DS)*CSPEED; while(j<NX-2&&sTab[j+1]<sig)j++;
+    const x=XL+(j+(sig-sTab[j])/Math.max(1e-9,sTab[j+1]-sTab[j]))*dx; XofS[m]=x; Ftab[m]=Dpat(x); DPtab[m]=Math.pow(depthRest(x),P_EXP); } }
+function xOfS(s){ const f=(s-S_MIN)/DS; if(f<=0)return XL; if(f>=SM-1)return XR; const i=Math.floor(f); return lerp(XofS[i],XofS[i+1],f-i); }
+const S_REF=sOf(XU+0.6), C_SRC=CSPEED*Math.sqrt(depthRest(XU)), SPREAD=0.9;
+const steepW=x=>sstep(1.0,0.1,depthRest(x));
+function ev(sig,dxp){ const f=(sig-S_MIN)/DS; if(f<=0||f>=SM-1)return 0; const i=Math.floor(f),u=f-i;
+  const F=Ftab[i]+(Ftab[i+1]-Ftab[i])*u; if(F===0)return 0; const dp=DPtab[i]+(DPtab[i+1]-DPtab[i])*u; return F*Math.min(CAP,dp*dxp); }
+function evR(sig,dxp,w,R){ if(w<=0.001) return ev(sig,dxp); let e=ev(sig,dxp); e=ev(sig-KAP*w*e*R,dxp); return ev(sig-KAP*w*e*R,dxp); }
+function etaW(S,dxp,w,z,tw,R){
+  const dz=Math.max(0,-ZR-z); let sum=0;
+  for(let k=0;k<3;k++){
+    const tk=tw-k*LAG; let r=1; if(k>0){ r=sstep(k*LAG-0.8,k*LAG+0.6,tw); if(r<=0)continue; }
+    const a=AMP[k]*r*0.5;
+    if(dz===0){ sum+=a*(evR(S-tk,dxp,w,R)+ev(S+tk,dxp)); }
+    else{ const Sr=S-S_REF, Te=Math.sqrt(Sr*Sr+(dz/C_SRC)**2), ww=sstep(-0.6,0.6,Sr);
+      const vp=evR(S_REF+Te-tk,dxp,w,R)+ev(S_REF+Te+tk,dxp), vm=evR(S_REF-Te-tk,dxp,w,R)+ev(S_REF-Te+tk,dxp);
+      sum+=a*(ww*vp+(1-ww)*vm)/Math.sqrt(1+dz/SPREAD); }
+  }
+  return sum*R;
+}
+
+/* ===================== Zeitachse ===================== */
+const TQ=14.8, P3S=21;
+const PH=[
+  {n:1,key:'lock',name:'Verhaken und Spannungsaufbau',short:'Verhaken',t0:0,t1:14,pill:['slow','Zeitraffer: Jahrhunderte'],
+   text:'Die ozeanische Platte schiebt sich jedes Jahr einige Zentimeter unter die kontinentale Platte (vor Japan rund 8 cm). An einem Abschnitt der Kontaktfläche haben sich die Gesteine durch Reibung verhakt. Die kontinentale Platte wird deshalb mitgezogen: Ihr Rand wird nach unten gedrückt, dahinter wölbt sie sich leicht auf. Wie ein gebogenes Lineal speichert sie dabei Spannung – über Jahrhunderte. Weil der Meeresboden über dem Plattenrand langsam absinkt, wird die Wassersäule darüber immer höher. Eine Welle entsteht dabei nicht, denn alles geschieht sehr langsam.',
+   look:'Achte auf: die hellblaue Fläche – so viel Wasser liegt zusätzlich über dem abgesenkten Meeresboden. Die gestrichelte Linie zeigt die Ausgangslage, die orange Färbung die Spannung.'},
+  {n:2,key:'quake',name:'Plötzliches Gleiten – Seebeben',short:'Seebeben',t0:14,t1:P3S,pill:['fast','Sekunden bis wenige Minuten'],
+   text:'Irgendwann ist die Spannung größer als die Reibung. Der blockierte Abschnitt reißt auf, und die Platten gleiten ruckartig um viele Meter aneinander vorbei. Der Rand der kontinentalen Platte federt nach oben und zum Meer hin zurück. Der Meeresboden wird – weit draußen vor der Küste – in Sekunden gehoben und drückt das zusätzliche Wasser nach oben; weiter landwärts senkt er sich. Vom Erdbebenherd laufen Erdbebenwellen durch das Gestein.',
+   look:'Achte auf: die hellblaue Fläche. Unten verschwindet sie, oben an der Wasseroberfläche erscheint sie als Wasserberg. Die schwarzen Pfeile zeigen, wie weit sich der Meeresboden senkrecht verschiebt.'},
+  {n:3,key:'water',name:'Verdrängung der Wassersäule',short:'Verdrängung',t0:P3S,t1:P3S+8,pill:['mid','Zeitraffer: Minuten'],
+   text:'Weil sich der Meeresboden so schnell bewegt, wird das ganze Wasser darüber – vom Meeresboden bis zur Oberfläche – mit angehoben oder abgesenkt. Die Wasseroberfläche bekommt einen flachen, aber riesigen Buckel. Die Schwerkraft zieht das Wasser wieder nach unten: Es fließt auseinander, und lange Wellen laufen in mehrere Richtungen – zum offenen Meer und zur Küste.',
+   look:'Achte auf: die blauen Pfeile. Schau auch von oben: Die Wellen breiten sich zu den Seiten hin aus.'},
+  {n:4,key:'spread',name:'Ausbreitung und Annäherung an die Küste',short:'Ausbreitung',t0:P3S+8,t1:P3S+T_ARR-0.7,pill:['mid','Zeitraffer: Minuten bis 1 Stunde'],
+   text:'Auf dem offenen Meer ist der Tsunami flach (unter 1 m), sehr lang (über 200 km) und so schnell wie ein Flugzeug (rund 700 km/h). Schiffe bemerken ihn kaum. Wird das Wasser flacher, wird der vordere Teil der Welle zuerst abgebremst. Der hintere Teil holt auf, das Wasser staut sich: Die Welle wird kürzer, höher und vorne steiler. Manchmal zieht sich das Meer an der Küste zuerst zurück.',
+   look:'Achte auf: die gelbe Spur des Wellenbergs und die Messkarte unten links. Vergleiche die Welle zur Küste mit der Welle zum offenen Meer.'},
+  {n:5,key:'flood',name:'Überflutung der Küste',short:'Überflutung',t0:P3S+T_ARR-0.7,t1:P3S+T_ARR+2*LAG+9,pill:['mid','Zeitraffer: Stunden'],
+   text:'An der Küste steigt das Wasser rasch an und strömt wie eine mächtige Flut weit ins Land. Ein Tsunami rollt sich dabei nicht wie eine Surfwelle ein. Das Wasser reißt Autos, Boote und Bäume mit und beschädigt Häuser, Straßen und Bahnlinien. Danach fließt es mit großer Kraft zurück. Weitere Wellen folgen, oft über Stunden – die erste ist nicht immer die höchste.',
+   look:'Achte auf: wie weit das Wasser ins Land vordringt, die Strömungspfeile (hin und zurück) und den höher gelegenen Ort.'}
+];
+const TEND=PH[4].t1;
+const phaseAt=t=>{ for(let i=PH.length-1;i>=0;i--) if(t>=PH[i].t0-1e-6) return i; return 0; };
+const state={t:0,playing:false,speed:1,stopEach:true,labels:true,lvl:'imp',arrows:true,ghost:true,autoCam:true,mode:'explore',view:'oblique',stopAt:null,dirty:true};
+
+const spr=u=>u<=0?0:1-Math.exp(-4*u)*(Math.cos(9*u)+4/9*Math.sin(9*u));
+function kOf(t){ if(t<PH[0].t1) return t/PH[0].t1; if(t<TQ) return 1; return 1-scen.R*spr(t-TQ); }
+function etaTR(S,dxp,w,z,t,R){ if(t<TQ) return 0; if(t<P3S) return etaW(S,dxp,w,z,0,R)*spr(t-TQ); return etaW(S,dxp,w,z,t-P3S,R); }
+
+/* Küstensignal (für die Überflutung) vorab berechnen: Wasserstand an der Küste über die Zeit, für R = 1 */
+const DTS=0.03, NT=Math.ceil((TEND+2)/DTS), DZS=0.5, NR=9;
+const SHtab=new Float32Array(NT*NR);
+{ const S=sOf(XS), dxp=Math.pow(depthRest(XS),-P_EXP), w=steepW(XS);
+  for(let r=0;r<NR;r++){ const z=-ZR-r*DZS; for(let n=0;n<NT;n++) SHtab[r*NT+n]=etaTR(S,dxp,w,z,n*DTS,1); } }
+function shoreAt(dz,t){ let fx=t/DTS; if(fx<=0) return 0; fx=Math.min(fx,NT-1.001); const fy=clamp(dz/DZS,0,NR-1.001); const ix=Math.floor(fx),iy=Math.floor(fy),ux=fx-ix,uy=fy-iy;
+  const a=SHtab[iy*NT+ix],b=SHtab[iy*NT+ix+1],c=SHtab[(iy+1)*NT+ix],d=SHtab[(iy+1)*NT+ix+1]; return lerp(lerp(a,b,ux),lerp(c,d,ux),uy); }
+const VF=0.9, BETA=0.06, HOLD=[0,0.4,0.8,1.3,1.8,2.4], HOLDW=[1,0.93,0.86,0.77,0.68,0.58];
+function landLevel(x,z,t){ const dx=x-XS, te=t-dx/VF, dz=Math.max(0,-ZR-z); let m=-1e9;
+  for(let j=0;j<6;j++){ const v=scen.R*shoreAt(dz,te-HOLD[j]); const w=v>0?v*HOLDW[j]:v; if(w>m)m=w; } return m-BETA*dx; }
+function seaLevelAt(x,z,t){ if(x>=XS) return landLevel(x,z,t); const xx=Math.min(x,XS); return etaTR(sOf(xx),Math.pow(depthRest(xx),-P_EXP),steepW(xx),z,t,scen.R); }
+function groundAt(x,z,kk){ return x<=XT ? gRest(x,z) : gRest(x,z)-kk*Dpat(x)*Tz(z); }
+
+/* ===================== three.js ===================== */
+const vp=document.getElementById('viewport');
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+const DPR_MAX=LOWQ?1:Math.min(1.75,devicePixelRatio||1); let dpr=DPR_MAX; renderer.setPixelRatio(dpr);
+renderer.toneMapping=THREE.NeutralToneMapping; renderer.toneMappingExposure=1.05;
+renderer.shadowMap.enabled=!LOWQ; renderer.shadowMap.type=THREE.PCFSoftShadowMap; renderer.shadowMap.autoUpdate=false; let shadowDirty=true, lastShadow=0;
+vp.insertBefore(renderer.domElement,vp.firstChild);
+const scene=new THREE.Scene();
+const pmrem=new THREE.PMREMGenerator(renderer); scene.environment=pmrem.fromScene(new RoomEnvironment(),0.04).texture; scene.environmentIntensity=0.55;
+const camera=new THREE.PerspectiveCamera(34,1,0.1,400);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true; controls.dampingFactor=0.09; controls.minDistance=4; controls.maxDistance=90; controls.maxPolarAngle=Math.PI*0.56;
+scene.add(new THREE.HemisphereLight(0xf4f8ff,0x8a7f70,0.75));
+const sun=new THREE.DirectionalLight(0xfff6e8,2.1); sun.position.set(14,18,13); sun.target.position.set(7,0,0); scene.add(sun,sun.target);
+sun.castShadow=true; sun.shadow.mapSize.set(2048,2048); Object.assign(sun.shadow.camera,{left:-9,right:9,top:9,bottom:-9,near:1,far:60}); sun.shadow.bias=-0.0004; sun.shadow.normalBias=0.03;
+const fill=new THREE.DirectionalLight(0xdfe8ff,0.5); fill.position.set(-14,6,16); scene.add(fill);
+const world=new THREE.Group(); scene.add(world);
+
+/* ---------- gemeinsame Shader-Bausteine ---------- */
+const U={uK:{value:0},uT:{value:0},uTime:{value:0},uR:{value:1}};
+const NOISE=`
+float hash3(vec3 p){ p=fract(p*0.3183099+vec3(0.71,0.113,0.419)); p*=17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
+float vnoise(vec3 x){ vec3 i=floor(x), f=fract(x); f=f*f*(3.0-2.0*f);
+  return mix(mix(mix(hash3(i),hash3(i+vec3(1,0,0)),f.x),mix(hash3(i+vec3(0,1,0)),hash3(i+vec3(1,1,0)),f.x),f.y),
+             mix(mix(hash3(i+vec3(0,0,1)),hash3(i+vec3(1,0,1)),f.x),mix(hash3(i+vec3(0,1,1)),hash3(i+vec3(1,1,1)),f.x),f.y),f.z); }
+float fbm(vec3 p){ float a=0.5,s=0.0; for(int i=0;i<3;i++){ s+=a*vnoise(p); p=p*2.03+vec3(1.7,9.2,3.1); a*=0.5; } return s*1.14; }
+float sst(float a,float b,float x){ float t=clamp((x-a)/(b-a),0.0,1.0); return t*t*(3.0-2.0*t); }
+`;
+const DEFGLSL=`
+float DpF(float x){ float a=(x-(${fl(XU)}))/1.4; float b=(x-(${fl(XSUB)}))/2.0; return (0.36*exp(-a*a)-0.14*exp(-b*b))*sst(-7.0,-6.3,x); }
+float HpF(float x){ float a=(x+5.2)/2.6; return 0.25*exp(-a*a)*sst(-7.0,-6.6,x); }
+float TzF(float z){ return sst(${fl(-ZR-1.5)},${fl(-ZR)},z); }
+/* Mitziehen der Plattenunterseite im blockierten Abschnitt (entlang der Plattengrenze nach unten) */
+vec2 dragF(float x,float g){ float d=x-(${fl(XT)}); float w=sst(${fl(LOCK0-0.7)},${fl(LOCK0+0.2)},d)*(1.0-sst(${fl(LOCK1-0.2)},${fl(LOCK1+1.4)},d));
+  float fall=exp(-g*3.2); float s=-(0.267+0.04*max(d,0.0)); return vec2(1.0,s)*w*fall; }
+`;
+const COL={SEAF1:'#7F7B70',SEAF2:'#9A9384',SED1:'#CFC3A6',SED2:'#B3A587',BAS1:'#2F383F',BAS2:'#4E5A62',DIK1:'#46525B',DIK2:'#5E6A73',GAB1:'#5F6B72',GAB2:'#7B878D',
+  PER1:'#66756A',PER2:'#83907F',PER3:'#3E4A42',AST1:'#DDB59A',AST2:'#C98466',
+  SAND:'#C9B993',MUD:'#857C6C',BEACH:'#E6D8AE',DUNE1:'#4D6A3A',DUNE2:'#6A834C',F1:'#7FA150',F2:'#97B562',F3:'#6E9246',F4:'#BDB264',F5:'#9C8962',PATH:'#B9AD88',FOR1:'#3F5E33',FOR2:'#5D7A43',WET:'#6B6450',
+  SD1:'#D7C6A1',SD2:'#B9A47C',GR1:'#C4B099',GR2:'#AE9A84',GR3:'#4E4843',LC1:'#9E8C7B',LC2:'#877565',AMB:'#E8960F'};
+const COLDEF=Object.entries(COL).map(([k,v])=>`#define C_${k} ${lin(v)}`).join('\n');
+const ROCKFRAG=`
+vec3 col; vec3 p=vWp; float up=vNw.y;
+#if KIND==0
+ if(up>0.55){ float n=fbm(p*2.0); col=mix(C_SEAF1,C_SEAF2,n); col*=0.88+0.24*vnoise(p*14.0); }
+ else { float d=vDB; float n=fbm(p*3.0);
+   if(d<0.05){ col=mix(C_SED1,C_SED2,0.5+0.5*sin((d+n*0.015)*300.0)); }
+   else if(d<0.17){ float bl=fbm(p*vec3(10.0,14.0,10.0)); col=mix(C_BAS1,C_BAS2,smoothstep(0.42,0.58,bl)); col*=0.86+0.28*vnoise(p*30.0); }
+   else if(d<0.25){ col=mix(C_DIK1,C_DIK2,0.5+0.5*sin(p.x*38.0+n*7.0)); }
+   else { col=mix(C_GAB1,C_GAB2,vnoise(p*26.0)); } }
+#elif KIND==1
+ { float n=fbm(p*2.4); col=mix(C_PER1,C_PER2,n); col=mix(col,C_PER3,smoothstep(0.78,0.9,vnoise(p*22.0))*0.6); }
+#elif KIND==2
+ { float n=fbm(p*vec3(0.6,1.3,0.6)); col=mix(C_AST1,C_AST2,sst(-4.5,-10.0,p.y)); col*=0.92+0.16*n; }
+#else
+ if(up>0.55){
+   float x=p.x;
+   if(x<${fl(XC-0.08)}){ float dep=-p.y; col=mix(C_SAND,C_MUD,sst(0.15,1.6,dep)); col*=0.93+0.07*sin(p.x*45.0+fbm(p*3.0)*9.0); col*=0.88+0.24*fbm(p*6.0); }
+   else if(x<${fl(XC+0.5)}){ col=C_BEACH*(0.93+0.12*vnoise(p*60.0)); }
+   else if(x<${fl(XC+1.05)}){ col=mix(C_DUNE1,C_DUNE2,fbm(p*6.0)); }
+   else if(x<10.9){ vec2 q=vec2(p.x*2.4,p.z*1.6); vec2 cell=floor(q); vec2 fr=fract(q); float h=hash3(vec3(cell,3.0));
+      vec3 fc = h<0.3?C_F1: h<0.55?C_F2: h<0.75?C_F3: h<0.9?C_F4: C_F5;
+      col=fc*(0.88+0.24*fbm(p*7.0)); float e=min(min(fr.x,1.0-fr.x)/2.4,min(fr.y,1.0-fr.y)/1.6); col=mix(C_PATH,col,smoothstep(0.010,0.020,e)); }
+   else { col=mix(C_FOR1,C_FOR2,fbm(p*5.0)); }
+   if(vWet>0.5 && x>${fl(XC-0.1)}){ col=mix(col*0.68,C_WET,0.38); }
+ } else {
+   float d=vDB; float n=fbm(p*vec3(1.4,3.0,1.4));
+   if(d<0.34){ float band=sin((p.y+n*0.22+0.12*sin(p.x*0.6))*58.0); col=mix(C_SD1,C_SD2,0.5+0.5*band); }
+   else if(d<2.4){ col=mix(C_GR1,C_GR2,n); float sp=vnoise(p*38.0); col=mix(col,C_GR3,smoothstep(0.84,0.93,sp)*0.4); }
+   else { col=mix(C_LC1,C_LC2,n); col*=0.94+0.06*sin(p.y*18.0+n*6.0); }
+ }
+ col=mix(col,C_AMB,clamp(vStrain,0.0,0.8));
+#endif
+diffuseColor.rgb=col;`;
+function rockMat(kind,deform){
+  const m=new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.94,metalness:0,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1});
+  m.defines={KIND:kind,DEFORM:deform?1:0};
+  m.onBeforeCompile=sh=>{
+    sh.uniforms.uK=U.uK; sh.uniforms.uT=U.uT;
+    sh.vertexShader=sh.vertexShader.replace('#include <common>',`#include <common>
+attribute float aDB; attribute float aG; attribute float aWet;
+uniform float uK; uniform float uT;
+varying vec3 vWp; varying vec3 vNw; varying float vDB; varying float vStrain; varying float vWet;
+${NOISE}${DEFGLSL}`)
+    .replace('#include <beginnormal_vertex>',`#include <beginnormal_vertex>
+#if DEFORM==1
+ { float tz=TzF(position.z); float dd=(DpF(position.x+0.01)-DpF(position.x-0.01))/0.02; objectNormal.x+=uK*dd*aG*tz*objectNormal.y; objectNormal=normalize(objectNormal); }
+#endif`)
+    .replace('#include <begin_vertex>',`#include <begin_vertex>
+#if DEFORM==1
+ { float tz=TzF(position.z); transformed.x+=uK*HpF(position.x)*aG*tz*0.8; transformed.y-=uK*DpF(position.x)*aG*tz; transformed.xy+=uK*0.9*dragF(position.x,aG)*tz;
+   float sa=(position.x-(${fl(XU+1.0)}))/2.6; vStrain=uK*0.62*exp(-sa*sa)*(0.35+0.65*aG)*tz; vWet=step(aWet,uT); }
+#else
+ vStrain=0.0; vWet=0.0;
+#endif
+ vDB=aDB;`)
+    .replace('#include <project_vertex>',`#include <project_vertex>
+ vWp=(modelMatrix*vec4(transformed,1.0)).xyz; vNw=normalize(mat3(modelMatrix)*objectNormal);`);
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>',`#include <common>
+varying vec3 vWp; varying vec3 vNw; varying float vDB; varying float vStrain; varying float vWet;
+${NOISE}
+${COLDEF}`).replace('#include <color_fragment>',`#include <color_fragment>
+{ ${ROCKFRAG} }`);
+  };
+  m.customProgramCacheKey=()=>'rock'+kind+(deform?1:0);
+  return m;
+}
+
+/* ---------- Körper aus Querschnittsprofilen (hohe Auflösung) ---------- */
+function makeBody({x0,x1,nx,top,bottom,ny=6,nz=1,kind,deform=false}){
+  const pos=[],aDB=[],aG=[],idx=[];
+  function grid(nu,nv,fn){ const start=pos.length/3;
+    for(let j=0;j<=nv;j++)for(let i=0;i<=nu;i++){ const [x,y,z,g,db]=fn(i,j); pos.push(x,y,z); aG.push(g); aDB.push(db); }
+    for(let j=0;j<nv;j++)for(let i=0;i<nu;i++){ const a=start+j*(nu+1)+i,b=a+1,d=a+(nu+1),e=d+1; idx.push(a,b,e,a,e,d); } }
+  const X=i=>x0+(x1-x0)*i/nx;
+  const T=(x,z)=>Math.max(YB,top(x,z)), B=x=>Math.max(YB,bottom(x));
+  for(const zz of [ZD,-ZD]) grid(nx,ny,(i,j)=>{const x=X(i),b=B(x),t=T(x,zz),y=b+(t-b)*j/ny;return [x,y,zz,j/ny,t-y];});
+  grid(nx,nz,(i,k)=>{const x=X(i),z=-ZD+2*ZD*k/nz;return [x,T(x,z),z,1,0];});
+  grid(nx,1,(i,k)=>{const x=X(i);return [x,B(x),-ZD+2*ZD*k,0,1];});
+  for(const xx of [x0,x1]) grid(ny,nz,(j,k)=>{const z=-ZD+2*ZD*k/nz,b=B(xx),t=T(xx,z),y=b+(t-b)*j/ny;return [xx,y,z,j/ny,t-y];});
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  geo.setAttribute('aDB',new THREE.Float32BufferAttribute(aDB,1));
+  geo.setAttribute('aG',new THREE.Float32BufferAttribute(aG,1));
+  geo.setAttribute('aWet',new THREE.Float32BufferAttribute(new Float32Array(aG.length).fill(1e9),1));
+  geo.setIndex(idx); geo.computeVertexNormals();
+  const mesh=new THREE.Mesh(geo,rockMat(kind,deform)); mesh.receiveShadow=true; mesh.frustumCulled=false; world.add(mesh);
+  return {mesh,geo};
+}
+const crustB=x=>slabTop(x)-0.34*Math.sqrt(1+slabSlope(x)**2);
+const lithB=x=>slabTop(x)-1.45*Math.sqrt(1+slabSlope(x)**2);
+makeBody({x0:XL,x1:XR,nx:420,top:(x,z)=>slabTop(x)+(x<XT?reliefOcean(x,z):0),bottom:crustB,ny:8,nz:90,kind:0});
+makeBody({x0:XL,x1:XR,nx:300,top:x=>crustB(x),bottom:lithB,ny:6,kind:1});
+makeBody({x0:XL,x1:XR,nx:240,top:x=>lithB(x),bottom:()=>YB,ny:8,kind:2});
+const XW=(()=>{let lo=XT,hi=XR;for(let i=0;i<60;i++){const m=(lo+hi)/2; if(slabTop(m)>YOP)lo=m;else hi=m;}return (lo+hi)/2;})();
+makeBody({x0:XW,x1:XR,nx:140,top:()=>YOP,bottom:slabTop,ny:6,kind:2});
+const OP=makeBody({x0:XT,x1:XR,nx:520,top:(x,z)=>gRest(x,z),bottom:x=>Math.max(slabTop(x),YOP),ny:18,nz:130,kind:3,deform:true});
+
+/* ---------- Plattengrenze, blockierter Abschnitt ---------- */
+function curveAlong(d0,d1,n,zz,off=0){ const pts=[]; for(let i=0;i<=n;i++){ const x=xAtDist(d0+(d1-d0)*i/n); pts.push(new THREE.Vector3(x,slabTop(x)+off,zz)); } return new THREE.CatmullRomCurve3(pts); }
+const dMax=(()=>{let d=0; while(slabTop(xAtDist(d))>YB+0.05 && d<20) d+=0.05; return d;})();
+world.add(new THREE.Mesh(new THREE.TubeGeometry(curveAlong(0,dMax,120,ZD+0.03),200,0.035,8,false),new THREE.MeshBasicMaterial({color:0x1d2224})));
+/* Der blockierte Abschnitt haftet an der abtauchenden Platte: Er wird in Phase 1 mit ihr nach unten gezogen und federt beim Beben zurück. */
+const LOCKDRAG=0.9; let lockOff=-1;
+function lockGeoFor(off){ const g=new THREE.TubeGeometry(curveAlong(LOCK0+off,LOCK1+off,60,ZD+0.05),120,0.09,10,false);
+  g.setAttribute('color',new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count*3),3)); return g; }
+let lockGeo=lockGeoFor(0);
+const lockMesh=new THREE.Mesh(lockGeo,new THREE.MeshBasicMaterial({vertexColors:true})); world.add(lockMesh);
+/* kleine Zähne zeigen die Verhakung */
+const teeth=new THREE.Group(); world.add(teeth);
+const toothGeo=new THREE.ConeGeometry(0.06,0.16,4); const toothM=new THREE.MeshBasicMaterial({color:0x9A4A00});
+for(let i=0;i<7;i++){ const m=new THREE.Mesh(toothGeo,toothM); m.userData.f=(i+0.5)/7; teeth.add(m); }
+function placeTeeth(off){ teeth.children.forEach((m,i)=>{ const d=LOCK0+off+(LOCK1-LOCK0)*m.userData.f, x=xAtDist(d), a=Math.atan(slabSlope(x));
+  m.position.set(x,slabTop(x),ZD+0.07); m.rotation.set(0,0,a+(i%2?0:Math.PI)); }); }
+{ const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(XT,slabTop(XT)+0.02,-ZD),new THREE.Vector3(XT,slabTop(XT)+0.02,ZD)]);
+  world.add(new THREE.Line(g,new THREE.LineBasicMaterial({color:0x22282a}))); }
+
+/* ---------- Gestrichelte Linien ---------- */
+function dashedLine(pts,color=0x17201b,dash=0.18,gap=0.12){
+  const g=new THREE.BufferGeometry().setFromPoints(pts);
+  const l=new THREE.Line(g,new THREE.LineDashedMaterial({color,dashSize:dash,gapSize:gap,depthTest:false,transparent:true}));
+  l.computeLineDistances(); l.renderOrder=6; world.add(l); return l;
+}
+const NG=220, ghostRest=[], ghostPre=[];
+for(let i=0;i<=NG;i++){ const x=XT+(XC+1.2-XT)*i/NG; ghostRest.push(new THREE.Vector3(x,gRest(x,ZD),ZD+0.06)); ghostPre.push(new THREE.Vector3(x,gRest(x,ZD)-Dpat(x),ZD+0.06)); }
+const gRestL=dashedLine(ghostRest), gPreL=dashedLine(ghostPre,0x17201b,0.1,0.08);
+const seaLine=dashedLine([new THREE.Vector3(XL,0,ZD+0.06),new THREE.Vector3(XC+0.4,0,ZD+0.06)],0x0b3d91,0.22,0.14);
+const gauge=dashedLine([new THREE.Vector3(0,0,ZD+0.08),new THREE.Vector3(0,-1,ZD+0.08)],0xffffff,0.08,0.06); gauge.material.opacity=0.95;
+/* Zusätzliches Wasser: unten über dem abgesenkten Meeresboden (Phase 1), oben als Wasserberg (Phase 2/3) */
+const BANDN=200;
+function bandMesh(color,op){ const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array((BANDN+1)*6),3));
+  const idx=[]; for(let i=0;i<BANDN;i++){const a=i*2; idx.push(a,a+2,a+3,a,a+3,a+1);} g.setIndex(idx);
+  const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color,transparent:true,opacity:op,side:THREE.DoubleSide,depthTest:false})); m.renderOrder=5; m.frustumCulled=false; m.visible=false; world.add(m); return m; }
+function edgeLine(color){ const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array((BANDN+1)*3),3));
+  const l=new THREE.Line(g,new THREE.LineBasicMaterial({color,depthTest:false,transparent:true})); l.renderOrder=6; l.frustumCulled=false; l.visible=false; world.add(l); return l; }
+const colBand=bandMesh(0x22A9E6,0.78), humpBand=bandMesh(0x22A9E6,0.78), colEdge=edgeLine(0x0b4f7a), humpEdge=edgeLine(0x0b4f7a);
+function setBand(m,edge,x0,x1,lo,hi,z,op){ const P=m.geometry.attributes.position.array, E=edge.geometry.attributes.position.array;
+  for(let i=0;i<=BANDN;i++){ const x=x0+(x1-x0)*i/BANDN; const a=lo(x); let b=hi(x); if(b<a) b=a;
+    P[i*6]=x;P[i*6+1]=a;P[i*6+2]=z;P[i*6+3]=x;P[i*6+4]=b;P[i*6+5]=z; E[i*3]=x;E[i*3+1]=(edge===colEdge)?a:b;E[i*3+2]=z; }
+  m.geometry.attributes.position.needsUpdate=true; edge.geometry.attributes.position.needsUpdate=true; m.material.opacity=0.78*op; edge.material.opacity=op; m.visible=edge.visible=op>0.01; }
+
+/* ---------- Marker auf der ozeanischen Platte (zeigen die Bewegung) ---------- */
+const pathPts=[]; for(let x=XL;x<=5.0;x+=0.02) pathPts.push([x,slabTop(x)]);
+const pathLen=[0]; for(let i=1;i<pathPts.length;i++){ const a=pathPts[i-1],b=pathPts[i]; pathLen.push(pathLen[i-1]+Math.hypot(b[0]-a[0],b[1]-a[1])); }
+const PL=pathLen[pathLen.length-1];
+function pathAt(u){ u=((u%PL)+PL)%PL; let lo=0,hi=pathLen.length-1; while(hi-lo>1){const m=(lo+hi)>>1; if(pathLen[m]<u)lo=m;else hi=m;}
+  const f=(u-pathLen[lo])/Math.max(1e-9,pathLen[hi]-pathLen[lo]); const x=lerp(pathPts[lo][0],pathPts[hi][0],f); return {x,y:slabTop(x),a:Math.atan(slabSlope(x))}; }
+const markers=[]; const MSP=1.6;
+for(let i=0;i<Math.ceil(PL/MSP);i++){ const m=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.9,0.02),new THREE.MeshBasicMaterial({color:0xe9edf0,transparent:true,opacity:0.7}));
+  m.userData.u0=i*MSP; world.add(m); markers.push(m); }
+
+/* ---------- Pfeile ---------- */
+const arrowGroup=new THREE.Group(); world.add(arrowGroup);
+const UP=new THREE.Vector3(0,1,0);
+function makeArrow(color,r=0.06){
+  const g=new THREE.Group(); const m=new THREE.MeshBasicMaterial({color,transparent:true,depthTest:false});
+  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(r,r,1,12),m); const head=new THREE.Mesh(new THREE.ConeGeometry(r*2.7,r*6,16),m);
+  shaft.renderOrder=head.renderOrder=8; g.add(shaft,head); g.userData={shaft,head,m,hl:r*6}; arrowGroup.add(g); g.visible=false; return g;
+}
+const _v=new THREE.Vector3();
+function setArrow(a,from,to,op=1){
+  const d=_v.set(to[0]-from[0],to[1]-from[1],to[2]-from[2]); const L=d.length(); if(L<0.05||op<=0.01){a.visible=false;return;}
+  a.visible=true; d.normalize(); const hl=Math.min(a.userData.hl,L*0.5), sl=L-hl;
+  a.position.set(...from); a.quaternion.setFromUnitVectors(UP,d);
+  a.userData.shaft.scale.set(1,sl,1); a.userData.shaft.position.set(0,sl/2,0); a.userData.head.position.set(0,sl+hl/2,0);
+  a.userData.m.opacity=op; a.userData.to=to; a.userData.from=from;
+}
+const C_PLATE=0xA61B1B, C_DEF=0xE08A00, C_FLOOR=0x1E2320, C_WATER=0x1C5FB8;
+const A={ plate1:makeArrow(C_PLATE,0.075), plate2:makeArrow(C_PLATE,0.075),
+  defDown:makeArrow(C_DEF), defUp:makeArrow(C_DEF), defPush:makeArrow(C_DEF),
+  slipOP:makeArrow(C_PLATE,0.05), slipSl:makeArrow(C_PLATE,0.05), spring:makeArrow(C_DEF),
+  floorUp:makeArrow(C_FLOOR,0.075), floorDn:makeArrow(C_FLOOR,0.075),
+  col1:makeArrow(C_WATER), col2:makeArrow(C_WATER), col3:makeArrow(C_WATER),
+  waveR:makeArrow(C_WATER,0.075), waveL:makeArrow(C_WATER,0.075), waveB:makeArrow(C_WATER,0.065),
+  flow1:makeArrow(C_WATER,0.07), flow2:makeArrow(C_WATER,0.07), flow3:makeArrow(C_WATER,0.07) };
+
+/* ---------- Erdbebenwellen ---------- */
+const rings=[]; for(let i=0;i<3;i++){ const pts=[]; for(let k=0;k<=96;k++){const a=k/96*Math.PI*2; pts.push(new THREE.Vector3(Math.cos(a),Math.sin(a),0));}
+  const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0xD2232A,transparent:true,depthTest:false}));
+  l.renderOrder=7; l.visible=false; world.add(l); rings.push(l); }
+
+/* ===================== Wasser (auf der Grafikkarte berechnet) ===================== */
+const tabTex=new THREE.DataTexture((()=>{const a=new Float32Array(SM*2); for(let m=0;m<SM;m++){a[m*2]=Ftab[m];a[m*2+1]=DPtab[m];} return a;})(),SM,1,THREE.RGFormat,THREE.FloatType);
+tabTex.minFilter=tabTex.magFilter=THREE.NearestFilter; tabTex.needsUpdate=true;
+const shTex=new THREE.DataTexture(SHtab,NT,NR,THREE.RedFormat,THREE.FloatType); shTex.minFilter=shTex.magFilter=THREE.NearestFilter; shTex.needsUpdate=true;
+const WU={uTab:{value:tabTex},uSH:{value:shTex},uAmp:{value:AMP},uHold:{value:HOLD},uHoldW:{value:HOLDW}};
+const WCONST=`
+#define XS ${fl(XS)}
+#define XT_ ${fl(XT)}
+#define ZR_ ${fl(ZR)}
+#define SMIN ${fl(S_MIN)}
+#define DSS ${fl(DS)}
+#define SMN ${fl(SM)}
+#define CAPV ${fl(CAP)}
+#define KAPV ${fl(KAP)}
+#define SREF ${fl(S_REF)}
+#define CSRC ${fl(C_SRC)}
+#define SPRD ${fl(SPREAD)}
+#define LAGV ${fl(LAG)}
+#define TQV ${fl(TQ)}
+#define P3SV ${fl(P3S)}
+#define DTSV ${fl(DTS)}
+#define NTV ${fl(NT)}
+#define DZSV ${fl(DZS)}
+#define NRV ${fl(NR)}
+#define VFV ${fl(VF)}
+#define BETAV ${fl(BETA)}
+uniform sampler2D uTab; uniform sampler2D uSH; uniform float uAmp[3]; uniform float uHold[6]; uniform float uHoldW[6];
+uniform float uT; uniform float uR; uniform float uK; uniform float uTime;
+float evW(float sig,float dxp){ float f=(sig-SMIN)/DSS; if(f<=0.0||f>=SMN-1.0) return 0.0; int i=int(floor(f)); float u=f-float(i);
+  vec2 v=mix(texelFetch(uTab,ivec2(i,0),0).rg,texelFetch(uTab,ivec2(i+1,0),0).rg,u); return v.r*min(CAPV,v.g*dxp); }
+float evRW(float sig,float dxp,float w){ if(w<=0.001) return evW(sig,dxp); float e=evW(sig,dxp); e=evW(sig-KAPV*w*e*uR,dxp); return evW(sig-KAPV*w*e*uR,dxp); }
+float etaWW(float S,float dxp,float w,float z,float tw){
+  float dz=max(0.0,-ZR_-z); float sum=0.0;
+  for(int k=0;k<3;k++){ float fk=float(k); float tk=tw-fk*LAGV; float r=1.0;
+    if(k>0){ r=smoothstep(fk*LAGV-0.8,fk*LAGV+0.6,tw); if(r<=0.0) continue; }
+    float a=uAmp[k]*r*0.5;
+    if(dz<=0.0){ sum+=a*(evRW(S-tk,dxp,w)+evW(S+tk,dxp)); }
+    else { float Sr=S-SREF; float Te=sqrt(Sr*Sr+(dz/CSRC)*(dz/CSRC)); float ww=smoothstep(-0.6,0.6,Sr);
+      float vp=evRW(SREF+Te-tk,dxp,w)+evW(SREF+Te+tk,dxp); float vm=evRW(SREF-Te-tk,dxp,w)+evW(SREF-Te+tk,dxp);
+      sum+=a*(ww*vp+(1.0-ww)*vm)/sqrt(1.0+dz/SPRD); } }
+  return sum*uR; }
+float sprW(float u){ if(u<=0.0) return 0.0; return 1.0-exp(-4.0*u)*(cos(9.0*u)+0.44444*sin(9.0*u)); }
+float etaTW(float S,float dxp,float w,float z){ if(uT<TQV) return 0.0; if(uT<P3SV) return etaWW(S,dxp,w,z,0.0)*sprW(uT-TQV); return etaWW(S,dxp,w,z,uT-P3SV); }
+float shoreW(float dz,float t){ float fx=t/DTSV; if(fx<=0.0) return 0.0; fx=min(fx,NTV-1.001); float fy=clamp(dz/DZSV,0.0,NRV-1.001);
+  int ix=int(fx), iy=int(fy); float ux=fx-float(ix), uy=fy-float(iy);
+  float a=texelFetch(uSH,ivec2(ix,iy),0).r, b=texelFetch(uSH,ivec2(ix+1,iy),0).r, c=texelFetch(uSH,ivec2(ix,iy+1),0).r, d=texelFetch(uSH,ivec2(ix+1,iy+1),0).r;
+  return mix(mix(a,b,ux),mix(c,d,ux),uy); }
+float landW(float x,float z){ float dx=x-XS; float te=uT-dx/VFV; float dz=max(0.0,-ZR_-z); float m=-1e9;
+  for(int j=0;j<6;j++){ float v=uR*shoreW(dz,te-uHold[j]); float w=v>0.0?v*uHoldW[j]:v; m=max(m,w); } return m-BETAV*dx; }
+float hW(float x,float z,float S,float dxp,float w){ return x<XS ? etaTW(S,dxp,w,z) : landW(x,z); }
+`;
+function surfGeoFor(NXW,NZW){ const nW=(NXW+1)*(NZW+1); const surfGeo=new THREE.BufferGeometry();
+{ const P=new Float32Array(nW*3), aS=new Float32Array(nW), aDS=new Float32Array(nW), aDxp=new Float32Array(nW), aW=new Float32Array(nW), aG0=new Float32Array(nW), aD=new Float32Array(nW);
+  const colS=[],colDS=[],colDxp=[],colW=[],colD=[];
+  for(let i=0;i<=NXW;i++){ const x=XL+(XR-XL)*i/NXW, xx=Math.min(x,XS); colS.push(sOf(xx)); colDS.push(dsdx(xx)); colDxp.push(Math.pow(depthRest(xx),-P_EXP)); colW.push(steepW(xx)); colD.push(x>XT?Dpat(x):0); }
+  for(let k=0;k<=NZW;k++)for(let i=0;i<=NXW;i++){ const n=k*(NXW+1)+i, x=XL+(XR-XL)*i/NXW, z=-ZD+2*ZD*k/NZW;
+    P[n*3]=x;P[n*3+1]=0;P[n*3+2]=z; aS[n]=colS[i]; aDS[n]=colDS[i]; aDxp[n]=colDxp[i]; aW[n]=colW[i]; aG0[n]=gRest(x,z); aD[n]=colD[i]; }
+  surfGeo.setAttribute('position',new THREE.BufferAttribute(P,3));
+  for(const [n,a] of Object.entries({aS,aDS,aDxp,aW,aG0,aD})) surfGeo.setAttribute(n,new THREE.BufferAttribute(a,1));
+  const idx=new Uint32Array(NXW*NZW*6); let q=0; for(let k=0;k<NZW;k++)for(let i=0;i<NXW;i++){ const a=k*(NXW+1)+i,b=a+1,d=a+NXW+1,e=d+1; idx[q++]=a;idx[q++]=d;idx[q++]=e;idx[q++]=a;idx[q++]=e;idx[q++]=b; }
+  surfGeo.setIndex(new THREE.BufferAttribute(idx,1)); }
+  return surfGeo; }
+let surfGeo=null;
+const WCOL={DEEP:'#123F6E',MID:'#2E6FA6',SHAL:'#4DA3C7',CREST:'#BFE0F2',MUD:'#6A7366',MUD2:'#857A60',FOAM:'#F4F8FA'};
+const waterMat=new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,roughness:0.12,metalness:0,side:THREE.FrontSide,depthWrite:false,envMapIntensity:1.0});
+function waterFrag(sh){
+  sh.fragmentShader=sh.fragmentShader.replace('#include <common>',`#include <common>
+uniform float uTime;
+varying float vDepth; varying float vEta; varying float vLand; varying float vSlope; varying vec3 vWp2;
+${NOISE}
+${Object.entries(WCOL).map(([k,v])=>`#define W_${k} ${lin(v)}`).join('\n')}`)
+  .replace('#include <color_fragment>',`#include <color_fragment>
+  { float n=fbm(vec3(vWp2.xz*3.0,uTime*0.2));
+    vec3 col=mix(W_SHAL,W_MID,sst(0.03,0.7,vDepth)); col=mix(col,W_DEEP,sst(0.7,3.0,vDepth));
+    col=mix(col,W_CREST,clamp(vEta*0.55,0.0,0.4));
+    col=mix(col,W_DEEP*0.8,clamp(-vEta*1.4,0.0,0.35));
+    float foam=sst(0.35,1.1,-vSlope)*sst(0.35,0.7,n+0.25*vnoise(vec3(vWp2.xz*14.0,uTime)));
+    foam=max(foam,(1.0-sst(0.0,0.05,vDepth))*sst(0.35,0.6,n));
+    float al=clamp(0.58+vDepth*0.07,0.58,0.8);
+    if(vLand>0.5){ float st=vnoise(vec3(vWp2.x*2.0-uTime*0.6,vWp2.z*9.0,uTime*0.15)); col=mix(W_MUD,W_MUD2,0.35+0.4*n); col*=0.9+0.18*st; foam=max(foam,(1.0-sst(0.0,0.06,vDepth))*0.8); al=0.94; }
+    col=mix(col,W_FOAM,clamp(foam,0.0,0.85));
+    al=mix(al,0.97,foam*0.8);
+    if(vDepth<0.004) discard;
+    diffuseColor=vec4(col,al); }`)
+  .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
+  { float tt=uTime*0.7; vec2 q=vWp2.xz*7.0; float e1=0.05;
+    float a0=vnoise(vec3(q,tt)), ax=vnoise(vec3(q+vec2(e1,0.0),tt)), az=vnoise(vec3(q+vec2(0.0,e1),tt));
+    vec2 q2=vWp2.xz*19.0; float b0=vnoise(vec3(q2,tt*1.7)), bx=vnoise(vec3(q2+vec2(e1,0.0),tt*1.7)), bz=vnoise(vec3(q2+vec2(0.0,e1),tt*1.7));
+    vec3 pert=vec3(-(ax-a0)-(bx-b0)*0.5,0.0,-(az-a0)-(bz-b0)*0.5)/e1*0.022*(vLand>0.5?1.6:1.0);
+    normal=normalize(normal+(viewMatrix*vec4(pert,0.0)).xyz); }`);
+}
+waterMat.onBeforeCompile=sh=>{
+  Object.assign(sh.uniforms,WU,{uT:U.uT,uR:U.uR,uK:U.uK,uTime:U.uTime});
+
+  sh.vertexShader=sh.vertexShader.replace('#include <common>',`#include <common>
+attribute float aS; attribute float aDS; attribute float aDxp; attribute float aW; attribute float aG0; attribute float aD;
+varying float vDepth; varying float vEta; varying float vLand; varying float vSlope; varying vec3 vWp2;
+${NOISE}${DEFGLSL}${WCONST}`)
+  .replace('#include <beginnormal_vertex>',`
+  float wx=position.x, wz=position.z; float e=0.05;
+  float gnd=aG0-uK*aD*TzF(wz);
+  float h0=hW(wx,wz,aS,aDxp,aW);
+  float hx=hW(wx+e,wz,aS+e*aDS,aDxp,aW);
+  float hz=hW(wx,wz+e,aS,aDxp,aW);
+  float dep=h0-gnd;
+  vec3 objectNormal=normalize(vec3(-(hx-h0)/e,1.0,-(hz-h0)/e));
+  vDepth=dep; vEta=h0; vLand=step(XS,wx); vSlope=(hx-h0)/e;
+  #ifdef USE_TANGENT
+  vec3 objectTangent=vec3(1.0,0.0,0.0);
+  #endif`)
+  .replace('#include <begin_vertex>',`vec3 transformed=vec3(wx, dep>0.004?h0:gnd-0.04, wz);`)
+  .replace('#include <project_vertex>',`#include <project_vertex>
+  vWp2=(modelMatrix*vec4(transformed,1.0)).xyz;`);
+  waterFrag(sh);
+};
+/* Schneller Weg: Wasserstand wird nur einmal pro Gitterpunkt und nur bei geänderter Zeit in eine Höhenkarte gerechnet.
+   Die Wasseroberfläche liest daraus Höhe und Neigung. Fallback ohne Float-Rendertarget: Berechnung im Vertex-Shader (oben). */
+const HM_OK=renderer.capabilities.isWebGL2&&(renderer.extensions.has('EXT_color_buffer_float')||renderer.extensions.has('EXT_color_buffer_half_float'));
+const GNX=LOWQ?200:520, GNZ=LOWQ?60:150;
+let hmRT=null, hmScene=null, hmCam=null, hmMat=null, waterMatHM=null;
+if(HM_OK){
+  hmRT=new THREE.WebGLRenderTarget(GNX+1,GNZ+1,{type:THREE.HalfFloatType,format:THREE.RGBAFormat,minFilter:THREE.NearestFilter,magFilter:THREE.NearestFilter,depthBuffer:false,stencilBuffer:false,generateMipmaps:false});
+  const colA=new Float32Array((GNX+1)*4), g0A=new Float32Array((GNX+1)*(GNZ+1));
+  for(let i=0;i<=GNX;i++){ const x=XL+(XR-XL)*i/GNX, xx=Math.min(x,XS); colA[i*4]=sOf(xx); colA[i*4+1]=Math.pow(depthRest(xx),-P_EXP); colA[i*4+2]=steepW(xx); colA[i*4+3]=x>XT?Dpat(x):0; }
+  for(let k=0;k<=GNZ;k++)for(let i=0;i<=GNX;i++){ g0A[k*(GNX+1)+i]=gRest(XL+(XR-XL)*i/GNX,-ZD+2*ZD*k/GNZ); }
+  const colTex=new THREE.DataTexture(colA,GNX+1,1,THREE.RGBAFormat,THREE.FloatType); colTex.minFilter=colTex.magFilter=THREE.NearestFilter; colTex.needsUpdate=true;
+  const g0Tex=new THREE.DataTexture(g0A,GNX+1,GNZ+1,THREE.RedFormat,THREE.FloatType); g0Tex.minFilter=g0Tex.magFilter=THREE.NearestFilter; g0Tex.needsUpdate=true;
+  hmMat=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,
+    uniforms:Object.assign({},WU,{uT:U.uT,uR:U.uR,uK:U.uK,uTime:U.uTime,uCol:{value:colTex},uG0:{value:g0Tex}}),
+    vertexShader:`void main(){ gl_Position=vec4(position.xy,0.0,1.0); }`,
+    fragmentShader:`precision highp float;
+${NOISE}${DEFGLSL}${WCONST}
+uniform sampler2D uCol; uniform sampler2D uG0;
+void main(){ ivec2 ij=ivec2(gl_FragCoord.xy); float x=${fl(XL)}+${fl(XR-XL)}*float(ij.x)/${fl(GNX)}; float z=${fl(-ZD)}+${fl(2*ZD)}*float(ij.y)/${fl(GNZ)};
+  vec4 c=texelFetch(uCol,ivec2(ij.x,0),0); float g0=texelFetch(uG0,ij,0).r;
+  float h=hW(x,z,c.r,c.g,c.b); float gnd=g0-uK*c.a*TzF(z);
+  gl_FragColor=vec4(h,gnd,0.0,1.0); }`});
+  hmScene=new THREE.Scene(); hmScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),hmMat)); hmCam=new THREE.Camera();
+  waterMatHM=waterMat.clone(); waterMatHM.onBeforeCompile=sh=>{
+    sh.uniforms.uHM={value:hmRT.texture}; sh.uniforms.uTime=U.uTime;
+    sh.vertexShader=sh.vertexShader.replace('#include <common>',`#include <common>
+uniform sampler2D uHM;
+varying float vDepth; varying float vEta; varying float vLand; varying float vSlope; varying vec3 vWp2;`)
+    .replace('#include <beginnormal_vertex>',`
+  float wx=position.x, wz=position.z;
+  ivec2 ij=ivec2(int(round((wx-(${fl(XL)}))/${fl((XR-XL)/GNX)})),int(round((wz+${fl(ZD)})/${fl(2*ZD/GNZ)})));
+  vec2 c0=texelFetch(uHM,ij,0).rg;
+  float hl=texelFetch(uHM,ivec2(max(ij.x-1,0),ij.y),0).r, hr=texelFetch(uHM,ivec2(min(ij.x+1,${GNX}),ij.y),0).r;
+  float hb=texelFetch(uHM,ivec2(ij.x,max(ij.y-1,0)),0).r, hf=texelFetch(uHM,ivec2(ij.x,min(ij.y+1,${GNZ})),0).r;
+  float h0=c0.r, gnd=c0.g, dep=h0-gnd;
+  float sx=(hr-hl)/${fl(2*(XR-XL)/GNX)}, sz=(hf-hb)/${fl(4*ZD/GNZ)};
+  vec3 objectNormal=normalize(vec3(-sx,1.0,-sz));
+  vDepth=dep; vEta=h0; vLand=step(${fl(XS)},wx); vSlope=sx;
+  #ifdef USE_TANGENT
+  vec3 objectTangent=vec3(1.0,0.0,0.0);
+  #endif`)
+    .replace('#include <begin_vertex>',`vec3 transformed=vec3(wx, dep>0.004?h0:gnd-0.04, wz);`)
+    .replace('#include <project_vertex>',`#include <project_vertex>
+  vWp2=(modelMatrix*vec4(transformed,1.0)).xyz;`);
+    waterFrag(sh); };
+  waterMatHM.customProgramCacheKey=()=>'waterHM';
+}
+function renderHeightmap(){ if(!HM_OK) return; const prev=renderer.getRenderTarget(); renderer.setRenderTarget(hmRT); renderer.render(hmScene,hmCam); renderer.setRenderTarget(prev); }
+const surf=new THREE.Mesh(HM_OK?(()=>{ const g=new THREE.BufferGeometry(); const P=new Float32Array((GNX+1)*(GNZ+1)*3);
+    for(let k=0;k<=GNZ;k++)for(let i=0;i<=GNX;i++){ const n=k*(GNX+1)+i; P[n*3]=XL+(XR-XL)*i/GNX; P[n*3+2]=-ZD+2*ZD*k/GNZ; }
+    g.setAttribute('position',new THREE.BufferAttribute(P,3)); const idx=new Uint32Array(GNX*GNZ*6); let q=0;
+    for(let k=0;k<GNZ;k++)for(let i=0;i<GNX;i++){ const a=k*(GNX+1)+i,b=a+1,d=a+GNX+1,e=d+1; idx[q++]=a;idx[q++]=d;idx[q++]=e;idx[q++]=a;idx[q++]=e;idx[q++]=b; }
+    g.setIndex(new THREE.BufferAttribute(idx,1)); return g; })():(surfGeo=LOWQ?surfGeoFor(200,60):surfGeoFor(520,150)), HM_OK?waterMatHM:waterMat);
+surf.frustumCulled=false; surf.renderOrder=3; world.add(surf);
+
+/* Seitenflächen des Wassers (Querschnitt) – auf der CPU */
+function stripMesh(n,matOpts){ const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array((n+1)*2*3),3));
+  g.setAttribute('color',new THREE.Float32BufferAttribute(new Float32Array((n+1)*2*4),4));
+  const idx=[]; for(let i=0;i<n;i++){const a=i*2,b=a+1,c=a+2,d=a+3; idx.push(a,c,d,a,d,b);} g.setIndex(idx);
+  const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,side:THREE.DoubleSide,depthWrite:false,...matOpts})); m.frustumCulled=false; m.renderOrder=2; world.add(m); return m; }
+const NXS=520, NZS=150;
+const NXB=NXS/2, NZL=75; const fStrip=stripMesh(NXS), bStrip=stripMesh(NXB), lStrip=stripMesh(NZL), rim=stripMesh(NXS); rim.renderOrder=4;
+const colX=[]; for(let i=0;i<=NXS;i++){ const x=XL+(XR-XL)*i/NXS, xx=Math.min(x,XS); colX.push({x,S:sOf(xx),dxp:Math.pow(depthRest(xx),-P_EXP),w:steepW(xx),D:x>XT?Dpat(x):0}); }
+const cTop=new THREE.Color('#62A9DD'), cBot=new THREE.Color('#163F6A'), cMud=new THREE.Color('#6F8088'), cRim=new THREE.Color('#E4F3FF');
+const FRONT_H=new Float32Array(NXS+1), FRONT_G=new Float32Array(NXS+1);
+function levelCol(c,z,t){ return c.x<XS ? etaTR(c.S,c.dxp,c.w,z,t,scen.R) : landLevel(c.x,z,t); }
+function updateStrips(t,kk){
+  const put=(strip,count,get,store)=>{ const P=strip.geometry.attributes.position.array, C=strip.geometry.attributes.color.array;
+    for(let i=0;i<=count;i++){ const [x,z,h,g,land]=get(i); const wet=h-g>0.004, top=wet?h:g;
+      P[i*6]=x;P[i*6+1]=g;P[i*6+2]=z;P[i*6+3]=x;P[i*6+4]=top;P[i*6+5]=z;
+      const ct=land?cMud:cTop; C[i*8]=cBot.r;C[i*8+1]=cBot.g;C[i*8+2]=cBot.b;C[i*8+3]=wet?(land?0.85:0.78):0;
+      C[i*8+4]=ct.r;C[i*8+5]=ct.g;C[i*8+6]=ct.b;C[i*8+7]=wet?(land?0.85:0.42):0; if(store) store(i,h,g); }
+    strip.geometry.attributes.position.needsUpdate=true; strip.geometry.attributes.color.needsUpdate=true; };
+  put(fStrip,NXS,i=>{const c=colX[i]; return [c.x,ZD+0.003,levelCol(c,ZD,t),groundAt(c.x,ZD,kk),c.x>=XS];},(i,h,g)=>{FRONT_H[i]=h;FRONT_G[i]=g;});
+  put(bStrip,NXB,i=>{const c=colX[i*2]; return [c.x,-ZD-0.003,levelCol(c,-ZD,t),groundAt(c.x,-ZD,kk),c.x>=XS];});
+  put(lStrip,NZL,k=>{const z=-ZD+2*ZD*k/NZL, c=colX[0]; return [XL-0.003,z,levelCol(c,z,t),groundAt(XL,z,kk),false];});
+  /* heller Rand oben an der Schnittfläche: zeigt die Wellenform */
+  const P=rim.geometry.attributes.position.array, C=rim.geometry.attributes.color.array;
+  for(let i=0;i<=NXS;i++){ const x=colX[i].x, h=FRONT_H[i], wet=h-FRONT_G[i]>0.01;
+    P[i*6]=x;P[i*6+1]=h-0.028;P[i*6+2]=ZD+0.006;P[i*6+3]=x;P[i*6+4]=h+0.006;P[i*6+5]=ZD+0.006;
+    for(let j=0;j<2;j++){C[i*8+j*4]=cRim.r;C[i*8+j*4+1]=cRim.g;C[i*8+j*4+2]=cRim.b;C[i*8+j*4+3]=wet?0.95:0;} }
+  rim.geometry.attributes.position.needsUpdate=true; rim.geometry.attributes.color.needsUpdate=true;
+}
+
+/* ---------- Spur des Wellenbergs (Phase 4) ---------- */
+const ENVN=360, envX=new Float32Array(ENVN+1), envH=new Float32Array(ENVN+1);
+{ for(let i=0;i<=ENVN;i++){ const x=XU+(XS-0.05-XU)*i/ENVN; envX[i]=x; const S=sOf(x),dxp=Math.pow(depthRest(x),-P_EXP),w=steepW(x); let m=0;
+    for(let tw=0;tw<=T_ARR+1.5;tw+=0.04){ const v=0.5*evR(S-tw,dxp,w,1); if(v>m)m=v; } envH[i]=m; } }
+const envGeo=new THREE.BufferGeometry(); envGeo.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array((ENVN+1)*6),3));
+{ const idx=[]; for(let i=0;i<ENVN;i++){const a=i*2; idx.push(a,a+2,a+3,a,a+3,a+1);} envGeo.setIndex(idx); }
+const envMesh=new THREE.Mesh(envGeo,new THREE.MeshBasicMaterial({color:0xF0B90B,side:THREE.DoubleSide,depthTest:false,transparent:true})); envMesh.renderOrder=9; envMesh.frustumCulled=false; world.add(envMesh);
+function updateEnvelope(xr){ const P=envGeo.attributes.position.array; let last=0;
+  for(let i=0;i<=ENVN;i++){ if(envX[i]<=xr) last=i; const x=Math.min(envX[i],xr), yy=envH[envX[i]<=xr?i:last]*scen.R;
+    P[i*6]=x;P[i*6+1]=yy-0.035;P[i*6+2]=ZD+0.09;P[i*6+3]=x;P[i*6+4]=yy+0.035;P[i*6+5]=ZD+0.09; }
+  envGeo.attributes.position.needsUpdate=true; }
+const envAt=x=>{ const f=clamp((x-XU)/(XS-0.05-XU)*ENVN,0,ENVN); const i=Math.min(ENVN-1,Math.floor(f)); return lerp(envH[i],envH[i+1],f-i)*scen.R; };
+
+/* ===================== Land: Häuser, Felder, Verkehr, Bäume, Hafen ===================== */
+const land=new THREE.Group(); world.add(land);
+let seed=11; const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
+function canvasTex(w,h,draw,repeat){ const c=document.createElement('canvas'); c.width=w;c.height=h; const g=c.getContext('2d',{willReadFrequently:true}); draw(g,w,h);
+  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=4; if(repeat){t.wrapS=t.wrapT=THREE.RepeatWrapping;} return t; }
+function grain(g,w,h,a=0.06){ const d=g.getImageData(0,0,w,h); for(let i=0;i<d.data.length;i+=4){ const v=(rnd()-0.5)*255*a; d.data[i]+=v;d.data[i+1]+=v;d.data[i+2]+=v; } g.putImageData(d,0,0); }
+const wallTex=(floors,cols,door)=>canvasTex(128,64*floors,(g,w,h)=>{ g.fillStyle='#F2EEE6'; g.fillRect(0,0,w,h); grain(g,w,h,0.05);
+  for(let f=0;f<floors;f++){ const y0=f*64; for(let c=0;c<cols;c++){ const cw=w/cols, x=c*cw+cw*0.22, ww=cw*0.56;
+    if(door&&f===floors-1&&c===Math.floor(cols/2)){ g.fillStyle='#6B4A33'; g.fillRect(x+ww*0.15,y0+22,ww*0.7,42); continue; }
+    g.fillStyle='#E6E2DA'; g.fillRect(x-2,y0+14,ww+4,30); g.fillStyle='#3E5568'; g.fillRect(x,y0+16,ww,26); g.fillStyle='rgba(255,255,255,.35)'; g.fillRect(x+2,y0+18,ww*0.35,8);
+    g.fillStyle='#CFC9BE'; g.fillRect(x,y0+28,ww,2); } if(f>0){ g.fillStyle='rgba(0,0,0,.08)'; g.fillRect(0,y0,w,2);} } });
+const roofTex=canvasTex(64,64,(g,w,h)=>{ g.fillStyle='#8A8F94'; g.fillRect(0,0,w,h); for(let y=0;y<h;y+=6){ g.fillStyle='rgba(0,0,0,.28)'; g.fillRect(0,y,w,1.5); for(let x=(y/6)%2*4;x<w;x+=8){ g.fillStyle='rgba(255,255,255,.08)'; g.fillRect(x,y+2,4,3);} } grain(g,w,h,0.06); },true);
+roofTex.repeat.set(2,2);
+const T1=wallTex(1,3,true), T2=wallTex(2,3,true), TA=wallTex(4,6,false), TW=canvasTex(128,64,(g,w,h)=>{ g.fillStyle='#C9CFD3'; g.fillRect(0,0,w,h); for(let x=0;x<w;x+=6){g.fillStyle='rgba(0,0,0,.12)';g.fillRect(x,0,1,h);} g.fillStyle='#5D666C'; g.fillRect(w*0.3,h*0.3,w*0.4,h*0.7); grain(g,w,h,0.04); });
+const WALLCOLS=['#FFFFFF','#F3E9D8','#E8E4DC','#F1E3CF','#DDE3E6'], ROOFCOLS=['#4A5560','#3D4650','#5E6670','#8C4436','#6B5948','#3F5E7A'];
+const roofGeo=(()=>{const s=new THREE.Shape(); s.moveTo(-0.5,0); s.lineTo(0.5,0); s.lineTo(0,0.42); s.lineTo(-0.5,0); const g=new THREE.ExtrudeGeometry(s,{depth:1,bevelEnabled:false}); g.translate(0,0,-0.5); return g;})();
+const boxGeo=new THREE.BoxGeometry(1,1,1);
+const ruinM=new THREE.MeshStandardMaterial({color:0x8A847A,roughness:1});
+const houses=[], cars=[], boats=[], roadSegs=[], railSegs=[], poles=[], treeInst=[];
+function shadowy(o){ o.traverse(m=>{ if(m.isMesh){ m.castShadow=true; m.receiveShadow=true; } }); return o; }
+function addBuilding(x,z,type){
+  const g=new THREE.Group(); let w,h,d,tex;
+  if(type==='h1'){ w=0.36+rnd()*0.08; d=0.3+rnd()*0.06; h=0.22; tex=T1; }
+  else if(type==='h2'){ w=0.36+rnd()*0.06; d=0.32; h=0.4; tex=T2; }
+  else if(type==='apt'){ w=0.7; d=0.34; h=0.78; tex=TA; }
+  else { w=0.9; d=0.55; h=0.34; tex=TW; }
+  const wm=new THREE.MeshStandardMaterial({map:tex,color:type==='ware'?0xffffff:WALLCOLS[Math.floor(rnd()*WALLCOLS.length)],roughness:0.85});
+  const body=new THREE.Mesh(boxGeo,wm); body.scale.set(w,h,d); body.position.y=h/2; g.add(body);
+  if(type==='apt'||type==='ware'){ const r=new THREE.Mesh(boxGeo,new THREE.MeshStandardMaterial({color:type==='ware'?0x5F7486:0x6E7378,roughness:0.9})); r.scale.set(w+0.02,0.03,d+0.02); r.position.y=h+0.015; g.add(r); }
+  else { const r=new THREE.Mesh(roofGeo,new THREE.MeshStandardMaterial({map:roofTex,color:ROOFCOLS[Math.floor(rnd()*ROOFCOLS.length)],roughness:0.7})); r.scale.set(d+0.08,0.5*(d+0.08),w+0.06); r.rotation.y=Math.PI/2; r.position.y=h; g.add(r);
+    if(rnd()<0.4){ const ch=new THREE.Mesh(boxGeo,new THREE.MeshStandardMaterial({color:0x8B8178})); ch.scale.set(0.04,0.1,0.04); ch.position.set(w*0.25,h+0.12,d*0.15); g.add(ch); } }
+  const y=gRest(x,z); g.position.set(x,y,z); g.rotation.y=(rnd()-0.5)*0.12+(rnd()<0.3?Math.PI/2:0)*(type==='h1'?1:0);
+  g.userData={x,z,y,ry:g.rotation.y,body,wm,dir:rnd()<0.5?1:-1,h}; shadowy(g); land.add(g); houses.push(g); return g;
+}
+/* Ort: Häuserreihen beidseits der Straße, Felder dazwischen */
+const ROAD_X=8.75, RAIL_X=10.05;
+for(const rx of [7.95,8.35,9.15,9.55,10.55]){ for(let z=-1.2;z<=5.7;z+=0.56){ if(rnd()<0.14) continue; addBuilding(rx+(rnd()-0.5)*0.1,z+(rnd()-0.5)*0.12,rnd()<0.28?'h2':'h1'); } }
+for(const [x,z] of [[9.35,-2.6],[8.1,-3.8],[9.5,-4.6],[8.4,-5.4],[10.5,-3.0],[9.2,-1.9]]) addBuilding(x,z,'h1');
+addBuilding(9.4,1.2,'apt'); addBuilding(9.4,3.6,'apt'); addBuilding(7.85,-2.2,'ware'); addBuilding(7.7,5.15,'ware');
+const school=(()=>{ const g=new THREE.Group(); const b=new THREE.Mesh(boxGeo,new THREE.MeshStandardMaterial({map:wallTex(3,8,false),color:0xffffff,roughness:0.8})); b.scale.set(1.0,0.5,0.45); b.position.y=0.25; g.add(b);
+  const r=new THREE.Mesh(boxGeo,new THREE.MeshStandardMaterial({color:0x56708A})); r.scale.set(1.04,0.04,0.49); r.position.y=0.52; g.add(r);
+  const x=11.55,z=0.9; g.position.set(x,gRest(x,z),z); g.userData={x,z}; shadowy(g); land.add(g); return g; })();
+/* Straße mit Asphalt-Textur */
+const roadTex=canvasTex(64,256,(g,w,h)=>{ g.fillStyle='#55595C'; g.fillRect(0,0,w,h); grain(g,w,h,0.09); g.fillStyle='#EDEDE6'; for(let y=0;y<h;y+=48) g.fillRect(w/2-2,y,4,26); g.fillStyle='#D9D9D0'; g.fillRect(3,0,2,h); g.fillRect(w-5,0,2,h); },true);
+const NSEG=14;
+for(let i=0;i<NSEG;i++){ const L=2*ZD/NSEG, z=-ZD+(i+0.5)*L; const t=roadTex.clone(); t.needsUpdate=true; t.repeat.set(1,L*1.2);
+  const m=new THREE.Mesh(boxGeo,new THREE.MeshStandardMaterial({map:t,roughness:0.95})); m.scale.set(0.34,0.03,L-0.01); const y=gRest(ROAD_X,z)+0.016; m.position.set(ROAD_X,y,z); m.receiveShadow=true; m.userData={x:ROAD_X,z,y}; land.add(m); roadSegs.push(m); }
+/* Bahnlinie: Schotter, Schwellen, Schienen */
+const ballM=new THREE.MeshStandardMaterial({color:0xA39E94,roughness:1}), railM=new THREE.MeshStandardMaterial({color:0x6E6A66,metalness:0.6,roughness:0.4}), sleepM=new THREE.MeshStandardMaterial({color:0x5A4B3E,roughness:0.9});
+for(let i=0;i<NSEG;i++){ const L=2*ZD/NSEG, z=-ZD+(i+0.5)*L; const g=new THREE.Group();
+  const b=new THREE.Mesh(boxGeo,ballM); b.scale.set(0.28,0.04,L-0.01); g.add(b);
+  const sl=[]; for(let s=0;s<7;s++){ const bg=new THREE.BoxGeometry(0.2,0.015,0.03); bg.translate(0,0.025,-L/2+(s+0.5)*L/7); sl.push(bg); }
+  g.add(new THREE.Mesh(mergeGeometries(sl),sleepM));
+  for(const o of [-0.055,0.055]){ const r=new THREE.Mesh(boxGeo,railM); r.scale.set(0.014,0.018,L-0.01); r.position.set(o,0.04,0); g.add(r); }
+  const y=gRest(RAIL_X,z)+0.02; g.position.set(RAIL_X,y,z); g.userData={x:RAIL_X,z,y}; shadowy(g); land.add(g); railSegs.push(g); }
+/* Strommasten mit Leitungen */
+const poleM=new THREE.MeshStandardMaterial({color:0x8E8A82,roughness:0.8});
+for(let z=-5.6;z<=5.7;z+=0.82){ const g=new THREE.Group(); const p=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.016,0.5,6),poleM); p.position.y=0.25; g.add(p);
+  const c=new THREE.Mesh(boxGeo,poleM); c.scale.set(0.012,0.012,0.16); c.position.y=0.46; g.add(c);
+  const x=ROAD_X+0.24; g.position.set(x,gRest(x,z),z); g.userData={x,z,y:g.position.y,dmg:0}; shadowy(g); land.add(g); poles.push(g); }
+const wireGeo=new THREE.BufferGeometry(); const wire=new THREE.LineSegments(wireGeo,new THREE.LineBasicMaterial({color:0x2b2f33,transparent:true,opacity:0.7})); land.add(wire);
+let wireKey='', shadowKey=null;
+function updateWires(){ const pts=[]; for(let i=0;i<poles.length-1;i++){ const a=poles[i],b=poles[i+1]; if(a.userData.dmg>0.2||b.userData.dmg>0.2) continue;
+  for(const off of [-0.07,0.07]){ const p0=new THREE.Vector3(0,0.46,off).applyMatrix4(a.matrixWorld), p1=new THREE.Vector3(0,0.46,off).applyMatrix4(b.matrixWorld);
+    const sag=0.05; let prev=p0; for(let s=1;s<=6;s++){ const u=s/6; const q=p0.clone().lerp(p1,u); q.y-=sag*4*u*(1-u); pts.push(prev,q); prev=q; } } }
+  wire.geometry.dispose(); wire.geometry=new THREE.BufferGeometry().setFromPoints(pts); }
+/* Autos */
+const CARCOLS=[0xF2F2F2,0x2D3A4A,0xB3261E,0x9AA3AB,0x1D1F21,0x2F6DB5,0xD8C27A];
+for(let i=0;i<22;i++){ const g=new THREE.Group(); const cm=new THREE.MeshStandardMaterial({color:CARCOLS[i%CARCOLS.length],roughness:0.35,metalness:0.4});
+  const b=new THREE.Mesh(boxGeo,cm); b.scale.set(0.085,0.045,0.18); b.position.y=0.035; g.add(b);
+  const c=new THREE.Mesh(boxGeo,new THREE.MeshStandardMaterial({color:0x2a3138,roughness:0.2,metalness:0.5})); c.scale.set(0.075,0.035,0.09); c.position.set(0,0.07,-0.01); g.add(c);
+  let x,z; if(i<14){ x=ROAD_X+(i%2?0.07:-0.07); z=-5.5+rnd()*11; } else { x=7.75+rnd()*0.3; z=-2.7+rnd()*1.0+(i>18?7.3:0); }
+  g.position.set(x,gRest(x,z)+0.03,z); g.rotation.y=i<14?0:rnd()*3; g.userData={x,z,ry:g.rotation.y,dir:rnd()<0.5?1:-1}; shadowy(g); land.add(g); cars.push(g); }
+/* Hafen: Mole und Fischerboote */
+const pier=new THREE.Mesh(boxGeo,new THREE.MeshStandardMaterial({color:0xA9A49A,roughness:0.95})); pier.scale.set(1.5,0.16,0.3); pier.position.set(6.45,0.02,4.15); shadowy(pier); land.add(pier); pier.userData={x:6.45,z:4.15,y:0.02};
+const hullGeo=(()=>{ const s=new THREE.Shape(); s.moveTo(-0.24,0.06); s.lineTo(0.2,0.06); s.quadraticCurveTo(0.27,0.06,0.26,0.0); s.lineTo(-0.22,-0.03); s.lineTo(-0.24,0.06);
+  const g=new THREE.ExtrudeGeometry(s,{depth:0.11,bevelEnabled:true,bevelSize:0.012,bevelThickness:0.01,bevelSegments:2}); g.translate(0,0,-0.055); return g; })();
+for(const [x,z,ry] of [[6.2,3.65,0.1],[5.85,4.75,-0.2],[6.6,4.7,0.15],[5.5,3.3,0.4]]){ const g=new THREE.Group();
+  const h=new THREE.Mesh(hullGeo,new THREE.MeshStandardMaterial({color:0xF4F4F0,roughness:0.5})); g.add(h);
+  const st=new THREE.Mesh(boxGeo,new THREE.MeshStandardMaterial({color:0x2F6DB5})); st.scale.set(0.5,0.015,0.13); st.position.y=0.04; g.add(st);
+  const cab=new THREE.Mesh(boxGeo,new THREE.MeshStandardMaterial({color:0xE8E8E2})); cab.scale.set(0.11,0.08,0.09); cab.position.set(-0.05,0.1,0); g.add(cab);
+  const mast=new THREE.Mesh(new THREE.CylinderGeometry(0.005,0.005,0.2,5),poleM); mast.position.set(0.06,0.16,0); g.add(mast);
+  g.rotation.y=Math.PI/2+ry; g.position.set(x,0,z); g.userData={x,z,ry:g.rotation.y}; shadowy(g); land.add(g); boats.push(g); }
+/* Schiffe auf dem offenen Meer: Der Tsunami hebt sie nur kurz an – sie bleiben unbeschädigt */
+const seaBoats=[];
+for(const [x,z,ry,sc,hc] of [[-11.2,2.2,0.15,1.9,0xB3261E],[-3.4,-0.6,-0.1,1.5,0x2D3A4A],[0.9,3.4,2.9,1.3,0x2F6DB5]]){ const g=new THREE.Group();
+  g.add(new THREE.Mesh(hullGeo,new THREE.MeshStandardMaterial({color:0xF4F4F0,roughness:0.5})));
+  const st=new THREE.Mesh(boxGeo,new THREE.MeshStandardMaterial({color:hc})); st.scale.set(0.5,0.02,0.13); st.position.y=0.035; g.add(st);
+  const cab=new THREE.Mesh(boxGeo,new THREE.MeshStandardMaterial({color:0xE8E8E2})); cab.scale.set(0.13,0.09,0.1); cab.position.set(-0.07,0.105,0); g.add(cab);
+  const win=new THREE.Mesh(boxGeo,new THREE.MeshStandardMaterial({color:0x2a3138,roughness:0.2})); win.scale.set(0.135,0.025,0.102); win.position.set(-0.07,0.125,0); g.add(win);
+  const mast=new THREE.Mesh(new THREE.CylinderGeometry(0.005,0.005,0.24,5),poleM); mast.position.set(0.07,0.17,0); g.add(mast);
+  g.scale.setScalar(sc); g.position.set(x,0,z); g.userData={x,z,ry,sc}; shadowy(g); land.add(g); seaBoats.push(g); }
+function updateSeaBoats(t){ for(const g of seaBoats){ const u=g.userData, e=0.18*u.sc;
+  const h=seaLevelAt(u.x,u.z,t), hf=seaLevelAt(u.x+e,u.z,t), hb=seaLevelAt(u.x-e,u.z,t);
+  g.position.set(u.x,h-0.012*u.sc,u.z); g.rotation.set(0,u.ry,0); g.rotateZ(Math.atan2(hf-hb,2*e)*Math.cos(u.ry)); } }
+/* Bäume: Küstenkiefernwald auf der Düne, Laubwald auf dem Hügel (Instanzen) */
+const pineCanopy=mergeGeometries([new THREE.ConeGeometry(0.075,0.16,8).translate(0,0.2,0),new THREE.ConeGeometry(0.06,0.14,8).translate(0,0.28,0),new THREE.ConeGeometry(0.042,0.12,8).translate(0,0.35,0)]);
+const trunkGeo=new THREE.CylinderGeometry(0.012,0.016,0.16,6).translate(0,0.08,0);
+const decCanopy=(()=>{ const g=new THREE.IcosahedronGeometry(0.11,1); const p=g.attributes.position; for(let i=0;i<p.count;i++){ const s=0.85+0.3*hash2(p.getX(i)*9,p.getY(i)*7+p.getZ(i)*3); p.setXYZ(i,p.getX(i)*s,p.getY(i)*s*0.85,p.getZ(i)*s); } g.computeVertexNormals(); g.translate(0,0.22,0); return g; })();
+const treeSpots=[];
+for(let z=-5.85;z<=5.85;z+=0.13){ for(let c=0;c<4;c++){ const x=XC+0.55+c*0.12+(rnd()-0.5)*0.07; if(z>3.4&&z<4.6&&c<2) continue; treeSpots.push([x,z+(rnd()-0.5)*0.08,'p']); } }
+for(let i=0;i<190;i++){ const x=10.85+rnd()*1.1, z=-5.8+rnd()*11.6; if(Math.abs(x-11.55)<0.65&&Math.abs(z-0.9)<0.45) continue; treeSpots.push([x,z,'d']); }
+for(let i=0;i<40;i++){ treeSpots.push([8.0+rnd()*2.6,-5.8+rnd()*4.2,'d']); }
+function instTrees(kind,canopyGeo,canopyCol){
+  const spots=treeSpots.filter(s=>s[2]===kind); const n=spots.length;
+  const can=new THREE.InstancedMesh(canopyGeo,new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.85}),n), tr=new THREE.InstancedMesh(trunkGeo,new THREE.MeshStandardMaterial({color:0x6A5139,roughness:0.9}),n);
+  can.castShadow=tr.castShadow=true; can.receiveShadow=true; can.frustumCulled=tr.frustumCulled=false; const col=new THREE.Color();
+  spots.forEach((s,i)=>{ col.set(canopyCol[Math.floor(rnd()*canopyCol.length)]).offsetHSL(0,0,(rnd()-0.5)*0.06); can.setColorAt(i,col);
+    treeInst.push({mesh:can,tr,i,x:s[0],z:s[1],y:gRest(s[0],s[1]),s:0.85+rnd()*0.4,ry:rnd()*6.28,dir:rnd()<0.5?1:-1}); });
+  land.add(can,tr); return {can,tr}; }
+instTrees('p',pineCanopy,['#2F4F2C','#36573A','#2B4627','#3C5B35']);
+instTrees('d',decCanopy,['#4F7337','#5E7F3D','#466A33','#6C8A45']);
+const treeMeshes=[...new Set(treeInst.flatMap(o=>[o.mesh,o.tr]))];
+const _m=new THREE.Matrix4(), _q=new THREE.Quaternion(), _e=new THREE.Euler(), _s=new THREE.Vector3(), _p3=new THREE.Vector3();
+function setTree(o,dx,tilt){ _e.set(tilt*0.15*o.dir,o.ry,-tilt); _q.setFromEuler(_e); _s.setScalar(o.s); _p3.set(o.x+dx,o.y,o.z); _m.compose(_p3,_q,_s); o.mesh.setMatrixAt(o.i,_m); o.tr.setMatrixAt(o.i,_m); }
+treeInst.forEach(o=>setTree(o,0,0));
+
+/* Trümmer aus zerstörten Häusern (Instanzen) */
+const DEBN=200;
+const debris=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.85}),DEBN);
+debris.castShadow=true; debris.frustumCulled=false; land.add(debris);
+const debInfo=[]; { const cols=['#8A6B4A','#A88B66','#E9E4DA','#5E6670','#7A5A3A','#C9C2B5','#4A5560']; const c=new THREE.Color();
+  for(let i=0;i<DEBN;i++){ const k=rnd(); const sc=k<0.5?[0.24,0.03,0.07]:(k<0.8?[0.15,0.025,0.15]:[0.1,0.08,0.11]);
+    debInfo.push({sc,spin:(rnd()-0.5)*7,jx:(rnd()-0.5),jz:(rnd()-0.5),lat:(rnd()-0.5)*0.5,tx:(rnd()-0.5)*0.6,tz:(rnd()-0.5)*0.6}); c.set(cols[Math.floor(rnd()*cols.length)]); debris.setColorAt(i,c); } }
+/* Schwimmende Gegenstände: werden von der Flut ins Land und vom Rückstrom wieder Richtung Meer getragen */
+const DTD=0.05;
+let floaters=[];
+function flowU(x,z,t,L,dep){
+  if(x<XS-0.05) return 0.9*Math.tanh(L/0.12)*sstep(0.0,0.08,dep);
+  const dL=(L-landLevel(x,z,t-0.1))/0.1; const u=dL>0?0.5*Math.tanh(dL/0.12):1.15*Math.tanh(dL/0.04); return u*sstep(0.01,0.22,dep);
+}
+function simulate(f){ const N=Math.ceil((TEND-T_S0)/DTD)+2; const X=new Float32Array(N),Z=new Float32Array(N),R=new Float32Array(N),Y=new Float32Array(N),A=new Uint8Array(N);
+  let x=f.x0,z=f.z0,ry=f.ry0;
+  for(let s=0;s<N;s++){ const t=T_S0+s*DTD;
+    if(t<f.spawn){ X[s]=x;Z[s]=z;R[s]=ry;Y[s]=0;A[s]=0; continue; }
+    const L=seaLevelAt(x,z,t), g=gRest(x,z), dep=L-g;
+    if(dep>f.th){ const u0=flowU(x,z,t,L,dep), u=u0*(u0>0?f.mob:f.mobB); x=clamp(x+u*DTD,XL+1,XR-0.4); z=clamp(z+Math.abs(u)*DTD*f.lat,-ZD+0.25,ZD-0.25); ry+=f.spin*Math.abs(u)*DTD; }
+    const af=dep>f.th*0.6; X[s]=x;Z[s]=z;R[s]=ry;Y[s]=af?L-f.sink:gRest(x,z)+f.rest;A[s]=af?1:0; }
+  f.X=X;f.Z=Z;f.R=R;f.Y=Y;f.A=A;f.N=N; }
+function floaterAt(f,t){ const fs=clamp((t-T_S0)/DTD,0,f.N-1.001), i=Math.floor(fs), u=fs-i;
+  return [lerp(f.X[i],f.X[i+1],u),lerp(f.Z[i],f.Z[i+1],u),lerp(f.R[i],f.R[i+1],u),lerp(f.Y[i],f.Y[i+1],u),f.A[u<0.5?i:i+1]]; }
+function buildFloaters(){
+  floaters=[];
+  for(const o of cars){ const u=o.userData; floaters.push({kind:'car',o,x0:u.x,z0:u.z,ry0:u.ry,th:0.07,spawn:T_S0,spin:2.2*u.dir,lat:0.25*u.dir,sink:0.035,rest:0.03,tilt:[0.25*u.dir,0.2]}); }
+  boats.forEach((o,i)=>{ const u=o.userData; floaters.push({kind:'boat',o,x0:u.x,z0:u.z,ry0:u.ry,th:0.02,spawn:T_S0,spin:(i%2?1.2:-1.2),lat:(i%2?-0.2:0.2),sink:0.02,rest:0.03,tilt:[0.3,0.35]}); });
+  let d=0;
+  for(const h of houses){ if(d>=DEBN) break; const tab=h.userData.tab; let si=-1; for(let s=0;s<NSAMP;s++){ if(tab[s]>=0.42){ si=s; break; } } if(si<0) continue;
+    for(let k=0;k<5&&d<DEBN;k++,d++){ const I=debInfo[d]; floaters.push({kind:'deb',i:d,x0:h.userData.x+I.jx*0.3,z0:h.userData.z+I.jz*0.3,ry0:I.spin,th:0.015,spawn:T_S0+si*DT_S+k*0.15,spin:I.spin,lat:I.lat,sink:0.008,rest:0.012,tilt:[I.tx,I.tz]}); } }
+  let q=7; const r2=()=>{q=(q*16807)%2147483647;return q/2147483647;}; for(const f of floaters){ f.mob=0.75+0.6*r2(); f.mobB=0.35+1.0*r2(); f.th*=0.7+0.9*r2(); simulate(f); }
+  debUsed=d;
+}
+let debUsed=0;
+const _dm=new THREE.Matrix4(), _dq=new THREE.Quaternion(), _de=new THREE.Euler(), _dsv=new THREE.Vector3(), _dp=new THREE.Vector3();
+function updateFloaters(t,dmgPhase){
+  for(let i=0;i<DEBN;i++){ if(i>=debUsed){ _dm.makeScale(0,0,0); debris.setMatrixAt(i,_dm); } }
+  for(const f of floaters){
+    let x,z,ry,y,afloat;
+    if(dmgPhase){ let a; [x,z,ry,y,a]=floaterAt(f,t); afloat=a===1; }
+    else { x=f.x0; z=f.z0; ry=f.ry0; const L=x<XS?seaLevelAt(x,z,t):-9, g=gRest(x,z); afloat=L-g>f.th*0.6; y=afloat?L-f.sink:g+f.rest; }
+    const moved=Math.hypot(x-f.x0,z-f.z0)>0.08, tx=(!afloat&&moved)?f.tilt[0]:0, tz=(!afloat&&moved)?f.tilt[1]:0;
+    if(f.kind==='deb'){ const I=debInfo[f.i]; if(!dmgPhase||t<f.spawn){ _dm.makeScale(0,0,0); debris.setMatrixAt(f.i,_dm); continue; }
+      _de.set(tx+0.2*Math.sin(ry*1.3),ry,tz+0.2*Math.cos(ry)); _dq.setFromEuler(_de); _dsv.set(...I.sc); _dp.set(x,y+I.sc[1]/2,z); _dm.compose(_dp,_dq,_dsv); debris.setMatrixAt(f.i,_dm); }
+    else { f.o.position.set(x,y,z); f.o.rotation.set(tx,ry,tz); }
+  }
+  debris.instanceMatrix.needsUpdate=true;
+}
+/* Schadensverlauf vorberechnen (zum Vor- und Zurückspulen) */
+const DT_S=0.1, T_S0=P3S, NSAMP=Math.ceil((TEND-T_S0)/DT_S)+2;
+const floodDepthAt=(x,z,t)=>landLevel(x,z,t)-gRest(x,z);
+let SHMAX=0; for(let i=0;i<SHtab.length;i++) if(SHtab[i]>SHMAX) SHMAX=SHtab[i];
+const canFlood=(x,y)=>scen.R*SHMAX-BETA*Math.max(0,x-XS)>y-0.02;
+function tabFor(x,z){ const arr=new Float32Array(NSAMP); if(!canFlood(x,gRest(x,z))) return arr; let m=0; for(let s=0;s<NSAMP;s++){ const d=floodDepthAt(x,z,T_S0+s*DT_S); if(d>m)m=d; arr[s]=m; } return arr; }
+let shoreMax=null;
+function precompute(){
+  for(const o of [...houses,...roadSegs,...railSegs,...poles,...cars,school]) o.userData.tab=tabFor(o.userData.x,o.userData.z);
+  for(const o of treeInst) o.tab=tabFor(o.x,o.z);
+  shoreMax=new Float32Array(NSAMP); { let m=0; for(let s=0;s<NSAMP;s++){ const v=landLevel(XS,ZD,T_S0+s*DT_S); if(v>m)m=v; shoreMax[s]=m; } }
+  const pos=OP.geo.attributes.position.array, aWet=OP.geo.attributes.aWet.array, aG=OP.geo.attributes.aG.array, aDB=OP.geo.attributes.aDB.array;
+  for(let v=0;v<aWet.length;v++){ aWet[v]=1e9; const x=pos[v*3],y=pos[v*3+1],z=pos[v*3+2]; if(x<XS-0.1||aG[v]<1||aDB[v]>0||!canFlood(x,y)) continue;
+    for(let s=0;s<NSAMP;s+=2){ if(landLevel(x,z,T_S0+s*DT_S)-y>0.012){ aWet[v]=T_S0+s*DT_S; break; } } }
+  OP.geo.attributes.aWet.needsUpdate=true;
+  buildFloaters();
+}
+const sIdx=t=>Math.min(NSAMP-1,Math.max(0,Math.floor((t-T_S0)/DT_S)));
+const maxDepthTo=(tab,t)=>t<T_S0?0:tab[sIdx(t)];
+
+/* ===================== Beschriftungen ohne Überlappung ===================== */
+const labelLayer=document.getElementById('labels'), leaderCv=document.getElementById('leaders'), lctx=leaderCv.getContext('2d'); let hudRects=[], hudStamp=0, labelsMoving=false;
+const labels=[];
+function addLabel(html,cls,anchor,phases,opt={}){ const el=document.createElement('div'); el.className='lab '+cls; el.innerHTML=html; labelLayer.appendChild(el);
+  const L={el,anchor:typeof anchor==='function'?anchor:()=>anchor,phases,cond:opt.cond,prio:opt.prio??5,point:opt.point!==false,icon:opt.icon,w:0,h:0,last:null,vis:false,_html:html};
+  labels.push(L); return L; }
+function setLabelHTML(L,html){ if(L._html!==html){ L.el.innerHTML=html; L._html=html; L.w=0; } }
+const _pp=new THREE.Vector3();
+function pointCands(w,h){ const g=14; return [[0,-(h/2+g)],[w/2+g,-(h/2+g*0.7)],[-(w/2+g),-(h/2+g*0.7)],[w/2+g+4,0],[-(w/2+g+4),0],[0,h/2+g],[w/2+g,h/2+g*0.7],[-(w/2+g),h/2+g*0.7],
+  [0,-(h/2+g*3)],[w/2+g*2,-(h/2+g*2.6)],[-(w/2+g*2),-(h/2+g*2.6)],[0,h/2+g*3],[w/2+g*3.5,0],[-(w/2+g*3.5),0],[0,-(h/2+g*5)],[0,h/2+g*5]]; }
+function areaCands(w,h){ return [[0,0],[0,-(h+8)],[0,h+8],[w*0.7,0],[-w*0.7,0],[0,-(h*2+16)],[0,h*2+16]]; }
+const starPath=(x,y)=>{ let d=''; for(let i=0;i<10;i++){ const r=i%2?4:10, a=-Math.PI/2+i*Math.PI/5; d+=(i?'L':'M')+(x+r*Math.cos(a)).toFixed(1)+','+(y+r*Math.sin(a)).toFixed(1);} return `<path class="star" d="${d}Z"/>`; };
+/* Beschriftungs-Layout nach bewährten Regeln:
+   1. Beschriftung möglichst nah am Objekt (intern), sonst am Bildrand (extern) mit kurzer, gerader Führungslinie.
+   2. Keine Überlappung mit anderen Beschriftungen, Bedienelementen, Pfeilen und markierten Punkten.
+   3. Wichtige Beschriftungen zuerst; ruhige Bewegung (weiches Nachführen, Einblenden statt Springen).
+   4. Detailstufe wählbar: „Wichtige“ oder „Alle“. */
+const prioOf=L=>typeof L.prio==='function'?L.prio():L.prio;
+function projXY(p,W,H){ _pp.set(p[0],p[1],p[2]).project(camera); if(_pp.z>1||_pp.z<-1) return null; return [(_pp.x*0.5+0.5)*W,(-_pp.y*0.5+0.5)*H]; }
+const hits=(r,q,pad=3)=>r[0]<q[2]+pad&&r[2]>q[0]-pad&&r[1]<q[3]+pad&&r[3]>q[1]-pad;
+function placeLabels(){
+  const W=vp.clientWidth,H=vp.clientHeight, nowT=performance.now();
+  if(nowT-hudStamp>250){ hudStamp=nowT; hudRects=[]; const vr=vp.getBoundingClientRect();
+    for(const id of ['hudTL','hudTR','hudBL','simp','viewnote','toast']){ const el=document.getElementById(id); if(!el||el.hidden) continue; if(id==='toast'&&!el.classList.contains('show')) continue;
+      for(const c of (id==='hudBL'||id==='hudTR')?el.children:[el]){ if(c.hidden) continue; const r=c.getBoundingClientRect(); if(r.width<2) continue; hudRects.push([r.left-vr.left-3,r.top-vr.top-3,r.right-vr.left+3,r.bottom-vr.top+3]); } } }
+  const obst=hudRects.slice();
+  /* Pfeile freihalten */
+  for(const k in A){ const a=A[k]; if(!a.visible||!a.userData.from) continue; const f=a.userData.from,to=a.userData.to;
+    for(const u of [0.2,0.5,0.8,1]){ const q=projXY([lerp(f[0],to[0],u),lerp(f[1],to[1],u),lerp(f[2],to[2],u)],W,H); if(q) obst.push([q[0]-8,q[1]-8,q[0]+8,q[1]+8]); } }
+  const minP=state.lvl==='all'?0:6;
+  const list=[];
+  for(const L of labels){ L.show=false; if(!L.vis||prioOf(L)<minP) continue; const q=projXY(L.anchor(),W,H); if(!q) continue; L.ax=q[0]; L.ay=q[1]; list.push(L);
+    if(L.point||L.icon){ const r=L.icon?9:5; obst.push([q[0]-r,q[1]-r,q[0]+r,q[1]+r]); } }
+  list.sort((a,b)=>prioOf(b)-prioOf(a));
+  const placed=[...obst], ext={l:[],r:[]};
+  for(const L of list){
+    if(!L.w){ L.w=L.el.offsetWidth; L.h=L.el.offsetHeight; }
+    const w=L.w,h=L.h, cands=L.point?pointCands(w,h):areaCands(w,h);
+    const order=[...cands.keys()]; if(L.last!=null&&L.last<cands.length){ order.splice(order.indexOf(L.last),1); order.unshift(L.last); }
+    let rect=null;
+    for(const ci of order){ const cx=L.ax+cands[ci][0], cy=L.ay+cands[ci][1]; const r=[cx-w/2,cy-h/2,cx+w/2,cy+h/2];
+      if(r[0]<6||r[1]<6||r[2]>W-6||r[3]>H-6) continue;
+      let hit=false; for(const q of placed){ if(hits(r,q)){hit=true;break;} } if(hit) continue;
+      rect=r; L.last=ci; break; }
+    if(rect){ placed.push(rect); L.tr=rect; L.show=true; L.ext=false; }
+    else if(L.point){ L.last=null; ext[L.ax<W/2?'l':'r'].push(L); }
+  }
+  /* externe Beschriftungen am Rand, nach Höhe sortiert (keine gekreuzten Linien) */
+  for(const side of ['l','r']){ const arr=ext[side].sort((a,b)=>a.ay-b.ay); let cursor=8;
+    for(const L of arr){ const w=L.w,h=L.h, x0=side==='l'?10:W-10-w; let y=Math.max(cursor,L.ay-h/2), ok=false;
+      for(let g=0;g<40&&y+h<H-8;g++){ const r=[x0,y,x0+w,y+h]; const q=placed.find(q=>hits(r,q,4)); if(!q){ ok=true; break; } y=q[3]+5; }
+      if(!ok) continue; const r=[x0,y,x0+w,y+h]; placed.push(r); L.tr=r; L.show=true; L.ext=true; cursor=y+h+6; } }
+  /* zeichnen: weich nachführen, Führungslinien mit hellem Rand (Canvas) */
+  const pr=Math.min(2,devicePixelRatio||1); if(leaderCv.width!==Math.round(W*pr)||leaderCv.height!==Math.round(H*pr)){ leaderCv.width=Math.round(W*pr); leaderCv.height=Math.round(H*pr); }
+  lctx.setTransform(pr,0,0,pr,0,0); lctx.clearRect(0,0,W,H); labelsMoving=false;
+  const dot=(x,y,r,fill,stroke,lw)=>{ lctx.beginPath(); lctx.arc(x,y,r,0,Math.PI*2); lctx.fillStyle=fill; lctx.fill(); lctx.lineWidth=lw; lctx.strokeStyle=stroke; lctx.stroke(); };
+  const star=(x,y)=>{ lctx.beginPath(); for(let i=0;i<10;i++){ const r=i%2?4:10, a=-Math.PI/2+i*Math.PI/5; lctx[i?'lineTo':'moveTo'](x+r*Math.cos(a),y+r*Math.sin(a)); } lctx.closePath(); lctx.fillStyle='#D2232A'; lctx.fill(); lctx.lineWidth=1.5; lctx.strokeStyle='#fff'; lctx.stroke(); };
+  for(const L of labels){
+    if(L.icon&&L.vis&&prioOf(L)>=minP&&L.ax!=null){ if(L.icon==='star') star(L.ax,L.ay); else dot(L.ax,L.ay,6,'#D2232A','#fff',2); }
+    if(!L.show){ if(L.was){ L.el.style.opacity='0'; L.was=false; } L.ax=null; continue; }
+    const r=L.tr; if(!L.was||L.cx==null){ L.cx=r[0]; L.cy=r[1]; } else { const dx=r[0]-L.cx, dy=r[1]-L.cy; if(Math.abs(dx)+Math.abs(dy)>0.6){ L.cx+=dx*0.28; L.cy+=dy*0.28; labelsMoving=true; } else { L.cx=r[0]; L.cy=r[1]; } }
+    if(!L.was){ L.el.style.opacity='1'; } L.was=true;
+    const tf=`translate(${L.cx.toFixed(1)}px,${L.cy.toFixed(1)}px)`; if(L._tf!==tf){ L.el.style.transform=tf; L._tf=tf; }
+    if(L.point){ const x0=L.cx,y0=L.cy,x1=x0+L.w,y1=y0+L.h; const px=clamp(L.ax,x0,x1), py=clamp(L.ay,y0,y1);
+      if(Math.hypot(px-L.ax,py-L.ay)>2){ lctx.beginPath(); lctx.moveTo(L.ax,L.ay); lctx.lineTo(px,py); lctx.lineWidth=3.6; lctx.strokeStyle='rgba(255,255,255,.85)'; lctx.stroke(); lctx.lineWidth=1.3; lctx.strokeStyle='rgba(23,32,27,.75)'; lctx.stroke(); }
+      if(!L.icon) dot(L.ax,L.ay,3,'#17201B','#fff',1.5); }
+    L.ax=null; }
+}
+const midLockX=()=>xAtDist((LOCK0+LOCK1)/2+LOCKDRAG*clamp(kOf(state.t),0,1.3));
+const surfY=x=>gRest(x,ZD)-kOf(state.t)*Dpat(x);
+const T=()=>state.t;
+addLabel('Ozeanische Platte<small>Beispiel Japan: Pazifische Platte</small>','r',[-12.5,-3.85,ZD],[1,2],{point:false,prio:()=>T()<14?6:4});
+addLabel('Kontinentale Platte<small>Beispiel Japan: Nordamerikanische Platte</small>','',[2.8,-3.2,ZD],[1,2],{point:false,prio:()=>T()<14?6:4});
+addLabel('Erdmantel<small>heiß und zähplastisch</small>','g',[-7,-8.2,ZD],[1],{point:false,prio:2});
+addLabel('Tiefseegraben<small>Japangraben</small>','',()=>[XT,slabTop(XT)+0.05,ZD],[1,2],{prio:()=>T()<14?6:4,cond:()=>T()<TQ+0.4});
+addLabel('Subduktion: Platte taucht ab','r',()=>[2.6,slabTop(2.6)-0.85,ZD],[1],{point:false,prio:3});
+addLabel('Plattenbewegung<small>rund 8 cm pro Jahr</small>','r',[-11.9,-3.9,ZD+0.16],[1],{prio:4,cond:()=>state.arrows});
+addLabel('Blockierter Abschnitt<small>Platten durch Reibung verhakt</small>','a',()=>{const x=midLockX(); return [x,slabTop(x),ZD+0.05];},[1,2],{prio:9,cond:()=>T()<TQ+0.3||scen.deep});
+addLabel('Spannung wird abgebaut<small>Platten gleiten ruckartig</small>','a',()=>{const x=midLockX(); return [x,slabTop(x),ZD+0.05];},[2],{prio:9,cond:()=>T()>=TQ+0.3&&!scen.deep});
+addLabel('Rand wird nach unten gezogen','a',()=>[XU,surfY(XU),ZD],[1],{prio:7,cond:()=>T()>2});
+addLabel('Platte wölbt sich auf','a',()=>[XSUB,surfY(XSUB),ZD],[1],{prio:5,cond:()=>T()>4});
+addLabel('Ausgangslage','k',()=>[XSUB+2.2,gRest(XSUB+2.2,ZD),ZD+0.06],[1],{prio:3,cond:()=>state.ghost&&T()>1});
+const Lcol=addLabel('Wassersäule wird höher<small>Der Meeresboden sinkt langsam ab</small>','w',()=>[XU+0.4,gRest(XU+0.4,ZD)-kOf(T())*Dpat(XU+0.4)*0.5,ZD+0.02],[1],{prio:8,cond:()=>T()>3});
+addLabel('Zusätzliches Wasser wird nach oben gedrückt','w',()=>{ const f=frontLevelAt(XU); return [XU,Math.max(0.02,f.h),ZD+0.02]; },[2,3],{prio:9,cond:()=>T()>=TQ+0.5&&T()<P3S+3&&scen.R>0.2});
+addLabel('Lage vor dem Beben','k',()=>[XSUB+2.2,gRest(XSUB+2.2,ZD)-Dpat(XSUB+2.2),ZD+0.06],[2],{prio:3,cond:()=>state.ghost&&T()>=TQ&&scen.R>0.2});
+const Lhypo=addLabel('Erdbebenherd','k',()=>{const hx=scen.hx; return [hx,scen.deep?slabTop(hx)-0.6:slabTop(hx)-0.02,ZD+0.05];},[2],{prio:10,icon:'star',cond:()=>T()>=TQ-0.2});
+addLabel('Epizentrum','k',()=>[scen.hx,surfY(scen.hx),0],[2],{prio:8,icon:'dot',cond:()=>T()>=TQ-0.2&&!scen.deep});
+addLabel('Hebung des Meeresbodens','k',()=>[XU,surfY(XU)-0.5,ZD+0.16],[2],{prio:9,cond:()=>T()>=TQ+0.5&&scen.R>0.2});
+addLabel('Senkung','k',()=>[XSUB,surfY(XSUB)-0.45,ZD+0.16],[2],{prio:7,cond:()=>T()>=TQ+0.5&&scen.R>0.2});
+addLabel('federt zurück','a',[-5.2,-3.25,ZD+0.16],[2],{prio:5,cond:()=>T()>=TQ+0.5&&scen.R>0.2});
+addLabel('Erdbebenwellen','',()=>{const hx=scen.hx,hy=scen.deep?slabTop(hx)-0.6:slabTop(hx); const r=0.2+clamp(T()-TQ,0,3.2)*2.6; return [hx+r*0.7,hy-r*0.7,ZD+0.07];},[2],{prio:3,cond:()=>T()>TQ+0.3&&T()<TQ+2.6});
+
+const LwR=addLabel('Welle Richtung Küste','w',[0,0,ZD],[3,4],{prio:9});
+const LwL=addLabel('Welle Richtung offenes Meer','w',[0,0,ZD],[3,4],{prio:8});
+const LwB=addLabel('Ausbreitung auch zur Seite','w',[0,0,0],[3,4],{prio:5,cond:()=>scen.R>0.2&&T()>P3S+3&&state.view!=='section'});
+addLabel('Normaler Meeresspiegel','k',[XL+1.6,0,ZD+0.06],[3,4,5],{prio:2,cond:()=>state.ghost});
+const Lenv=addLabel('Spur des Wellenbergs<small>Er wird zur Küste hin immer höher</small>','y',[0,0,ZD],[4,5],{prio:9,cond:()=>scen.R>0.2});
+const Lgauge=addLabel('Wassertiefe','',[0,0,ZD],[4],{prio:4,cond:()=>scen.R>0.2});
+for(const [x,txt] of [[-12,'4000 m'],[2.5,'200 m'],[6.3,'10 m']]) addLabel(txt,'tag',()=>[x,gRest(x,ZD),ZD+0.05],[4],{prio:3,cond:()=>scen.R>0.2});
+const Ldraw=addLabel('Meer zieht sich zurück<small>Warnzeichen!</small>','w',[XC-0.7,0,ZD-0.5],[4,5],{prio:9,cond:()=>false});
+const Lin=addLabel('Wasser strömt ins Landesinnere','w',[0,0,0],[5],{prio:8,cond:()=>false});
+const Lback=addLabel('Rückstrom zum Meer<small>zieht Trümmer, Autos und Boote mit</small>','w',[0,0,0],[5],{prio:8,cond:()=>false});
+addLabel('Häuser, Straße und Bahnlinie<small>werden beschädigt</small>','',[9.3,0.45,-1.0],[5],{prio:6,cond:()=>T()>PH[4].t0+3&&scen.R>0.2});
+addLabel('Schiff auf dem offenen Meer<small>Die Welle hebt es nur kurz an – keine Schäden</small>','w',()=>{const g=seaBoats[1]; return [g.position.x,g.position.y+0.25,g.position.z];},[3,4],{prio:6,cond:()=>scen.R>0.2&&T()>P3S+2});
+addLabel('Schiff im tiefen Wasser bleibt unbeschädigt','w',()=>{const g=seaBoats[0]; return [g.position.x,g.position.y+0.3,g.position.z];},[5],{prio:5,cond:()=>scen.R>0.2});
+const Lboat=addLabel('Boot an Land gespült','w',()=>[boats[0].position.x,boats[0].position.y+0.12,boats[0].position.z],[5],{prio:6,cond:()=>scen.R>0.2&&boats[0].position.x>XC+0.3});
+addLabel('Höher gelegener Ort<small>Hier ist man sicher – Evakuierung!</small>','k',()=>[11.55,school.position.y+0.55,0.9],[5],{prio:7});
+addLabel('Küste','',[XC,0.02,ZD],[5],{prio:3});
+const Lwave=addLabel('','w big',[XC-4.2,1.7,ZD],[5],{point:false,prio:6,cond:()=>scen.R>0.2});
+const Lnone=addLabel('','k big',[-1,1.4,ZD],[3,4,5],{point:false,prio:10,cond:()=>scen.R<=0.2});
+
+/* ===================== Szene aktualisieren ===================== */
+let lastQuakeShake=false;
+function crestX(tw,dir,k=0){ const t=tw-k*LAG; if(t<0) return null; return xOfS(sOf(XU)+dir*t); }
+function frontLevelAt(x){ const f=clamp((x-XL)/(XR-XL)*NXS,0,NXS); const i=Math.min(NXS-1,Math.floor(f)); return {h:lerp(FRONT_H[i],FRONT_H[i+1],f-i),g:lerp(FRONT_G[i],FRONT_G[i+1],f-i)}; }
+function update(){
+  const t=state.t, ph=phaseAt(t), kk=kOf(t);
+  U.uK.value=kk; U.uT.value=t; U.uR.value=scen.R; renderHeightmap();
+  /* blockierter Abschnitt */
+  { const off=LOCKDRAG*clamp(kk,-0.3,1.3);
+    if(Math.abs(off-lockOff)>1e-4){ lockOff=off; lockGeo.dispose(); lockGeo=lockGeoFor(off); lockMesh.geometry=lockGeo; placeTeeth(off); }
+    teeth.visible=!(t>=TQ&&!scen.deep&&scen.R>0.2);
+    const a=lockGeo.attributes.color.array, uv=lockGeo.attributes.uv.array, n=lockGeo.attributes.position.count;
+    const rr=t<TQ?-1:(t-TQ)*4.5, released=!scen.deep&&t>=TQ;
+    const cLock=new THREE.Color('#E59A1C').lerp(new THREE.Color('#C25E00'),clamp(kk,0,1)), cRup=new THREE.Color('#D2232A'), cDone=new THREE.Color('#8E9A90');
+    for(let v=0;v<n;v++){ const d=LOCK0+(LOCK1-LOCK0)*uv[v*2]; let c=cLock;
+      if(released){ const dist=Math.abs(d-DH); const reach=scen.R<0.2?0.5:9; if(dist<Math.min(rr,reach)) c=(rr-dist<1.4)?cRup:cDone; }
+      a[v*3]=c.r;a[v*3+1]=c.g;a[v*3+2]=c.b; }
+    lockGeo.attributes.color.needsUpdate=true; }
+  /* Marker */
+  const off=LOCKDRAG*clamp(t/PH[0].t1,0,1);
+  for(const m of markers){ const p=pathAt(m.userData.u0+off); const nx=-Math.sin(p.a), ny=Math.cos(p.a);
+    m.position.set(p.x-nx*0.95,p.y-ny*0.95,ZD+0.012); m.rotation.z=p.a; m.visible=p.y-1.5>YB&&p.x<4.8; m.material.opacity=0.7*sstep(XL,XL+0.6,p.x); }
+  /* Wasser-Seitenflächen */
+  updateStrips(t,kk);
+  /* Land */
+  const dmgPhase=ph>=3;
+  for(const o of houses){ const u=o.userData, md=dmgPhase?maxDepthTo(u.tab,t):0, dmg=sstep(0.14,0.4,md), col=sstep(0.4,0.6,md);
+    o.position.set(u.x+0.2*dmg+0.22*col,u.y-0.02*col,u.z+0.07*u.dir*dmg); o.rotation.set(0.05*u.dir*dmg,u.ry+0.35*u.dir*dmg,-0.45*dmg-0.8*col); o.scale.set(1,1-0.6*col,1);
+    o.children.forEach(c=>{ if(c!==u.body) c.visible=col<0.7; }); u.body.material=col>0.6?ruinM:u.wm; }
+  for(const o of [...roadSegs,...railSegs,...poles]){ const u=o.userData, md=dmgPhase?maxDepthTo(u.tab,t):0, dmg=sstep(0.1,0.38,md); u.dmg=dmg;
+    o.position.set(u.x+0.3*dmg,u.y+0.02*dmg,u.z); o.rotation.set(0.5*dmg,0.4*dmg,-(poles.includes(o)?1.2:0.35)*dmg); }
+  updateFloaters(t,dmgPhase); updateSeaBoats(t);
+  { const u=pier.userData, md=dmgPhase&&shoreMax?shoreMax[sIdx(t)]:0, dmg=sstep(0.5,0.9,md); pier.rotation.set(0,0,-0.12*dmg); pier.position.y=u.y-0.04*dmg; }
+  { let ch=false; for(const o of treeInst){ const md=dmgPhase?maxDepthTo(o.tab,t):0, d=sstep(0.18,0.55,md); if(o.ld!==d){ o.ld=d; setTree(o,0.12*d,1.1*d); ch=true; } }
+    if(ch) for(const m of treeMeshes) m.instanceMatrix.needsUpdate=true; }
+  land.updateMatrixWorld(true); { const key=poles.map(p=>Math.round((p.userData.dmg||0)*20)).join(''); if(key!==wireKey){ wireKey=key; updateWires(); } }
+  { const sk=dmgPhase?Math.round(t*12):-1; if(sk!==shadowKey){ shadowKey=sk; shadowDirty=true; } }
+  /* Erdbebenwellen */
+  const hx=scen.hx, hy=scen.deep?slabTop(hx)-0.6:slabTop(hx)-0.02;
+  rings.forEach((r,i)=>{ const u=t-TQ-i*0.45; const on=u>0&&u<3.2&&ph===1; r.visible=on; if(on){ const rad=0.2+u*2.6; r.position.set(hx,hy,ZD+0.07); r.scale.set(rad,rad,1); r.material.opacity=(1-u/3.2)*0.85; } });
+  if(state.playing&&t>=TQ&&t<TQ+0.2&&!lastQuakeShake&&!REDUCED){ vp.classList.remove('shake'); void vp.offsetWidth; vp.classList.add('shake'); lastQuakeShake=true; }
+  if(t<TQ) lastQuakeShake=false;
+  /* zusätzliches Wasser */
+  { const z=ZD+0.02, show=true;
+    const colOp=show?(ph===0?sstep(0.5,2,t):(ph===1?1:0)):0;
+    if(colOp>0) setBand(colBand,colEdge,XT,-1.6,x=>gRest(x,ZD)-kk*Math.max(0,Dpat(x)),x=>gRest(x,ZD),z,colOp); else { colBand.visible=colEdge.visible=false; }
+    const humpOp=scen.R>0.2&&t>=TQ?(t<P3S?1:1-sstep(P3S+1.5,P3S+4.5,t)):0;
+    if(humpOp>0){ const x0=XT-3.5, x1=-1.2; setBand(humpBand,humpEdge,x0,x1,()=>0.0,x=>{ const f=frontLevelAt(x); return f.h-f.g>0.01?f.h:0; },z,humpOp); } else { humpBand.visible=humpEdge.visible=false; } }
+  /* gestrichelte Linien */
+  gRestL.visible=state.ghost&&ph===0&&t>0.6;
+  gPreL.visible=state.ghost&&ph===1&&t>=TQ&&scen.R>0.2;
+  seaLine.visible=state.ghost&&ph>=2;
+  /* Spur des Wellenbergs + Tiefenmaß */
+  const tw=t-P3S, xr=crestX(tw,1), xl=crestX(tw,-1);
+  const showEnv=ph===3&&scen.R>0.2&&xr!==null;
+  envMesh.visible=showEnv; if(showEnv) updateEnvelope(Math.min(xr,XS-0.06));
+  gauge.visible=ph===3&&scen.R>0.2&&xr!==null&&xr<XS-0.2;
+  if(gauge.visible){ const f2=frontLevelAt(xr); const P=gauge.geometry.attributes.position.array; P[0]=xr;P[1]=f2.h;P[3]=xr;P[4]=f2.g; gauge.geometry.attributes.position.needsUpdate=true; gauge.computeLineDistances(); Lgauge.anchor=()=>[xr,(f2.h+f2.g)/2,ZD+0.08]; }
+  if(showEnv){ const xm=XU+(Math.min(xr,XS-0.1)-XU)*0.82; Lenv.anchor=()=>[xm,envAt(xm),ZD+0.09]; }
+  /* Pfeile */
+  for(const k in A) A[k].visible=false;
+  if(state.arrows){
+    const zf=ZD+0.16;
+    if(ph<=1){ setArrow(A.plate1,[-14.3,-3.9,zf],[-11.9,-3.9,zf]); const p0=xAtDist(8.6),p1=xAtDist(10.4); setArrow(A.plate2,[p0,slabTop(p0)-0.75,zf],[p1,slabTop(p1)-0.75,zf]); }
+    if(ph===0&&kk>0.08){ const s=0.25+0.75*kk; const yt=surfY(XU);
+      setArrow(A.defDown,[XU,yt+0.95,zf],[XU,yt+0.95-0.8*s,zf],sstep(0.08,0.2,kk));
+      const yb=surfY(XSUB); setArrow(A.defUp,[XSUB,yb+0.08,zf],[XSUB,yb+0.08+0.55*s,zf],sstep(0.15,0.3,kk));
+      setArrow(A.defPush,[-6.0,-3.3,zf],[-6.0+0.9*s,-3.36,zf],sstep(0.1,0.25,kk)); }
+    if(ph===1&&t>=TQ&&!scen.deep){ const op=sstep(TQ,TQ+0.4,t), big=scen.R>0.2;
+      const a0=xAtDist(DH-0.7),a1=xAtDist(DH+0.7); const sl=Math.atan(slabSlope(xAtDist(DH))); const nx=-Math.sin(sl)*0.22, ny=Math.cos(sl)*0.22;
+      setArrow(A.slipOP,[a1+nx,slabTop(a1)+ny,zf],[a0+nx,slabTop(a0)+ny,zf],op); setArrow(A.slipSl,[a0-nx,slabTop(a0)-ny,zf],[a1-nx,slabTop(a1)-ny,zf],op);
+      if(big){ setArrow(A.spring,[-4.3,-3.35,zf],[-5.7,-3.2,zf],op);
+        const yu=surfY(XU); setArrow(A.floorUp,[XU,yu-0.95,zf],[XU,yu-0.06,zf],op);
+        const yd=surfY(XSUB); setArrow(A.floorDn,[XSUB,yd-0.05,zf],[XSUB,yd-0.85,zf],op); } }
+    if(scen.R>0.2){
+      if((ph===1&&t>=TQ+0.6)||(ph===2&&t<P3S+3.2)){ const op=ph===1?sstep(TQ+0.6,TQ+1.4,t):1-sstep(P3S+2.2,P3S+3.2,t);
+        [[A.col1,XU-0.7],[A.col2,XU],[A.col3,XU+0.7]].forEach(([a,x])=>{ const g=surfY(x); setArrow(a,[x,g+0.25,zf],[x,g+0.25+Math.min(1.6,(-g)*0.62),zf],op); }); }
+      if(ph===2||ph===3){ const op=sstep(2.6,3.4,tw), cMax=Math.sqrt(3.2);
+        if(xr!==null&&xr<XS-0.05){ const y=Math.max(0,frontLevelAt(xr).h)+0.3; const len=0.35+1.6*Math.sqrt(depthRest(xr))/cMax; setArrow(A.waveR,[xr-len*0.4,y,zf],[xr+len*0.6,y,zf],op); LwR.anchor=()=>[xr+len*0.6,y,zf]; }
+        if(xl!==null&&xl>XL+0.6){ const y=Math.max(0,frontLevelAt(xl).h)+0.3; const len=0.35+1.6*Math.sqrt(depthRest(xl))/cMax; setArrow(A.waveL,[xl+len*0.4,y,zf],[xl-len*0.6,y,zf],op); LwL.anchor=()=>[xl-len*0.6,y,zf]; }
+        if(state.view!=='section'){ const rz=-ZR-0.6-Math.min(3.0,tw*0.24); setArrow(A.waveB,[XU,0.35,-ZR-0.4],[XU,0.35,rz],op*sstep(3,4,tw)); LwB.anchor=()=>[XU,0.35,rz]; } }
+    }
+    if(ph===4&&scen.R>0.2){ const a=landLevel(XC+1.2,0,t), b=landLevel(XC+1.2,0,t-0.15), rising=a>=b;
+      [[A.flow1,3.0],[A.flow2,0.4],[A.flow3,-2.6]].forEach(([ar,z])=>{ const lv=landLevel(XC+1.2,z,t), dep=lv-gRest(XC+1.2,z);
+        if(dep>0.05){ const y=lv+0.12; setArrow(ar,rising?[XC+0.4,y,z]:[XC+2.0,y,z],rising?[XC+2.0,y,z]:[XC+0.4,y,z],sstep(0.05,0.15,dep)); if(z===3.0){ Lin.anchor=Lback.anchor=()=>[XC+1.2,y,z]; } } }); }
+  }
+  /* Sichtbarkeit der Beschriftungen */
+  const fs=frontLevelAt(XC-0.55); const drawback=(fs.h-fs.g<0.012)&&t>P3S+1&&scen.R>0.2;
+  const dl=landLevel(XC+1.2,3.0,t)-gRest(XC+1.2,3.0), rising=landLevel(XC+1.2,3.0,t)>=landLevel(XC+1.2,3.0,t-0.15);
+  for(const L of labels){ let vis=state.labels&&L.phases.includes(ph+1)&&(!L.cond||L.cond());
+    if(L===Ldraw) vis=state.labels&&ph===3&&drawback;
+    if(L===Lin) vis=state.labels&&ph===4&&dl>0.06&&rising&&scen.R>0.2&&state.arrows;
+    if(L===Lback) vis=state.labels&&ph===4&&dl>0.06&&!rising&&scen.R>0.2&&state.arrows;
+    if(L===LwR) vis=vis&&scen.R>0.2&&xr!==null&&xr<XS-0.3&&t>P3S+3&&state.arrows;
+    if(L===LwL) vis=vis&&scen.R>0.2&&xl!==null&&xl>XL+1&&t>P3S+3&&state.arrows;
+    if(L===LwB) vis=vis&&state.arrows;
+    if(L===Lenv) vis=vis&&envMesh.visible&&ph===3;
+    if(L===Lgauge) vis=vis&&gauge.visible;
+    L.vis=vis; }
+  if(ph===4){ const k=tw<T_ARR+LAG-2.5?1:(tw<T_ARR+2*LAG-2.5?2:3); setLabelHTML(Lwave,`Welle ${k} von 3 erreicht die Küste`); }
+  setLabelHTML(Lnone,scen.deep?'Kein Tsunami<small>Der Herd liegt zu tief – der Meeresboden bewegt sich kaum.</small>':'Kein gefährlicher Tsunami<small>Bei Magnitude 6 hebt sich der Meeresboden nur wenig, auf kleiner Fläche.</small>');
+  setLabelHTML(Lhypo,scen.deep?'Erdbebenherd<small>rund 300 km tief</small>':'Erdbebenherd');
+  updateHUD(t,ph,kk,xr);
+}
+
+/* ===================== HUD & Erklärung ===================== */
+const $=id=>document.getElementById(id);
+const DMAP=[[0.04,2],[0.08,10],[0.42,200],[1.0,800],[2.0,2200],[3.0,4000],[3.5,5500]];
+function realDepth(dm){ if(dm<=DMAP[0][0]) return DMAP[0][1]; for(let i=1;i<DMAP.length;i++){ if(dm<=DMAP[i][0]){ const [a,ra]=DMAP[i-1],[b,rb]=DMAP[i]; const u=(dm-a)/(b-a); return Math.exp(lerp(Math.log(ra),Math.log(rb),u)); } } return DMAP[DMAP.length-1][1]; }
+const de=(v,d=0)=>v.toLocaleString('de-DE',{maximumFractionDigits:d,minimumFractionDigits:d});
+function updateHUD(t,ph,kk,xr){
+  const P=PH[ph]; $('clockTitle').textContent=`Phase ${P.n} · ${P.short}`;
+  let txt='';
+  if(ph===0) txt=`Jahr ${Math.round(clamp(t/PH[0].t1,0,1)*500)} – die Spannung wächst langsam`;
+  else if(ph===1) txt=t<TQ?'kurz vor dem Beben':`${Math.min(180,Math.round((t-TQ)*36))} Sekunden nach Bebenbeginn`;
+  else txt=`etwa ${Math.round((t-P3S)*65/T_ARR)} Minuten nach dem Beben`;
+  $('clockTime').textContent=txt; const pl=$('clockPill'); pl.className='pill '+P.pill[0]; pl.textContent=P.pill[1];
+  $('meter').hidden=ph>1;
+  $('meterBar').style.width=(clamp(kk,0,1)*100)+'%';
+  { const ex=ph===0?kk*7:(t<TQ?7:Math.max(0,kk*7)); $('wcolTxt').textContent=ph===0||t<TQ?`Wassersäule über dem Plattenrand: +${de(ex,ex<10?1:0)} m`:(scen.R>0.2?'Meeresboden hebt sich um bis zu 7 m':'Meeresboden bleibt fast in Ruhe'); }
+  $('meterLab').textContent=ph===0?'Spannung in der Platte':(t<TQ?'Spannung maximal':(scen.R>0.2?'Spannung abgebaut':(scen.deep?'Spannung bleibt (Beben woanders)':'Spannung kaum abgebaut')));
+  /* Messkarte */
+  const showW=scen.R>0.2&&xr!==null&&((ph===2&&t>P3S+2.5)||ph===3||(ph===4&&xr<XS+0.01));
+  $('wcard').hidden=!showW;
+  if(showW){ const x=Math.min(xr,XS), d=realDepth(depthRest(x)), v=Math.sqrt(9.81*d)*3.6, Lk=v*0.3, Hm=Math.min(12,0.5*Math.sqrt(4000/d));
+    $('wvD').textContent=d>=100?`${de(Math.round(d/10)*10)} m`:`${de(Math.max(1,Math.round(d)))} m`; $('wbD').style.width=clamp(d/4500*100,1,100)+'%';
+    $('wvV').textContent=`${de(Math.round(v))} km/h`; $('wbV').style.width=clamp(v/800*100,1,100)+'%';
+    $('wvL').textContent=`${de(Lk,Lk<20?1:0)} km`; $('wbL').style.width=clamp(Lk/240*100,1,100)+'%';
+    $('wvH').textContent=Hm<1?'unter 1 m':(Hm>=11.5?'über 10 m':`${de(Hm,Hm<3?1:0)} m`); $('wbH').style.width=clamp(Hm/12*100,3,100)+'%'; }
+  const sl=$('time'); if(document.activeElement!==sl) sl.value=Math.round(t/TEND*1000);
+  sl.setAttribute('aria-valuetext',`Phase ${P.n}: ${P.name}`);
+  document.querySelectorAll('.tick').forEach((b,i)=>b.classList.toggle('cur',i===ph));
+  if(curPhaseShown!==ph) showPhase(ph);
+}
+let curPhaseShown=-1;
+function showPhase(ph){
+  curPhaseShown=ph; const P=PH[ph];
+  $('exTitle').textContent=`${P.n} · ${P.name}`; $('exText').textContent=P.text; $('exLook').textContent=P.look;
+  document.querySelectorAll('.phase').forEach((b,i)=>b.setAttribute('aria-current',i===ph?'step':'false'));
+  if(state.autoCam&&state.view!=='section'&&state.view!=='top') camTo(P.key==='quake'&&scen.deep?'deepq':P.key);
+}
+
+/* ===================== Kamera ===================== */
+const CAMS={
+  oblique:{p:[10,12,35],t:[-1,-3,0]},
+  lock:{p:[-1.4,2.4,21.5],t:[-4.4,-3.4,2]},
+  quake:{p:[-1.4,3.0,22.5],t:[-4.4,-3.0,2]},
+  water:{p:[-9,10,31],t:[-2.5,-1.6,0]},
+  spread:{p:[-0.5,4.2,34],t:[-0.5,-1.3,0]},
+  flood:{p:[3.2,5.4,15.5],t:[9.0,0.1,0.6]},
+  deepq:{p:[6,1,30],t:[2.5,-6.2,1]},
+  top:{p:[-2,44,5],t:[-2,-1,0]}
+};
+let tween=null;
+function camTo(key,dur=1.2){ const c=CAMS[key]; if(!c) return; const t1=new THREE.Vector3(...c.t), p1=new THREE.Vector3(...c.p);
+  if(key!=='section'){ const k=Math.pow(clamp(1.45/camera.aspect,1,2.4),0.75); p1.sub(t1).multiplyScalar(k).add(t1); }
+  tween={p0:camera.position.clone(),t0:controls.target.clone(),p1,t1,s:performance.now(),d:dur*1000}; }
+function sectionCam(){ const w=vp.clientWidth,h=vp.clientHeight,asp=w/h; const halfW=14.2, halfH=6.7; const tanv=Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
+  const dist=Math.max(halfH/tanv,halfW/(tanv*asp))+ZD; return {p:[-2,-3.5,dist],t:[-2,-3.5,0]}; }
+function setView(v){
+  state.view=v; state.dirty=true; document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===v)));
+  controls.enableRotate=v!=='section';
+  if(v==='section'){ CAMS.section=sectionCam(); camTo('section',0.9); note('Querschnittsansicht: Die Vorderseite des Blocks ist ein Schnitt durch die Subduktionszone. Drehen ist hier gesperrt; vergrößern und verschieben geht.',4200); }
+  else if(v==='top'){ camTo('top',1.0); }
+  else { camTo(state.autoCam?PH[phaseAt(state.t)].key:'oblique',1.0); }
+}
+document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));
+function zoom(f){ const d=camera.position.clone().sub(controls.target); d.multiplyScalar(f); d.setLength(clamp(d.length(),controls.minDistance,controls.maxDistance)); camera.position.copy(controls.target).add(d); }
+$('zin').onclick=()=>zoom(0.82); $('zout').onclick=()=>zoom(1.22);
+controls.addEventListener('start',()=>{ tween=null; });
+let toastTimer=null;
+function toast(msg,ms=2600){ const el=$('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'),ms); }
+let noteTimer=null;
+function note(msg,ms){ const el=$('viewnote'); el.textContent=msg; el.hidden=false; clearTimeout(noteTimer); if(ms) noteTimer=setTimeout(()=>el.hidden=true,ms); }
+
+/* ===================== Steuerung ===================== */
+const ticks=$('ticks');
+PH.forEach((P,i)=>{ const b=document.createElement('button'); b.className='tick'; b.type='button';
+  b.style.left=(P.t0/TEND*100)+'%'; b.style.width=((P.t1-P.t0)/TEND*100)+'%';
+  b.innerHTML=`<b>${P.n}</b>${P.short}`; b.setAttribute('aria-label',`Phase ${P.n}: ${P.name}`);
+  b.onclick=()=>gotoPhase(i,true); ticks.appendChild(b); });
+const plist=$('phases');
+PH.forEach((P,i)=>{ const li=document.createElement('li'); const b=document.createElement('button'); b.className='phase'; b.type='button';
+  b.innerHTML=`<span class="n">${P.n}</span><span>${P.name}</span>`; b.onclick=()=>gotoPhase(i,true); li.appendChild(b); plist.appendChild(li); });
+function maxAllowed(){ if(state.mode!=='task') return TEND; const q=task; if(q.idx>=5) return TEND; return q.stage==='ask'?PH[q.idx].t0:PH[q.idx].t1; }
+function setTime(t){ state.t=clamp(t,0,maxAllowed()); state.dirty=true; }
+function play(){ if(state.t>=maxAllowed()-1e-3){ if(state.mode==='task') return; setTime(0); } state.playing=true; syncButtons(); }
+function pause(){ state.playing=false; state.stopAt=null; syncButtons(); }
+function syncButtons(){ $('bStart').disabled=state.playing||(state.mode==='task'&&task.stage==='ask'&&task.idx<5); $('bPause').disabled=!state.playing;
+  const lock=state.mode==='task'; document.querySelectorAll('.phase,.tick').forEach(b=>b.disabled=lock); $('bNext').disabled=lock; $('bPrev').disabled=lock; }
+function gotoPhase(i,andPlay){ if(state.mode==='task') return; i=clamp(i,0,4); setTime(PH[i].t0+(i===0?0:0.001)); state.stopAt=PH[i].t1; if(andPlay) state.playing=true; syncButtons(); }
+$('bStart').onclick=()=>{ state.stopAt=null; play(); };
+$('bPause').onclick=pause;
+$('bNext').onclick=()=>{ const ph=phaseAt(state.t); if(state.t>=TEND-0.01) return; const nx=(state.t<PH[ph].t0+0.05&&!state.playing)?ph:ph+1; if(nx>4){ setTime(TEND); pause(); return;} gotoPhase(nx,true); };
+$('bPrev').onclick=()=>{ const ph=phaseAt(state.t); const pv=(state.t>PH[ph].t0+0.6)?ph:ph-1; gotoPhase(Math.max(0,pv),true); };
+$('bReset').onclick=()=>{ pause(); if(state.mode==='task'){ startTask(); } else setTime(0); setView('oblique'); if(!state.autoCam) camTo('oblique'); };
+$('speed').onchange=e=>state.speed=+e.target.value;
+$('stopEach').onchange=e=>state.stopEach=e.target.checked;
+$('time').addEventListener('input',e=>{ pause(); setTime(e.target.value/1000*TEND); });
+document.querySelectorAll('input[name=lvl]').forEach(r=>r.addEventListener('change',e=>{ state.lvl=e.target.value; state.labels=state.lvl!=='off'; state.dirty=true; }));
+$('tArrows').onchange=e=>{state.arrows=e.target.checked;state.dirty=true;};
+$('tGhost').onchange=e=>{state.ghost=e.target.checked;state.dirty=true;};
+$('tCam').onchange=e=>{state.autoCam=e.target.checked; if(state.autoCam&&state.view==='oblique') camTo(PH[phaseAt(state.t)].key);};
+document.querySelectorAll('input[name=scen]').forEach(r=>r.addEventListener('change',e=>{ scen=SCEN[e.target.value]; precompute(); state.dirty=true; curPhaseShown=-1;
+  if(state.mode!=='task'&&state.t>TQ-0.5){ setTime(PH[1].t0); toast({big:'Starkes, flaches Beben: Der Meeresboden hebt sich stark – Tsunami.',small:'Magnitude 6: Der Meeresboden hebt sich nur wenig – höchstens eine winzige Welle.',deep:'Tiefes Beben: Die Erde bebt, aber der Meeresboden hebt sich kaum – kein Tsunami.'}[e.target.value],4500); state.stopAt=null; state.playing=true; syncButtons(); } }));
+document.addEventListener('keydown',e=>{ if(e.target.closest('input,select,textarea')&&e.target.type!=='checkbox'&&e.target.type!=='radio') return;
+  if(e.code==='Space'&&!e.target.closest('button')){ e.preventDefault(); state.playing?pause():(state.stopAt=null,play()); }
+  else if(e.key==='ArrowRight'&&!e.target.closest('input')){ $('bNext').click(); } else if(e.key==='ArrowLeft'&&!e.target.closest('input')){ $('bPrev').click(); } });
+
+/* ===================== Vorhersage-Modus ===================== */
+const QUIZ=[
+  {q:'Die ozeanische Platte schiebt sich weiter unter die kontinentale Platte. Ein Abschnitt der Kontaktfläche ist aber verhakt. Was passiert in den nächsten Jahrhunderten?',
+   o:[['Die kontinentale Platte wird mitgezogen und verbiegt sich langsam: Ihr Rand wird nach unten gezogen, dahinter wölbt sie sich auf.',1,'Richtig. Die Platte verformt sich elastisch – wie ein Lineal, das man biegt. Dabei speichert sie Spannung.'],
+      ['Nichts – solange die Platten verhakt sind, bewegt sich auch die ozeanische Platte nicht.',0,'Die ozeanische Platte wird weiter angetrieben und bewegt sich jedes Jahr einige Zentimeter. Nur an der Kontaktfläche hakt es.'],
+      ['Jedes Jahr gibt es ein kleines Seebeben, das sofort einen Tsunami auslöst.',0,'Im verhakten Abschnitt baut sich die Spannung über sehr lange Zeit auf – ohne Tsunami.'],
+      ['Das Gestein an der Kontaktfläche schmilzt und gibt sofort nach.',0,'Im verhakten Abschnitt ist das Gestein fest. Gerade deshalb hält es so lange.']]},
+  {q:'Die Spannung in der verbogenen Platte wird immer größer. Was passiert, wenn sie größer wird als die Reibung?',
+   o:[['Der verhakte Abschnitt reißt in Sekunden bis Minuten auf. Die Platte federt zurück, und der Meeresboden wird gehoben.',1,'Richtig. Die über Jahrhunderte gespeicherte Spannung entlädt sich in kurzer Zeit: ein Seebeben.'],
+      ['Die Platten trennen sich, und zwischen ihnen öffnet sich ein Spalt bis zum Meeresboden.',0,'Es öffnet sich kein Spalt. Die Platten gleiten ruckartig aneinander vorbei und bleiben in Kontakt.'],
+      ['Die Spannung wird über weitere Jahrhunderte langsam und ohne Beben abgebaut.',0,'Weil der Abschnitt verhakt war, löst sich die Spannung ruckartig – nicht langsam.'],
+      ['Der Meeresboden verschiebt sich nur waagerecht, nicht nach oben oder unten.',0,'Der Rand der Platte federt auch nach oben zurück. Gerade diese senkrechte Bewegung ist für den Tsunami entscheidend.']]},
+  {q:'Der Meeresboden wurde gerade in kurzer Zeit um mehrere Meter gehoben. Was passiert mit dem Wasser darüber?',
+   o:[['Das ganze Wasser bis zur Oberfläche wird mit angehoben. Dieser Wasserberg fließt auseinander, und Wellen laufen in mehrere Richtungen.',1,'Richtig. Die ganze Wassersäule wird verdrängt. Der flache, riesige Buckel teilt sich in Wellen zum offenen Meer und zur Küste.'],
+      ['Nur an der Oberfläche entsteht eine kleine Welle; das Wasser in der Tiefe bleibt ruhig.',0,'Bei einem Tsunami bewegt sich das Wasser vom Meeresboden bis zur Oberfläche. Das unterscheidet ihn von einer Windwelle.'],
+      ['Es entsteht eine einzige Welle, die nur in Richtung Küste läuft.',0,'Die Wellen laufen in mehrere Richtungen – auch hinaus aufs offene Meer und zur Seite.'],
+      ['Das Wasser bleibt ruhig, weil sich der Boden nur ein paar Meter bewegt hat.',0,'Ein paar Meter auf einer Fläche von vielen hundert Kilometern – das ist eine riesige Wassermenge.']]},
+  {q:'Die Welle läuft vom tiefen Meer in das flacher werdende Wasser vor der Küste. Wie verändert sie sich?',
+   o:[['Sie wird langsamer, kürzer und höher.',1,'Richtig. Im flachen Wasser wird die Welle vorne abgebremst, das Wasser dahinter holt auf und staut sich (Buch M2).'],
+      ['Sie wird schneller, länger und flacher.',0,'Umgekehrt: Je flacher das Wasser, desto langsamer die Welle.'],
+      ['Sie bleibt gleich, bis sie auf die Küste trifft.',0,'Die Meerestiefe bestimmt Tempo, Länge und Höhe der Welle. Darum ändert sie sich unterwegs.'],
+      ['Sie wird langsamer, aber länger und flacher.',0,'Langsamer stimmt. Weil das Wasser dahinter aufholt, wird die Welle aber kürzer und höher.']]},
+  {q:'Die Welle erreicht die Küste. Was geschieht?',
+   o:[['Das Wasser steigt rasch an und strömt weit ins Land. Dann fließt es zurück, und weitere Wellen folgen.',1,'Richtig. Ein Tsunami ist eine schnell strömende Flut. Die Gefahr dauert oft Stunden.'],
+      ['Eine riesige Welle rollt sich ein und bricht wie beim Surfen am Strand. Danach ist die Gefahr vorbei.',0,'Ein Tsunami rollt sich nicht wie eine Surfwelle ein (NOAA). Und nach der ersten Welle ist die Gefahr nicht vorbei.'],
+      ['Das Wasser bleibt am Strand stehen, weil der Sand es aufhält.',0,'Das Wasser hat so viel Energie, dass es oft mehrere Kilometer weit ins Land strömt.'],
+      ['Nur die erste Welle ist gefährlich; spätere Wellen sind immer kleiner.',0,'Die erste Welle ist nicht immer die höchste. Man muss warten, bis die Behörden Entwarnung geben.']]},
+  {q:'Transfer: Nicht jedes Seebeben löst einen gefährlichen Tsunami aus. Bei welchem Beben ist ein großer Tsunami am wahrscheinlichsten?',
+   o:[['Magnitude 9 an einer Subduktionszone, Herd rund 30 km tief, der Meeresboden hebt sich auf großer Fläche.',1,'Richtig. Stark, flach und mit großer senkrechter Hebung des Meeresbodens – das sind die Bedingungen für einen großen Tsunami.'],
+      ['Magnitude 6, flach unter dem Meeresboden.',0,'Bei Magnitude 6 ist die Bruchfläche klein und die Hebung gering. Meist entsteht höchstens eine winzige Welle.'],
+      ['Magnitude 8,5 in 400 km Tiefe.',0,'So tief unten bewegt sich der Meeresboden kaum. Ein gefährlicher Tsunami ist deshalb unwahrscheinlich.'],
+      ['Magnitude 7,5 an einer Blattverschiebung, bei der die Platten waagerecht aneinander vorbeigleiten.',0,'Bei waagerechter Bewegung wird der Meeresboden kaum angehoben. Tsunamis sind dort selten.']]}
+];
+const task={idx:0,stage:'ask',choice:null,score:0,answered:[],order:[]};
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function startTask(){ task.idx=0; task.stage='ask'; task.choice=null; task.score=0; task.answered=[]; task.order=QUIZ.map(q=>shuffle(q.o.map((_,i)=>i)));
+  document.querySelector('input[name=scen][value=big]').checked=true; scen=SCEN.big; precompute();
+  state.playing=false; state.t=0; state.dirty=true; renderTask(); syncButtons(); }
+function renderTask(){
+  const q=QUIZ[task.idx]; if(!q) return;
+  $('score').textContent=`${task.score} von ${task.answered.length} richtig`;
+  $('qText').textContent=(task.idx<5?`Vor Phase ${task.idx+1}: `:'')+q.q;
+  const fs=$('qOpts'); fs.querySelectorAll('.opt').forEach(e=>e.remove());
+  task.order[task.idx].forEach(oi=>{ const [txt]=q.o[oi]; const l=document.createElement('label'); l.className='opt';
+    l.innerHTML=`<input type="radio" name="qopt" value="${oi}"><span>${txt}</span>`; fs.appendChild(l);
+    l.querySelector('input').onchange=()=>{ task.choice=oi; $('qSubmit').disabled=false; }; });
+  $('qSubmit').hidden=false; $('qSubmit').disabled=true; $('qSubmit').textContent=task.idx<5?'Vorhersage prüfen ▶':'Antwort prüfen';
+  $('qNext').hidden=true; $('qReplay').hidden=true; $('qFb').className='fb'; $('qFb').innerHTML='';
+  if(task.idx<5) note(`Vorhersage: Was passiert in Phase ${task.idx+1}? Wähle rechts eine Antwort.`); else $('viewnote').hidden=true;
+}
+$('qSubmit').onclick=()=>{
+  if(task.choice===null) return;
+  document.querySelectorAll('#qOpts input').forEach(i=>{ i.disabled=true; i.closest('.opt').classList.add('dis'); });
+  $('qSubmit').hidden=true;
+  if(task.idx<5){ task.stage='watch'; $('viewnote').hidden=true; setTime(PH[task.idx].t0+0.001); state.stopAt=PH[task.idx].t1; state.playing=true; syncButtons();
+    $('qFb').className='fb info'; $('qFb').innerHTML='<p>Beobachte die Animation. Danach siehst du, ob deine Vorhersage stimmt.</p>'; }
+  else showTaskFeedback();
+};
+function showTaskFeedback(){
+  const q=QUIZ[task.idx], [,ok,why]=q.o[task.choice]; const right=q.o.findIndex(o=>o[1]);
+  if(!task.answered.includes(task.idx)){ task.answered.push(task.idx); if(ok) task.score++; }
+  document.querySelectorAll('#qOpts .opt').forEach(l=>{ const v=+l.querySelector('input').value; if(v===right) l.classList.add('ok'); else if(v===task.choice) l.classList.add('bad'); });
+  const fb=$('qFb'); fb.className='fb '+(ok?'ok':'bad');
+  fb.innerHTML=`<p><b>${ok?'Gut vorhergesagt!':'Nicht ganz.'}</b> ${why}</p>`+(ok?'':`<p>${q.o[right][2]}</p>`);
+  $('score').textContent=`${task.score} von ${task.answered.length} richtig`;
+  task.stage='feedback';
+  if(task.idx<5){ $('qReplay').hidden=false; $('qNext').hidden=false; $('qNext').textContent=task.idx<4?'Nächste Vorhersage':'Zur Transferfrage'; }
+  else { fb.innerHTML+=`<p><b>Ergebnis: ${task.score} von 6 richtig.</b></p><p><button class="btn" id="tryDeep">Im Modell ausprobieren: tiefes Beben</button></p>`;
+    $('qNext').hidden=false; $('qNext').textContent='Noch einmal von vorn';
+    $('tryDeep').onclick=()=>{ setMode('explore'); document.querySelector('input[name=scen][value=deep]').checked=true; scen=SCEN.deep; precompute(); curPhaseShown=-1; gotoPhase(1,true); }; }
+  syncButtons();
+}
+$('qNext').onclick=()=>{ if(task.idx>=5){ startTask(); return; } task.idx++; task.stage='ask'; task.choice=null; if(task.idx===5){ state.t=TEND; state.dirty=true; } renderTask(); syncButtons(); };
+$('qReplay').onclick=()=>{ setTime(PH[task.idx].t0+0.001); state.stopAt=PH[task.idx].t1; state.playing=true; syncButtons(); };
+function setMode(m){ state.mode=m; document.querySelector(`input[name=mode][value=${m}]`).checked=true; $('qcard').hidden=m!=='task';
+  if(m==='task'){ startTask(); setView('oblique'); } else { $('viewnote').hidden=true; } syncButtons(); }
+document.querySelectorAll('input[name=mode]').forEach(r=>r.addEventListener('change',e=>{ pause(); setMode(e.target.value); }));
+
+/* ===================== Schleife ===================== */
+function resize(){ needsRender=true; hudStamp=0; const w=vp.clientWidth,h=vp.clientHeight; renderer.setSize(w,h,false); renderer.domElement.style.width=w+'px'; renderer.domElement.style.height=h+'px'; camera.aspect=w/h; camera.updateProjectionMatrix();
+  if(state.view==='section'){ CAMS.section=sectionCam(); const c=CAMS.section; camera.position.set(...c.p); controls.target.set(...c.t); } }
+new ResizeObserver(resize).observe(vp);
+let last=performance.now(), lastActive=0, animTime=0, needsRender=true, prevActive=false;
+const fq={ema:16.7,n:0,stamp:performance.now(),blockUp:0,lowGeo:false};
+controls.addEventListener('change',()=>{ needsRender=true; });
+function adaptQuality(now,ft){
+  if(LOWQ) return; fq.ema=fq.ema*0.9+ft*0.1; fq.n++;
+  if(now-fq.stamp<1500||fq.n<40) return; fq.stamp=now; fq.n=0;
+  if(fq.ema>21&&dpr>1){ dpr=Math.max(1,dpr-0.25); renderer.setPixelRatio(dpr); resize(); fq.blockUp=now+10000; }
+  else if(fq.ema>34&&dpr<=1&&!fq.lowGeo&&!HM_OK){ fq.lowGeo=true; surf.geometry=surfGeoFor(260,80); renderer.shadowMap.enabled=false; scene.traverse(o=>{ if(o.material) o.material.needsUpdate=true; }); }
+  else if(fq.ema>34&&dpr<=1&&renderer.shadowMap.enabled){ renderer.shadowMap.enabled=false; scene.traverse(o=>{ if(o.material) o.material.needsUpdate=true; }); }
+  else if(fq.ema<17.5&&dpr<DPR_MAX&&now>fq.blockUp){ dpr=Math.min(DPR_MAX,dpr+0.25); renderer.setPixelRatio(dpr); resize(); }
+}
+function loop(now){
+  const raw=now-last, dt=Math.min(0.1,raw/1000); last=now;
+  if(state.playing){ const prev=state.t; let nt=prev+dt*state.speed*(phaseAt(prev)===1&&prev>TQ-0.2&&prev<TQ+2?0.6:1);
+    let stop=state.stopAt; if(state.stopEach&&stop===null){ for(const P of PH){ if(prev<P.t1-1e-6&&nt>=P.t1-1e-6){ stop=P.t1; break; } } }
+    const mx=maxAllowed(); if(stop!==null&&nt>=stop) nt=stop; if(nt>=mx) nt=mx;
+    state.t=nt; state.dirty=true;
+    if((stop!==null&&nt>=stop-1e-6)||nt>=mx-1e-6||nt>=TEND){ state.playing=false; state.stopAt=null; syncButtons(); if(state.mode==='task'&&task.stage==='watch') showTaskFeedback(); } }
+  if(tween){ const u=clamp((now-tween.s)/tween.d,0,1), e=u<0.5?2*u*u:1-Math.pow(-2*u+2,2)/2; camera.position.lerpVectors(tween.p0,tween.p1,e); controls.target.lerpVectors(tween.t0,tween.t1,e); if(u>=1) tween=null; needsRender=true; }
+  if(state.dirty){ update(); state.dirty=false; needsRender=true; }
+  if(controls.update()) needsRender=true;
+  const active=needsRender||state.playing||labelsMoving;
+  if(active) lastActive=now;
+  const ripple=!REDUCED&&now-lastActive<1500;   /* Kräuselwellen laufen nach jeder Bewegung noch kurz weiter, danach ruht die Seite */
+  if(active||ripple){
+    if(prevActive) adaptQuality(now,raw);
+    animTime+=dt; U.uTime.value=REDUCED?0:animTime;
+    if(renderer.shadowMap.enabled&&shadowDirty&&now-lastShadow>90){ renderer.shadowMap.needsUpdate=true; shadowDirty=false; lastShadow=now; }
+    renderer.render(scene,camera);
+    if(state.labels) placeLabels(); else if(labels.some(L=>L.was)){ labels.forEach(L=>{L.el.style.opacity='0';L.was=false;}); lctx.clearRect(0,0,leaderCv.width,leaderCv.height); }
+    needsRender=false; prevActive=true;
+  } else prevActive=false;
+  requestAnimationFrame(loop);
+}
+precompute();
+camera.position.set(...CAMS.lock.p); controls.target.set(...CAMS.lock.t);
+resize(); update(); showPhase(0); syncButtons();
+$('loading').remove();
+requestAnimationFrame(loop);
+window.__tsu={renderer,floaters:()=>floaters,XC,state,PH,setTime:t=>setTime(t),setView,setMode,task,TEND,upd:update};
+</script>
+</body>
+</html>

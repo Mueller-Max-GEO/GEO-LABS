@@ -1,0 +1,8 @@
+{
+  "name": "tsunami-labor",
+  "private": true,
+  "version": "2.0.0",
+  "description": "Quelltext des Tsunami-Labors (GEO-LABS). Bauen: python3 build.py",
+  "scripts": { "build": "python3 build.py", "test": "node tests/sim_lab.js && node tests/rec_lab.js" },
+  "devDependencies": { "esbuild": "^0.24.0", "three": "0.170.0" }
+}
