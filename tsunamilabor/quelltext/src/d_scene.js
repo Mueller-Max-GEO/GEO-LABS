@@ -120,7 +120,11 @@ ${NOISE}${DEFGLSL}`)
 varying vec3 vWp; varying vec3 vNw; varying float vDB; varying float vStrain; varying float vWet;
 ${NOISE}
 ${COLDEF}`).replace('#include <color_fragment>',`#include <color_fragment>
-{ ${ROCKFRAG} }`);
+{ ${ROCKFRAG} }`).replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
+  { /* feines Relief der Gesteinsoberfläche (Höhe aus Rauschen, wie eine Bump-Map) */
+    float hb=fbm(vWp*7.0)*0.6+vnoise(vWp*27.0)*0.4;
+    vec3 sx=dFdx(-vViewPosition), sy=dFdy(-vViewPosition); vec3 r1=cross(sy,normal), r2=cross(normal,sx); float det=dot(sx,r1);
+    vec3 grad=sign(det)*(dFdx(hb)*r1+dFdy(hb)*r2); normal=normalize(abs(det)*normal-(KIND==2?0.012:0.03)*grad); }`);
   };
   m.customProgramCacheKey=()=>'rock'+kind+(deform?1:0);
   return m;

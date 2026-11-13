@@ -34,7 +34,7 @@ function waterAt(x,z){
   let e=0,h=0,u=0,v=0; for(let q=0;q<4;q++){ const o=4*nn[q]; e+=w[q]*(B[o]+(A[o]-B[o])*m); h+=w[q]*(B[o+1]+(A[o+1]-B[o+1])*m); u+=w[q]*bufV[2*nn[q]]; v+=w[q]*bufV[2*nn[q]+1]; }
   _ws[0]=e; _ws[1]=h; _ws[2]=u; _ws[3]=v; return _ws; }
 
-const WCOL={DEEP:'#0F3B68',MID:'#2A6DA6',SHAL:'#57B0CC',CREST:'#C6E6F4',MUD:'#7C7254',MUD2:'#A8946A',FOAM:'#F5F8F9'};
+const WCOL={DEEP:'#0A3560',MID:'#1B69A8',SHAL:'#45B5C9',CREST:'#BFE3F2',MUD:'#7F775C',MUD2:'#B3A078',FOAM:'#F5F8F9'};
 const waterMat=new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,roughness:0.1,metalness:0,side:THREE.FrontSide,depthWrite:false,envMapIntensity:0.62});
 waterMat.onBeforeCompile=sh=>{
   Object.assign(sh.uniforms,WU,{uTime:U.uTime});
@@ -73,18 +73,18 @@ ${Object.entries(WCOL).map(([k,v])=>`#define W_${k} ${lin(v)}`).join('\n')}`)
     float nF=mix(vnoise(vec3(gQ1*16.0,uTime*0.45)),vnoise(vec3(gQ2*16.0,uTime*0.45)),gWq);
     float sea=1.0-sst(${fl(XC-0.4)},${fl(XC+0.1)},vWp2.x);
     vec3 col=mix(W_SHAL,W_MID,sst(0.03,0.75,dep)); col=mix(col,W_DEEP,sst(0.75,3.0,dep));
-    col=mix(col,W_CREST,clamp(eta*1.5,0.0,0.4)*sea); col=mix(col,W_DEEP*0.72,clamp(-eta*2.2,0.0,0.4)*sea);
+    col=mix(col,W_CREST,clamp(eta*1.3,0.0,0.32)*sea); col=mix(col,W_DEEP*0.72,clamp(-eta*2.2,0.0,0.4)*sea);
     vec3 mud=mix(W_MUD,W_MUD2,0.25+0.6*nA);
-    col=mix(col,mud,turb*0.9);
+    col=mix(col,mud,turb*mix(0.8,0.9,sea));
     col*=1.0+turb*(0.42*nF-0.2);                                  // Schlieren im trüben Wasser: zeigen die Strömung
     float fm=clamp(foam*1.5+(1.0-sst(0.0,0.035,dep))*0.4*sea,0.0,1.0);
     float lace=sst(0.82-0.78*fm,1.04-0.62*fm,nF*0.72+nA*0.5);
     float fa=lace*clamp(fm*2.0,0.0,1.0); gFoam=fa;
     col=mix(col,mix(W_FOAM,mud*1.45+0.1,turb*0.8),fa*0.9);
-    float al=clamp(0.6+dep*0.07,0.6,0.82); al=mix(al,0.95,turb); al=mix(al,0.97,fa); al*=sst(0.0025,0.014,dep);
+    float al=clamp(0.5+dep*0.6,0.5,0.95); al=mix(al,0.95,turb); al=mix(al,0.97,fa); al*=sst(0.0025,0.014,dep);
     diffuseColor=vec4(col,al); }`)
   .replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
-  roughnessFactor=mix(roughnessFactor,0.85,gFoam); roughnessFactor=mix(roughnessFactor,0.55,clamp(vA.b,0.0,1.0));`)
+  roughnessFactor=mix(roughnessFactor,0.85,gFoam); roughnessFactor=mix(roughnessFactor,0.34,clamp(vA.b,0.0,1.0));`)
   .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
   { float tt=uTime*0.6, e1=0.05; vec2 qa=mix(gQ1,gQ2,gWq)*7.0, qb=mix(gQ1,gQ2,gWq)*19.0;
     float a0=vnoise(vec3(qa,tt)), ax=vnoise(vec3(qa+vec2(e1,0.0),tt)), az=vnoise(vec3(qa+vec2(0.0,e1),tt));
@@ -119,9 +119,9 @@ function updateStrips(){
   const put=(strip,count,get,store)=>{ const P=strip.geometry.attributes.position.array, C=strip.geometry.attributes.color.array;
     for(let q=0;q<=count;q++){ const [x,z,n]=get(q); const e=val(n,0), h=val(n,1), tb=clamp(val(n,2),0,1), g=e-h, wet=h>0.004, top=wet?e:g;
       P[q*6]=x;P[q*6+1]=g;P[q*6+2]=z;P[q*6+3]=x;P[q*6+4]=top;P[q*6+5]=z;
-      const al=wet?0.8:0, r=lerp(cTop.r,cMud.r,tb), gg=lerp(cTop.g,cMud.g,tb), bb=lerp(cTop.b,cMud.b,tb), k2=tb*0.75;
+      const al=wet?0.9:0, r=lerp(cTop.r,cMud.r,tb), gg=lerp(cTop.g,cMud.g,tb), bb=lerp(cTop.b,cMud.b,tb), k2=tb*0.75;
       C[q*8]=lerp(cBot.r,cMud.r,k2);C[q*8+1]=lerp(cBot.g,cMud.g,k2);C[q*8+2]=lerp(cBot.b,cMud.b,k2);C[q*8+3]=al;
-      C[q*8+4]=r;C[q*8+5]=gg;C[q*8+6]=bb;C[q*8+7]=wet?lerp(0.46,0.86,tb):0; if(store) store(q,top,g); }
+      C[q*8+4]=r;C[q*8+5]=gg;C[q*8+6]=bb;C[q*8+7]=wet?lerp(0.6,0.88,tb):0; if(store) store(q,top,g); }
     strip.geometry.attributes.position.needsUpdate=true; strip.geometry.attributes.color.needsUpdate=true; };
   put(fStrip,NXS,c=>[FRONT_X[c],ZD+0.003,(NZW-1)*NXW+clamp(c-1,0,NXW-1)],(c,h,g)=>{FRONT_H[c]=h;FRONT_G[c]=g;});
   put(bStrip,NXS,c=>[FRONT_X[c],-ZD-0.003,clamp(c-1,0,NXW-1)]);

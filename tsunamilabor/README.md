@@ -8,7 +8,7 @@ die fünf Phasen folgen dem Schulbuch (S. 138–139, M2, M3, M5, M6).
 **Starten:** `index.html` im Browser öffnen oder über GitHub Pages:
 <https://mueller-max-geo.github.io/GEO-LABS/tsunamilabor/>
 
-Die Seite ist **eine einzige Datei** und läuft auch ohne Internet (three.js ist eingebettet).
+Die Seite ist **eine einzige Datei** und läuft auch ohne Internet (three.js ist eingebettet; nur die Schrift wird online nachgeladen).
 Für den Unterricht frei nutzbar.
 
 ## Für den Unterricht
@@ -20,6 +20,7 @@ Für den Unterricht frei nutzbar.
 | **Vorhersagen** | Tab „Vorhersage“: Vor jeder Phase vorhersagen, dann prüfen; am Ende eine Transferfrage. |
 | **Vergleichen** | „Was wäre, wenn …?“: starkes flaches Beben (M 9), schwächeres Beben (M 6), tiefes Beben (≈ 300 km). Nicht jedes Seebeben löst einen Tsunami aus. |
 | **Messen** | Messkarte in Phase 3/4: Meerestiefe, Geschwindigkeit, Wellenlänge, Wellenhöhe in echten Größen (wie Buch M2); gelbe „Spur des Wellenbergs“. |
+| **Beobachten** | Zu jeder Phase eine Beobachtungsaufgabe mit aufklappbarer Lösung und eine Kennzahl zum Beispiel Japan 2011. Der Pegel „Wasserstand an der Küste“ zeigt Rückzug, Anstieg und Rückstrom als Kurve. |
 
 Tasten: Leertaste Start/Pause · ← → Phase zurück/weiter · 1–5 Phase wählen · F Vollbild · B Bedienfeld.
 Adresszusätze: `?film` startet direkt den Erklärfilm, `?low` erzwingt die einfache Darstellung für schwache Geräte.
@@ -33,8 +34,9 @@ Adresszusätze: `?film` startet direkt den Erklärfilm, `?low` erzwingt die einf
 - **Überflutung und Rückstrom:** Autos, Boote und Trümmer treiben mit der berechneten Strömung ins Land und werden
   vom Rückstrom wieder Richtung Meer gezogen. Holzhäuser werden je nach Belastung (Wassertiefe + Strömung)
   beschädigt oder zerstört; Stahlbetonbauten bleiben stehen. Schlamm, Trübung und Schaum folgen der Strömung.
-- **Neue Oberfläche** im Stil der anderen GEO-LABS: dunkle Bühne, Zeitleiste mit Phasen, Bedienfeld mit Tabs,
-  Erklärfilm, Vollbild.
+- **Neue Oberfläche** wie im Erdumlauf-Labor V2: Bühne über die ganze Fläche, gläsernes Bedienfeld, Zeitleiste mit
+  farbigen Phasen, Ansichtsleiste, Erklärfilm mit großen Untertiteln, Vollbild. Schriften: Atkinson Hyperlegible
+  (werden online nachgeladen; ohne Internet erscheint die Systemschrift).
 - **Küste** mit Flussmündung und Hafen; höhere Auflösung von Gelände und Wasser.
 
 ## Wie das Modell rechnet

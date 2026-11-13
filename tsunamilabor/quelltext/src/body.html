@@ -6,31 +6,35 @@
   </div>
 
   <header class="hud">
-    <div class="titlebox" data-avoid>
-      <p class="eyebrow">GEO-LABS · Tsunami-Labor</p>
-      <h1 id="clockTitle">Phase 1 · Verhaken</h1>
-      <p class="sub"><span id="clockTime">Jahr 0</span> <span class="pill slow" id="clockPill">Zeitraffer</span></p>
+    <div class="title" data-avoid>
+      <p class="eyebrow">GEO-LABS · <b>Tsunami-Labor</b></p>
+      <h1 class="date" id="clockTitle">Phase 1 · Verhaken</h1>
+      <p class="sub"><b id="clockTime">Jahr 0</b><span class="pill slow" id="clockPill">Zeitraffer</span></p>
       <div class="meter" id="meter">
-        <div class="mrow"><span id="meterLab">Spannung in der Platte</span></div>
         <div class="mbar"><i id="meterBar"></i></div>
-        <p class="mnote" id="wcolTxt"></p>
+        <p class="mrow"><span id="meterLab">Spannung in der Platte</span> · <span id="wcolTxt"></span></p>
       </div>
     </div>
     <div class="tools" data-avoid>
-      <button class="tool accent" id="bFilm" type="button" title="Erklärfilm: Die Animation läuft mit Untertiteln von selbst"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg><span>Erklärfilm</span></button>
-      <button class="tool" id="bPanel" type="button" aria-pressed="true" title="Bedienfeld ein- oder ausblenden"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM14 5v14" fill="none" stroke="currentColor" stroke-width="2"/></svg><span>Bedienfeld</span></button>
-      <button class="tool" id="bFull" type="button" title="Vollbild"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2"/></svg><span>Vollbild</span></button>
+      <button class="tbtn" id="bFilm" type="button" aria-pressed="false" title="Erklärfilm: Die Animation läuft mit Untertiteln von selbst">▶ Erklärfilm</button>
+      <button class="tbtn" id="bPanel" type="button" title="Bedienfeld ein- oder ausblenden (B)">Bedienfeld aus</button>
+      <button class="tbtn" id="bFull" type="button" title="Vollbild (F)">Vollbild</button>
     </div>
   </header>
 
   <nav class="viewrail" aria-label="Ansicht" data-avoid>
-    <button type="button" data-view="oblique" aria-pressed="true" title="Schrägansicht – frei drehbar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12L4 7.5" fill="none" stroke="currentColor" stroke-width="1.7"/></svg><span>Schräg</span></button>
-    <button type="button" data-view="section" aria-pressed="false" title="Feste Querschnittsansicht von der Seite"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v12H3zM3 11c5-1 8 5 18 2" fill="none" stroke="currentColor" stroke-width="1.7"/></svg><span>Querschnitt</span></button>
-    <button type="button" data-view="top" aria-pressed="false" title="Ansicht von oben"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM9 4c2 5 2 11 0 16M15 4c2 5 2 11 0 16" fill="none" stroke="currentColor" stroke-width="1.7"/></svg><span>Von oben</span></button>
-    <button type="button" data-view="coast" aria-pressed="false" title="Nahansicht der Küste"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17c3-2 5 2 8 0s5-2 10 0M13 13V7l4 3-4 0M5 21h14" fill="none" stroke="currentColor" stroke-width="1.7"/></svg><span>Küste</span></button>
-    <i class="sep"></i>
-    <button type="button" id="zin" title="Vergrößern" aria-label="Vergrößern"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
-    <button type="button" id="zout" title="Verkleinern" aria-label="Verkleinern"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+    <div class="vr-h">Ansicht</div>
+    <div class="vr-in">
+      <button type="button" data-view="oblique" aria-pressed="true" title="Schrägansicht – frei drehbar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>Schräg</button>
+      <button type="button" data-view="section" aria-pressed="false" title="Feste Querschnittsansicht von der Seite"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v12H3zM3 11c5-1 8 5 18 2"/></svg>Querschnitt</button>
+      <button type="button" data-view="top" aria-pressed="false" title="Ansicht von oben"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM9 4c2 5 2 11 0 16M15 4c2 5 2 11 0 16"/></svg>Von oben</button>
+      <button type="button" data-view="coast" aria-pressed="false" title="Nahansicht der Küste"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17c3-2 5 2 8 0s5-2 10 0M13 13V7l4 3h-4M5 21h14"/></svg>Küste</button>
+    </div>
+    <div class="vr-sep"></div>
+    <div class="vr-in vr-zoom">
+      <button type="button" id="zin" title="Vergrößern" aria-label="Vergrößern"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button type="button" id="zout" title="Verkleinern" aria-label="Verkleinern"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+    </div>
   </nav>
 
   <section class="wcard" id="wcard" hidden data-avoid aria-label="Messkarte der Welle">
@@ -42,44 +46,46 @@
     <p class="wnote">Je flacher das Meer, desto langsamer, kürzer und höher die Welle.</p>
   </section>
 
-  <p class="simp" id="simp" data-avoid>Modell: Höhen stark überhöht · Entfernungen verkürzt · Zeit gerafft</p>
   <div class="viewnote" id="viewnote" hidden data-avoid role="status"></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <div class="cap" id="cap" hidden data-avoid aria-live="polite">
-    <p class="capch" id="capCh"></p>
-    <p class="captx" id="capTx"></p>
+    <p class="cap-k" id="capCh"></p>
+    <p class="cap-s" id="capTx"></p>
   </div>
   <div class="cinenav" id="cinenav" hidden data-avoid>
+    <div class="cn-prog"><i id="fProg"></i></div>
+    <button id="fPrev" type="button" class="cn-arrow" title="Voriges Kapitel" aria-label="Voriges Kapitel">‹</button>
     <div class="chapters" id="chapters"></div>
-    <div class="cinebtn">
-      <button class="btn" id="fPrev" type="button" title="Voriges Kapitel">◀</button>
-      <button class="btn pri" id="fPlay" type="button">Pause</button>
-      <button class="btn" id="fNext" type="button" title="Nächstes Kapitel">▶</button>
-      <label class="chk"><input type="checkbox" id="fStop" checked> nach jedem Kapitel anhalten</label>
-      <label class="chk"><input type="checkbox" id="fVoice"> vorlesen</label>
-      <button class="btn" id="fEnd" type="button">Film beenden ✕</button>
-    </div>
+    <button id="fNext" type="button" class="cn-arrow" title="Nächstes Kapitel" aria-label="Nächstes Kapitel">›</button>
+    <button id="fPlay" type="button" class="cn-play">Pause</button>
+    <label class="cn-tg" title="Nach jedem Kapitel anhalten"><input type="checkbox" id="fStop" checked><span>Halt je Kapitel</span></label>
+    <label class="cn-tg" title="Untertitel vorlesen (Stimme des Browsers)"><input type="checkbox" id="fVoice"><span>Vorlesen</span></label>
+    <button id="fEnd" type="button" class="cn-exit" title="Film beenden (Esc)">Beenden ✕</button>
   </div>
 
   <footer class="dock" id="dock" data-avoid>
     <div class="transport">
-      <button class="ibtn" id="bPrev" type="button" title="Zurück: an den Anfang der Phase" aria-label="Zurück"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
-      <button class="ibtn play" id="bPlay" type="button" title="Start / Pause (Leertaste)" aria-label="Start"><svg viewBox="0 0 24 24" aria-hidden="true"><path id="playIcon" d="M8 5v14l11-7z"/></svg></button>
-      <button class="ibtn" id="bNext" type="button" title="Weiter: nächste Phase" aria-label="Weiter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
-      <button class="ibtn" id="bReset" type="button" title="Zurücksetzen" aria-label="Zurücksetzen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12a7 7 0 1 0 2.2-5.1M5 4v4h4" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
-      <label class="speed">Tempo <select id="speed"><option value="0.5">½×</option><option value="1" selected>1×</option><option value="2">2×</option></select></label>
+      <button class="play" id="bPlay" type="button" title="Start / Pause (Leertaste)" aria-label="Start"><svg viewBox="0 0 24 24" aria-hidden="true"><path id="playIcon" fill="currentColor" d="M8 5v14l11-7z"/></svg></button>
+      <div class="seg">
+        <button id="bPrev" type="button" title="Zurück: an den Anfang der Phase (←)">◀ Zurück</button>
+        <button id="bNext" type="button" title="Weiter: nächste Phase (→)">Weiter ▶</button>
+        <button id="bReset" type="button" title="Zurücksetzen">Zurücksetzen</button>
+      </div>
+      <label class="spd">Tempo <select class="sel" id="speed"><option value="0.5">½×</option><option value="1" selected>1×</option><option value="2">2×</option></select></label>
+      <span class="scale-note" id="simp">Modell: Höhen stark überhöht · Entfernungen verkürzt · Zeit gerafft</span>
     </div>
     <div class="track">
-      <div class="ticks" id="ticks"></div>
+      <div class="bands" id="bands"></div>
       <input type="range" id="time" min="0" max="1000" value="0" step="1" aria-label="Zeit im Ablauf">
+      <div class="ticks" id="ticks"></div>
     </div>
   </footer>
 
-  <div class="veil" id="loading"><div class="veilbox"><p class="eyebrow">GEO-LABS</p><h2>Tsunami-Labor</h2><p id="loadTxt">Modell wird aufgebaut …</p><div class="lbar"><i id="loadBar"></i></div></div></div>
+  <div class="veil" id="loading"><div class="veilbox"><i class="ring"></i><p id="loadTxt">Modell wird aufgebaut</p><div class="lbar"><i id="loadBar"></i></div></div></div>
 </main>
 
-<aside class="panel" id="panel" aria-label="Bedienfeld">
+<aside class="panel" id="panel" aria-label="Bedienfeld" data-avoid>
   <div class="tabs" role="tablist">
     <button role="tab" id="tab-ex" aria-controls="pane-ex" aria-selected="true" type="button">Erklärung</button>
     <button role="tab" id="tab-task" aria-controls="pane-task" aria-selected="false" type="button">Vorhersage</button>
@@ -88,19 +94,33 @@
   </div>
 
   <div class="pane" id="pane-ex" role="tabpanel" aria-labelledby="tab-ex">
-    <ol class="phases" id="phases"></ol>
-    <article class="explain" aria-live="polite">
-      <h2 id="exTitle"></h2>
-      <p id="exText"></p>
-      <p class="look"><b>Achte auf:</b> <span id="exLook"></span></p>
-    </article>
-    <fieldset class="group">
-      <legend>Was wäre, wenn …?</legend>
-      <label class="radio"><input type="radio" name="scen" value="big" checked><span><b>Starkes, flaches Beben</b> (Magnitude 9, Herd rund 30 km tief)</span></label>
-      <label class="radio"><input type="radio" name="scen" value="small"><span><b>Schwächeres Beben</b> (Magnitude 6, gleicher Ort)</span></label>
-      <label class="radio"><input type="radio" name="scen" value="deep"><span><b>Tiefes Beben</b> (Herd rund 300 km tief)</span></label>
-      <p class="hint">Nicht jedes Seebeben löst einen Tsunami aus. Entscheidend ist, ob sich der Meeresboden schnell und auf großer Fläche senkrecht verschiebt.</p>
-    </fieldset>
+    <ol class="topics" id="phases" aria-label="Phasen"></ol>
+    <section class="lesson" aria-live="polite">
+      <p class="step" id="exStep"></p>
+      <h1 id="exTitle"></h1>
+      <p class="lead" id="exText"></p>
+      <div class="key"><span class="k-v" id="keyV"></span><span class="k-l" id="keyL"></span></div>
+      <p class="look"><b>Achte auf</b><span id="exLook"></span></p>
+    </section>
+    <section class="task">
+      <h2>Aufgabe</h2>
+      <p id="taskQ"></p>
+      <details id="taskD"><summary>Lösung zeigen</summary><p id="taskA"></p></details>
+    </section>
+    <section class="chart" id="gaugeBox">
+      <h2>Wasserstand an der Küste</h2>
+      <svg id="gaugeSvg" viewBox="0 0 320 96" role="img" aria-label="Verlauf des Wasserstands an der Küste"></svg>
+      <p class="note">Wie ein Pegel am Strand: Die Kurve zeigt, wie das Meer sinkt, steigt und wieder zurückfließt.</p>
+    </section>
+    <section>
+      <h2>Was wäre, wenn …?</h2>
+      <div class="scen">
+        <label class="radio"><input type="radio" name="scen" value="big" checked><span><b>Starkes, flaches Beben</b><small>Magnitude 9 · Herd rund 30 km tief</small></span></label>
+        <label class="radio"><input type="radio" name="scen" value="small"><span><b>Schwächeres Beben</b><small>Magnitude 6 · gleicher Ort</small></span></label>
+        <label class="radio"><input type="radio" name="scen" value="deep"><span><b>Tiefes Beben</b><small>Herd rund 300 km tief</small></span></label>
+      </div>
+      <p class="note">Nicht jedes Seebeben löst einen Tsunami aus. Entscheidend ist, ob sich der Meeresboden schnell und auf großer Fläche senkrecht verschiebt.</p>
+    </section>
   </div>
 
   <div class="pane" id="pane-task" role="tabpanel" aria-labelledby="tab-task" hidden>
@@ -119,23 +139,23 @@
   </div>
 
   <div class="pane" id="pane-view" role="tabpanel" aria-labelledby="tab-view" hidden>
-    <fieldset class="group"><legend>Beschriftungen</legend>
-      <div class="seg" role="radiogroup" aria-label="Beschriftungen">
+    <fieldset><legend>Beschriftungen</legend>
+      <div class="seg3" role="radiogroup" aria-label="Beschriftungen">
         <label><input type="radio" name="lvl" value="off"><span>Aus</span></label>
         <label><input type="radio" name="lvl" value="imp" checked><span>Wichtige</span></label>
         <label><input type="radio" name="lvl" value="all"><span>Alle</span></label>
       </div>
     </fieldset>
-    <fieldset class="group"><legend>Einblenden</legend>
-      <label class="chk"><input type="checkbox" id="tArrows" checked> Bewegungspfeile</label>
-      <label class="chk"><input type="checkbox" id="tGhost" checked> Ausgangslage (gestrichelt)</label>
-      <label class="chk"><input type="checkbox" id="tSimp" checked> Hinweis auf Vereinfachungen</label>
+    <fieldset><legend>Einblenden</legend>
+      <label class="tg"><input type="checkbox" id="tArrows" checked><span>Bewegungspfeile</span></label>
+      <label class="tg"><input type="checkbox" id="tGhost" checked><span>Ausgangslage (gestrichelt)</span></label>
+      <label class="tg"><input type="checkbox" id="tSimp" checked><span>Hinweis auf Vereinfachungen</span></label>
     </fieldset>
-    <fieldset class="group"><legend>Ablauf</legend>
-      <label class="chk"><input type="checkbox" id="stopEach" checked> nach jeder Phase anhalten</label>
-      <label class="chk"><input type="checkbox" id="tCam" checked> Kamera folgt der Phase</label>
+    <fieldset><legend>Ablauf</legend>
+      <label class="tg"><input type="checkbox" id="stopEach" checked><span>nach jeder Phase anhalten</span></label>
+      <label class="tg"><input type="checkbox" id="tCam" checked><span>Kamera folgt der Phase</span></label>
     </fieldset>
-    <fieldset class="group"><legend>Pfeilfarben</legend>
+    <fieldset><legend>Pfeilfarben</legend>
       <ul class="legend">
         <li><i style="background:#D2432F"></i>Plattenbewegung</li>
         <li><i style="background:#E8960F"></i>Verformung und Spannung</li>
@@ -144,7 +164,7 @@
         <li><i style="background:#FFC83D"></i>Spur des Wellenbergs</li>
       </ul>
     </fieldset>
-    <fieldset class="group"><legend>Tasten</legend>
+    <fieldset><legend>Tasten</legend>
       <p class="hint"><kbd>Leertaste</kbd> Start / Pause · <kbd>←</kbd> <kbd>→</kbd> Phase zurück / weiter · <kbd>1</kbd>–<kbd>5</kbd> Phase wählen · <kbd>F</kbd> Vollbild · <kbd>B</kbd> Bedienfeld</p>
     </fieldset>
   </div>

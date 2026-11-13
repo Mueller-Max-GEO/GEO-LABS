@@ -18,6 +18,24 @@ const PH=[
    text:'An der Küste steigt das Wasser rasch an und strömt wie eine mächtige Flut weit ins Land. Ein Tsunami rollt sich dabei nicht wie eine Surfwelle ein. Das Wasser reißt Autos, Boote und Bäume mit und zerstört Häuser, Straßen und Bahnlinien. Danach fließt es zurück – braun von Schlamm, voller Trümmer – und zieht vieles mit ins Meer. Weitere Wellen können folgen, oft über Stunden; die erste ist nicht immer die höchste.',
    look:'wie weit das Wasser ins Land vordringt, was es mitreißt und was der Rückstrom wieder zum Meer zieht. Wo ist man sicher?'}
 ];
+/* Zu jeder Phase: Farbe in der Zeitleiste, eine Kennzahl (Beispiel Japan 2011) und eine Beobachtungsaufgabe mit Lösung */
+const PHX=[
+  {c:'#E9B649',kv:'≈ 8 cm',kl:'pro Jahr schiebt sich die Pazifische Platte vor Japan unter die Nachbarplatte.',
+   q:'Der Meeresboden bewegt sich – trotzdem entsteht in dieser Phase keine Welle. Warum nicht?',
+   a:'Der Meeresboden sinkt nur wenige Millimeter pro Jahr. Das Wasser gleicht sich dabei ständig aus, die Oberfläche bleibt eben. Für eine Welle muss sich der Boden schnell bewegen.'},
+  {c:'#F0643A',kv:'Magnitude 9,0–9,1',kl:'Tōhoku-Beben, 11. März 2011: das stärkste Beben, das in Japan je gemessen wurde.',
+   q:'Vergleiche die beiden schwarzen Pfeile: Wo hebt sich der Meeresboden, wo senkt er sich?',
+   a:'Nahe dem Tiefseegraben federt der Plattenrand nach oben – Hebung. Weiter zur Küste hin, wo die Platte vorher aufgewölbt war, sinkt der Boden ab – Senkung.'},
+  {c:'#7CC8F0',kv:'≈ 400 km',kl:'lang war die Bruchfläche 2011. Auf dieser riesigen Fläche wurde das Wasser angehoben.',
+   q:'Auf dem offenen Meer ist ein Tsunami oft nur etwa einen Meter hoch. Warum ist er trotzdem so gefährlich?',
+   a:'Weil die ganze Wassersäule bewegt wird – mehrere Kilometer tief und über hunderte Kilometer Länge. In der flachen Welle steckt deshalb eine riesige Wassermenge.'},
+  {c:'#4F8FE6',kv:'≈ 700 km/h',kl:'schnell ist ein Tsunami über 4000 m tiefem Meer – so schnell wie ein Flugzeug.',
+   q:'Lies die Messkarte ab: Wie ändern sich Geschwindigkeit, Wellenlänge und Wellenhöhe, wenn das Meer flacher wird?',
+   a:'Die Geschwindigkeit sinkt von rund 700 km/h auf unter 50 km/h, die Wellenlänge wird kürzer, die Welle wird höher. Der hintere Teil der Welle holt den vorderen ein – das Wasser staut sich.'},
+  {c:'#46B8A0',kv:'≈ 65 Minuten',kl:'nach dem Beben erreichte die Flut 2011 die Ebene von Sendai – Zeit, um sich in Sicherheit zu bringen.',
+   q:'Schau auf das Modell und auf den Pegel: Woran erkennt man, dass ein Tsunami keine gewöhnliche Welle ist?',
+   a:'Das Wasser steigt viele Minuten lang und strömt wie ein Fluss weit ins Land, statt nach Sekunden zurückzulaufen. Danach fließt es lange und kräftig zurück. Sicher ist man nur auf höherem Gelände.'}
+];
 const phaseAt=t=>{ for(let i=PH.length-1;i>=0;i--) if(t>=PH[i].t0-1e-6) return i; return 0; };
 
 const QUIZ=[
@@ -58,21 +76,21 @@ const FILM=[
   {title:'Einstieg',shots:[
     {a:0,b:0,cam:'oblique',text:'Am 11. März 2011 bebt vor der Küste Japans der Meeresboden. Etwa eine Stunde später überflutet ein Tsunami die Ebene von Sendai. Wie entsteht eine solche Welle?'},
     {a:0,b:0,cam:'intro',text:'Wir schauen von der Seite in die Erde. Links liegt die ozeanische Platte unter dem tiefen Meer, rechts die kontinentale Platte mit der Küste.'}]},
-  {title:'1 · Verhaken',shots:[
+  {title:'1 Verhaken',shots:[
     {a:0,b:5,cam:'lock',text:'Die ozeanische Platte schiebt sich unter die kontinentale Platte – nur wenige Zentimeter pro Jahr.'},
     {a:5,b:10,cam:'lock',text:'An der Kontaktfläche haben sich die Platten verhakt. Die kontinentale Platte wird mitgezogen und verbiegt sich wie ein Lineal.'},
     {a:10,b:T1E,cam:'lock',text:'Ihr Rand sinkt langsam ab. Über Jahrhunderte baut sich immer mehr Spannung auf.'}]},
-  {title:'2 · Seebeben',shots:[
+  {title:'2 Seebeben',shots:[
     {a:T1E,b:16.6,cam:'quake',text:'Dann reißt der verhakte Abschnitt auf. Die Platte federt in wenigen Minuten zurück: ein Seebeben.'},
     {a:16.6,b:TSEG[2][0],cam:'quake',text:'Dabei wird der Meeresboden um mehrere Meter gehoben – auf einer riesigen Fläche.'}]},
-  {title:'3 · Verdrängung',shots:[
+  {title:'3 Verdrängung',shots:[
     {a:TSEG[2][0],b:21.6,cam:'water',text:'Das ganze Wasser darüber wird mit angehoben, vom Meeresboden bis zur Oberfläche.'},
     {a:21.6,b:TSEG[3][0],cam:'water',text:'Der Wasserberg fließt auseinander. Lange Wellen laufen hinaus aufs offene Meer und zur Küste.'}]},
-  {title:'4 · Ausbreitung',shots:[
+  {title:'4 Ausbreitung',shots:[
     {a:TSEG[3][0],b:27.6,cam:'spread',text:'Auf dem tiefen Meer ist der Tsunami so schnell wie ein Flugzeug, aber flach. Schiffe bemerken ihn kaum.'},
     {a:27.6,b:30.6,cam:'spread',text:'Im flachen Wasser wird er langsamer. Das Wasser staut sich: Die Welle wird kürzer und höher.'},
     {a:30.6,b:TSEG[4][0],cam:'coast',text:'An der Küste zieht sich das Meer manchmal zuerst zurück. Das ist ein Warnzeichen!'}]},
-  {title:'5 · Überflutung',shots:[
+  {title:'5 Überflutung',shots:[
     {a:TSEG[4][0],b:36.5,cam:'flood',text:'Der Tsunami rollt sich nicht ein wie eine Surfwelle. Er kommt als schnell steigende, strömende Flut.'},
     {a:36.5,b:42.5,cam:'flood',text:'Das Wasser dringt weit ins Land vor. Es reißt Autos und Boote mit und zerstört Häuser.'},
     {a:42.5,b:53,cam:'back',text:'Dann strömt es zurück zum Meer – braun von Schlamm – und zieht Trümmer mit.'},

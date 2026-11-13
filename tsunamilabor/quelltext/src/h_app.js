@@ -39,8 +39,9 @@ addLabel('Schiffe im tiefen Wasser bleiben unbeschädigt','w',()=>{const g=seaBo
 addLabel('Boot wird an Land gespült','w',()=>[boats[1].position.x,boats[1].position.y+0.12,boats[1].position.z],[5],{prio:6,cond:()=>BIG()&&boats[1].position.x>boats[1].userData.x+0.5});
 addLabel('Höher gelegener Ort<small>Hier ist man sicher – Evakuierung!</small>','k',()=>[school.userData.x,school.position.y+0.6,school.userData.z],[5],{prio:8});
 addLabel('Küste','',[XC,0.02,ZD],[4,5],{prio:3});
+addLabel('Vom Graben bis zur Küste<small>in Wirklichkeit rund 200 km</small>','',[0.5,gRest(0.5,ZD),ZD+0.05],[1],{prio:2});
 addLabel('Flussmündung mit Hafen','',[7.4,0.0,chZ(7.4)],[4],{prio:2});
-const Lwave=addLabel('','w big',[XC-3.6,1.55,ZD],[5],{point:false,prio:6,cond:BIG});
+const Lwave=addLabel('','w big',[XC-3.6,1.55,ZD],[5],{point:false,prio:6,cond:()=>BIG()&&!state.film});
 const Lnone=addLabel('','k big',[-1,1.4,ZD],[3,4,5],{point:false,prio:10,cond:()=>!BIG()});
 
 /* ===================== Szene aktualisieren ===================== */
@@ -117,7 +118,7 @@ function update(){
     }
   }
   /* Sichtbarkeit der Beschriftungen */
-  const lvlShore=waterAt(XC-0.75,ZD-0.4), drawback=live&&tau>5&&lvlShore[0]<-0.035;
+  const lvlShore=waterAt(XC-0.75,ZD-0.4), drawback=live&&tau>5&&rec.arr&&tau<rec.arr+0.3&&lvlShore[0]<-0.03;
   if(drawback) Ldraw.anchor=()=>[XC-0.75,lvlShore[0],ZD-0.4];
   for(const L of labels){ let vis=state.labels&&L.phases.includes(ph+1)&&(!L.cond||L.cond());
     if(L===Ldraw) vis=state.labels&&ph>=3&&drawback;
@@ -160,15 +161,31 @@ function updateHUD(t,ph,kk,tau,xr){
   const sl=$('time'); if(document.activeElement!==sl) sl.value=Math.round(t/TEND*1000);
   sl.setAttribute('aria-valuetext',`Phase ${P.n}: ${P.name}`);
   document.querySelectorAll('.tick').forEach((b,i)=>b.classList.toggle('cur',i===ph));
+  bandEls.forEach((b,i)=>{ b.classList.toggle('cur',i===ph); b.classList.toggle('done',i<ph); });
+  updateGauge(tau);
   if(curPhaseShown!==ph) showPhase(ph);
 }
 let curPhaseShown=-1;
 function showPhase(ph){
   curPhaseShown=ph; const P=PH[ph];
-  $('exTitle').textContent=`${P.n} · ${P.name}`; $('exText').textContent=P.text; $('exLook').textContent=P.look;
+  const X=PHX[ph]; $('exStep').textContent=`Phase ${P.n} von 5 · ${P.pill[1]}`; $('exTitle').textContent=P.name; $('exText').textContent=P.text; $('exLook').textContent=P.look;
+  $('keyV').textContent=X.kv; $('keyL').textContent=X.kl; $('taskQ').textContent=X.q; $('taskA').textContent=X.a; $('taskD').open=false;
   document.querySelectorAll('.phase').forEach((b,i)=>b.setAttribute('aria-current',i===ph?'step':'false'));
   if(state.autoCam&&state.view==='oblique'&&!state.film) camTo(P.key==='quake'&&scen.deep?'deepq':P.key);
 }
+
+/* ===================== Pegel: Wasserstand an der Küste über die Zeit ===================== */
+const GW=320, GH=96, GX0=30, GX1=312, GY0=10, GY1=76, GMIN=-0.12, GMAX=0.2;
+const gx=tau=>GX0+(GX1-GX0)*clamp(tau/TAUEND,0,1), gy=e=>GY1-(GY1-GY0)*(clamp(e,GMIN,GMAX)-GMIN)/(GMAX-GMIN);
+function buildGauge(){
+  let d='', ar=''; const ok=rec&&rec.done&&scen.R>0;
+  for(let i=0;i<=230;i++){ const tau=TAUEND*i/230; let e=ok?rec.at(rec.shore,tau):0; if(e<-1) e=GMIN; const x=gx(tau).toFixed(1), y=gy(e).toFixed(1); d+=(i?'L':'M')+x+','+y; }
+  ar=d+`L${GX1},${gy(0).toFixed(1)}L${GX0},${gy(0).toFixed(1)}Z`;
+  let tx=''; for(const h of [0,1,2,3,4]){ const tau=h*60/MIN_PER_TAU; if(tau>TAUEND) break; tx+=`<line class="ax" x1="${gx(tau)}" y1="${GY1+2}" x2="${gx(tau)}" y2="${GY1+6}" style="stroke-dasharray:none"/><text class="tx" x="${gx(tau)}" y="${GH-4}" text-anchor="${h?'middle':'start'}">${h===0?'Beben':h+' h'}</text>`; }
+  $('gaugeSvg').innerHTML=`<path class="ar" d="${ar}"/><line class="ax" x1="${GX0}" y1="${gy(0)}" x2="${GX1}" y2="${gy(0)}"/><text class="tx" x="2" y="${gy(0)+3}">normal</text><text class="tx" x="2" y="${GY0+6}">hoch</text><text class="tx" x="2" y="${GY1}">tief</text>${tx}<path class="ln" d="${d}"/><line class="cur" id="gCur" x1="0" y1="${GY0-4}" x2="0" y2="${GY1+2}"/><circle class="dot" id="gDot" r="3.5" cx="0" cy="0"/>`;
+}
+function updateGauge(tau){ const c=$('gCur'); if(!c) return; const ok=rec&&rec.done&&scen.R>0; let e=ok?rec.at(rec.shore,tau):0; if(e<-1) e=GMIN; const x=gx(Math.max(0,tau)), y=gy(e);
+  c.setAttribute('x1',x); c.setAttribute('x2',x); const d=$('gDot'); d.setAttribute('cx',x); d.setAttribute('cy',y); }
 
 /* ===================== Kamera ===================== */
 const CAMS={
@@ -187,9 +204,9 @@ const CAMS={
 };
 let tween=null;
 function camTo(key,dur=1.2){ const c=CAMS[key]; if(!c) return; const t1=new THREE.Vector3(...c.t), p1=new THREE.Vector3(...c.p);
-  if(key!=='section'){ const k=Math.pow(clamp(1.45/camera.aspect,1,2.4),0.75); p1.sub(t1).multiplyScalar(k).add(t1); }
+  if(key!=='section'){ const k=Math.pow(clamp(1.5/freeAspect,0.9,2.4),0.75); p1.sub(t1).multiplyScalar(k).add(t1); }
   tween={p0:camera.position.clone(),t0:controls.target.clone(),p1,t1,s:performance.now(),d:(REDUCED?0.01:dur)*1000}; }
-function sectionCam(){ const w=vp.clientWidth,h=vp.clientHeight,asp=w/h; const halfW=14.6, halfH=7.4; const tanv=Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
+function sectionCam(){ const w=vp.clientWidth,h=vp.clientHeight,asp=w/h; const halfW=14.8*asp/freeAspect, halfH=8.4; const tanv=Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
   const dist=Math.max(halfH/tanv,halfW/(tanv*asp))+ZD; return {p:[-2,-3.9,dist],t:[-2,-3.9,0]}; }
 function setView(v,quiet){
   state.view=v; state.dirty=true; document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===v)));
@@ -210,14 +227,15 @@ function note(msg,ms){ const el=$('viewnote'); el.textContent=msg; el.hidden=fal
 
 /* ===================== Steuerung ===================== */
 const app=$('app');
-const ticks=$('ticks');
-PH.forEach((P,i)=>{ const b=document.createElement('button'); b.className='tick'; b.type='button';
+const ticks=$('ticks'), bandEls=[];
+PH.forEach((P,i)=>{ const sp=document.createElement('span'); sp.style.flex=`${P.t1-P.t0} 0 0`; sp.style.background=PHX[i].c; $('bands').appendChild(sp); bandEls.push(sp);
+  const b=document.createElement('button'); b.className='tick'; b.type='button'; b.style.setProperty('--c',PHX[i].c);
   b.style.left=(P.t0/TEND*100)+'%'; b.style.width=((P.t1-P.t0)/TEND*100)+'%';
   b.innerHTML=`<b>${P.n}</b>${P.short}`; b.setAttribute('aria-label',`Phase ${P.n}: ${P.name}`); b.title=`Phase ${P.n}: ${P.name}`;
   b.onclick=()=>gotoPhase(i,true); ticks.appendChild(b); });
 const plist=$('phases');
 PH.forEach((P,i)=>{ const li=document.createElement('li'); const b=document.createElement('button'); b.className='phase'; b.type='button';
-  b.innerHTML=`<span class="n">${P.n}</span><span>${P.name}</span>`; b.onclick=()=>gotoPhase(i,true); li.appendChild(b); plist.appendChild(li); });
+  b.textContent=P.n; b.title=`Phase ${P.n}: ${P.name}`; b.setAttribute('aria-label',`Phase ${P.n}: ${P.name}`); b.onclick=()=>gotoPhase(i,true); li.appendChild(b); plist.appendChild(li); });
 function maxAllowed(){ if(state.mode!=='task') return TEND; const q=task; if(q.idx>=5) return TEND; return q.stage==='ask'?PH[q.idx].t0:PH[q.idx].t1; }
 function setTime(t){ state.t=clamp(t,0,maxAllowed()); state.dirty=true; }
 function play(){ if(state.t>=maxAllowed()-1e-3){ if(state.mode==='task') return; setTime(0); } state.playing=true; syncButtons(); }
@@ -243,7 +261,7 @@ document.querySelectorAll('input[name=scen]').forEach(r=>r.addEventListener('cha
 /* Tabs, Bedienfeld, Vollbild */
 function selectTab(k){ for(const b of document.querySelectorAll('.tabs button')){ const on=b.id==='tab-'+k; b.setAttribute('aria-selected',String(on)); $(b.getAttribute('aria-controls')).hidden=!on; } }
 document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>selectTab(b.id.slice(4))));
-function togglePanel(){ const off=app.classList.toggle('nopanel'); $('bPanel').setAttribute('aria-pressed',String(!off)); }
+function togglePanel(){ const off=app.classList.toggle('nopanel'); $('bPanel').textContent=off?'Bedienfeld ein':'Bedienfeld aus'; resize(); }
 $('bPanel').onclick=togglePanel;
 function toggleFull(){ const d=document, el=app; if(d.fullscreenElement||d.webkitFullscreenElement){ (d.exitFullscreen||d.webkitExitFullscreen).call(d); } else { const f=el.requestFullscreen||el.webkitRequestFullscreen; if(f) f.call(el).catch?.(()=>toast('Vollbild ist hier nicht verfügbar.')); else toast('Vollbild ist hier nicht verfügbar.'); } }
 $('bFull').onclick=toggleFull;
@@ -265,11 +283,11 @@ function setScen(key,quiet){
 function prepare(){
   pause(); preparing=true; simN=-2;
   const veil=$('loading'), first=!veil.classList.contains('soft');
-  const finish=()=>{ preparing=false; applyWetMap(); state.dirty=true; veil.classList.add('hide'); setTimeout(()=>{ veil.classList.add('soft'); },600); };
+  const finish=()=>{ preparing=false; applyWetMap(); buildGauge(); state.dirty=true; veil.classList.add('hide'); setTimeout(()=>{ veil.classList.add('soft'); },600); };
   if(recCache[scen.key]){ rec=recCache[scen.key]; finish(); return Promise.resolve(); }
   rec=makeRecorder(scen,probes,floatSpecs,SIMQ);
   if(scen.R<=0){ rec.work(1); recCache[scen.key]=rec; finish(); return Promise.resolve(); }
-  veil.classList.remove('hide'); $('loadTxt').textContent='Das Wasser wird berechnet …';
+  veil.classList.remove('hide'); $('loadTxt').textContent='Das Wasser wird berechnet';
   return new Promise(res=>{ const tick=()=>{ const p=rec.work(first?45:30); $('loadBar').style.width=(p*100).toFixed(1)+'%';
       if(rec.done){ if(scen.key!=='small') recCache[scen.key]=rec; finish(); res(); } else setTimeout(tick,0); }; setTimeout(tick,30); });
 }
@@ -324,14 +342,14 @@ $('taskEnd').onclick=()=>{ pause(); setMode('explore'); };
 /* ===================== Erklärfilm ===================== */
 const film={ch:0,sh:0,el:0,dur:1,paused:false,wait:false,speaking:false,ended:false};
 const shotDur=s=>Math.max(1.8+s.text.length*0.068,(s.b-s.a)*1.0);
-$('chapters').innerHTML=FILM.map((c,i)=>`<button type="button" data-ch="${i}">${c.title}</button>`).join('');
+$('chapters').innerHTML=FILM.map((c,i)=>`<button type="button" data-ch="${i}" title="${c.title}">${c.title}</button>`).join('');
 $('chapters').querySelectorAll('button').forEach(b=>b.onclick=()=>filmShot(+b.dataset.ch,0));
 function speak(text){ film.speaking=false; if(!('speechSynthesis' in window)) return; speechSynthesis.cancel(); if(!$('fVoice').checked) return;
   const u=new SpeechSynthesisUtterance(text.replace(/–/g,',')); u.lang='de-DE'; const v=speechSynthesis.getVoices().find(v=>v.lang&&v.lang.startsWith('de')); if(v) u.voice=v; u.rate=0.95;
   film.speaking=true; const sh=film.sh, ch=film.ch; const done=()=>{ if(film.sh===sh&&film.ch===ch) film.speaking=false; }; u.onend=done; u.onerror=done; setTimeout(done,(film.dur+6)*1000); speechSynthesis.speak(u); }
 function filmStart(){
   pause(); if(state.mode==='task') setMode('explore');
-  const go=()=>{ state.film=true; app.classList.add('film'); $('cap').hidden=false; $('cinenav').hidden=false; $('dock').hidden=true; $('viewnote').hidden=true;
+  const go=()=>{ state.film=true; app.classList.add('film'); $('bFilm').textContent='■ Film beenden'; $('cap').hidden=false; $('cinenav').hidden=false; $('dock').hidden=true; $('viewnote').hidden=true; resize();
     if(state.view!=='oblique') setView('oblique',true); hudStamp=0; filmShot(0,0); };
   if(scen.key!=='big') setScen('big',true).then(go); else go();
 }
@@ -341,20 +359,24 @@ function filmShot(ch,sh){ film.ch=ch; film.sh=sh; const s=FILM[ch].shots[sh]; fi
 function filmStep(dt){
   if(film.paused||film.wait) return; film.el+=dt; const s=FILM[film.ch].shots[film.sh], u=clamp(film.el/film.dur,0,1);
   const nt=s.a+(s.b-s.a)*u; if(nt!==state.t){ state.t=nt; state.dirty=true; }
+  $('fProg').style.width=((film.sh+u)/FILM[film.ch].shots.length*100).toFixed(1)+'%';
   if(u>=1&&!film.speaking){
     if(film.sh+1<FILM[film.ch].shots.length) filmShot(film.ch,film.sh+1);
     else if(film.ch+1<FILM.length){ if($('fStop').checked){ film.wait=true; $('fPlay').textContent='Weiter ▶'; } else filmShot(film.ch+1,0); }
     else { film.wait=true; film.ended=true; $('fPlay').textContent='Noch einmal ↺'; } }
 }
-function filmEnd(){ state.film=false; app.classList.remove('film'); $('cap').hidden=true; $('cinenav').hidden=true; $('dock').hidden=false; if('speechSynthesis' in window) speechSynthesis.cancel(); hudStamp=0; state.dirty=true; curPhaseShown=-1; syncButtons(); }
-$('bFilm').onclick=filmStart; $('fEnd').onclick=filmEnd;
+function filmEnd(){ state.film=false; app.classList.remove('film'); $('bFilm').textContent='▶ Erklärfilm'; $('cap').hidden=true; $('cinenav').hidden=true; $('dock').hidden=false; resize(); if(state.autoCam) camTo(PH[phaseAt(state.t)].key); if('speechSynthesis' in window) speechSynthesis.cancel(); hudStamp=0; state.dirty=true; curPhaseShown=-1; syncButtons(); }
+$('bFilm').onclick=()=>{ if(state.film) filmEnd(); else filmStart(); }; $('fEnd').onclick=filmEnd;
 $('fPlay').onclick=()=>{ if(film.ended){ filmShot(0,0); } else if(film.wait){ filmShot(film.ch+1,0); } else { film.paused=!film.paused; $('fPlay').textContent=film.paused?'Weiter ▶':'Pause'; if(film.paused&&'speechSynthesis' in window) speechSynthesis.cancel(); } };
 $('fNext').onclick=()=>{ if(film.ch+1<FILM.length) filmShot(film.ch+1,0); };
 $('fPrev').onclick=()=>{ filmShot(film.el>2.5||film.sh>0?film.ch:Math.max(0,film.ch-1),0); };
 $('fVoice').onchange=e=>{ if(!e.target.checked&&'speechSynthesis' in window) speechSynthesis.cancel(); else if(!('speechSynthesis' in window)){ e.target.checked=false; toast('Vorlesen wird von diesem Browser nicht unterstützt.'); } };
 
 /* ===================== Schleife ===================== */
-function resize(){ needsRender=true; hudStamp=0; const w=vp.clientWidth,h=vp.clientHeight; if(w<2||h<2) return; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix();
+let freeAspect=1.6;
+function resize(){ needsRender=true; hudStamp=0; const w=vp.clientWidth,h=vp.clientHeight; if(w<2||h<2) return; renderer.setSize(w,h,false); camera.aspect=w/h;
+  const wide=innerWidth>820, pw=(wide&&!state.film&&!app.classList.contains('nopanel'))?$('panel').offsetWidth+16:0, lw=wide&&!state.film?70:0, dh=state.film?150:(wide?70:60);
+  camera.setViewOffset(w,h,Math.round((pw-lw)/2),Math.round(dh/2-18),w,h); freeAspect=Math.max(0.5,(w-pw-lw)/Math.max(200,h-dh-70)); camera.updateProjectionMatrix();
   if(state.view==='section'){ CAMS.section=sectionCam(); const c=CAMS.section; camera.position.set(...c.p); controls.target.set(...c.t); } }
 new ResizeObserver(resize).observe(vp);
 let last=performance.now(), lastActive=0, animTime=0, needsRender=true, prevActive=false;
