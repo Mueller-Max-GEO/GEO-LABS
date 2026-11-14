@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Föhn-Labor</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;500&family=Atkinson+Hyperlegible+Next:wght@400;500;700&display=swap">
+<style>
+/* Aufbau wie das Erdumlauf-Labor: eine dunkle Bühne über die ganze Fläche. Darüber liegen Titel und Werkzeuge (oben),
+   die Messleiste (oben links), die Erklärkarte (rechts, auf schmalen Bildschirmen unten) und die Abspielleiste (unten).
+   Alle Größen in rem: Der Vorführmodus vergrößert nur die Grundschrift. */
+:root{
+  color-scheme:dark;
+  --bg:#05080C; --ink:#EAF0F7; --muted:#9AA8BA; --faint:#66738A;
+  --line:rgba(234,240,247,.14); --line-strong:rgba(234,240,247,.32);
+  --glass:rgba(10,14,21,.74); --glass-2:rgba(22,28,39,.8); --solid:#0B1017;
+  --accent:#F0874A; --accent-ink:#1B0D04; --focus:#8DB8FF;
+  --cold:#7FB2F0; --wet:#4FD1C5; --warm:#FF9272; --lcl:#7FB2F0; --ok:#6CD49A;
+  --f-ui:"Atkinson Hyperlegible Next","Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-num:"Atkinson Hyperlegible Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --panel-w:21.5rem;
+}
+html{font-size:16px;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html.present{font-size:clamp(18px,1.72vw,27px)}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:.9375rem;line-height:1.45;-webkit-font-smoothing:antialiased;overflow:hidden;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+[hidden]{display:none!important}
+
+.app{position:fixed;inset:0;overflow:hidden}
+.stage{position:absolute;inset:0;overflow:hidden;touch-action:none;
+  background:radial-gradient(115% 80% at 40% 36%,#263242 0%,#141c27 42%,#070b11 78%,#05080c 100%)}
+.stage canvas{display:block;cursor:grab}
+.stage canvas:active{cursor:grabbing}
+.lead-line{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}
+.lead-line line{stroke:rgba(234,240,247,.55);stroke-width:1}
+.lead-line circle{fill:rgba(234,240,247,.8)}
+
+/* Bedienebene als Raster über der Bühne. Das Feld „free“ bleibt leer: Dort wird das Modell eingepasst. */
+.ui{position:absolute;inset:0;z-index:3;display:grid;pointer-events:none;gap:.6rem 1rem;
+  grid-template-columns:minmax(0,1fr) var(--panel-w);
+  grid-template-rows:auto auto minmax(0,1fr) auto auto;
+  grid-template-areas:"hud hud" "meter panel" "free panel" "cap panel" "dock panel";
+  padding:max(.8rem,env(safe-area-inset-top,0px)) max(1rem,env(safe-area-inset-right,0px)) max(.8rem,env(safe-area-inset-bottom,0px)) max(1rem,env(safe-area-inset-left,0px))}
+.ui>*{pointer-events:auto;min-width:0}
+.app.nopanel .ui{grid-template-columns:minmax(0,1fr);grid-template-areas:"hud" "meter" "free" "cap" "dock"}
+.app.nopanel .panel{display:none}
+.app.narrow .ui{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto auto auto;grid-template-areas:"hud" "meter" "free" "cap" "panel" "dock";gap:.5rem}
+.app.narrow.nopanel .ui{grid-template-rows:auto auto minmax(0,1fr) auto auto;grid-template-areas:"hud" "meter" "free" "cap" "dock"}
+
+/* Kopf */
+.hud{grid-area:hud;display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem 1rem;flex-wrap:wrap}
+.title{display:flex;flex-direction:column;gap:.1rem;min-width:0}
+.eyebrow{font-size:.6875rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.eyebrow b{color:var(--ink);font-weight:700}
+h1{margin:0;font-size:clamp(1.35rem,2.5vw,1.9rem);font-weight:700;letter-spacing:-.01em;line-height:1.1}
+.sub{font-size:.8125rem;color:var(--muted)}
+.tools{display:flex;gap:.4rem;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+.tbtn{font-size:.8125rem;background:var(--glass);border:1px solid var(--line);border-radius:.5rem;padding:.45rem .7rem;min-height:2.3rem;white-space:nowrap;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.tbtn:hover{border-color:var(--line-strong)}
+.tbtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.seg{display:flex;border:1px solid var(--line);border-radius:.5rem;overflow:hidden;background:var(--glass);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.seg label{position:relative;display:block;flex:1}
+.seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer;width:100%;height:100%}
+.seg span,.seg button{display:block;text-align:center;font-size:.8125rem;padding:.45rem .75rem;min-height:2.3rem;line-height:1.4rem;white-space:nowrap;border:0;background:transparent;color:var(--muted)}
+.seg label+label span,.seg button+button{border-left:1px solid var(--line)}
+.seg input:checked+span,.seg button[aria-pressed="true"]{background:var(--ink);color:var(--solid);font-weight:700}
+.seg input:focus-visible+span{outline:2px solid var(--focus);outline-offset:-2px}
+
+/* Messleiste */
+.meterwrap{grid-area:meter;display:flex;flex-direction:column;gap:.4rem;align-items:flex-start}
+.meter{align-self:stretch;display:grid;grid-template-columns:1.25fr .75fr 1.35fr 1.15fr 1.4fr;background:var(--glass);border:1px solid var(--line);border-radius:.85rem;-webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15)}
+.m-cell{padding:.5rem .8rem .55rem;display:flex;flex-direction:column;gap:.05rem;min-width:0;border-left:1px solid var(--line)}
+.m-cell:first-child{border-left:0;flex-direction:row;align-items:center;gap:.6rem}
+.m-cell .k{font-size:.75rem;color:var(--muted);white-space:nowrap}
+.m-cell b{font-family:var(--f-num);font-variant-numeric:tabular-nums;font-weight:500;font-size:1.05rem;line-height:1.2;white-space:nowrap}
+.m-cell b.big{font-size:1.5rem;line-height:1.05}
+.m-cell .who{display:flex;flex-direction:column;min-width:0}
+.m-cell .who b{font-family:var(--f-ui);font-weight:700;font-size:.9375rem}
+.m-cell .who span{font-size:.75rem;color:var(--muted);white-space:nowrap}
+.m-dot{width:1.1rem;height:1.1rem;border-radius:50%;border:2px solid var(--ink);flex:none;background:#fff}
+.m-bar{height:.375rem;border-radius:.2rem;background:rgba(234,240,247,.14);overflow:hidden;display:flex;margin-top:.2rem}
+.m-bar i{display:block;height:100%;background:var(--cold)}
+.m-bar u{display:block;height:100%;background:repeating-linear-gradient(135deg,rgba(234,240,247,.6) 0 2px,transparent 2px 5px)}
+.m-cap{font-size:.6875rem;color:var(--muted);line-height:1.2;margin-top:.15rem}
+.lbar{position:relative;height:.5rem;border-radius:.2rem;margin-top:.2rem;background:linear-gradient(90deg,#2A4B9B 0%,#3F78C4 16.67%,#7FB2E5 33.33%,#E9E5D8 50%,#F2A65A 66.67%,#D4572F 83.33%,#9E1F2A 100%)}
+.lbar .mark{position:absolute;top:-.2rem;width:3px;height:.9rem;margin-left:-1.5px;border-radius:2px;background:var(--ink);box-shadow:0 0 0 1.5px var(--solid)}
+.lticks{display:flex;justify-content:space-between;font-family:var(--f-num);font-size:.6875rem;color:var(--muted);line-height:1.2;margin-top:.15rem}
+/* Regel, die gerade gilt */
+.rule{display:flex;align-items:baseline;gap:.2rem .65rem;flex-wrap:wrap;background:var(--glass);border:1px solid var(--line);border-left:.4rem solid var(--cold);border-radius:.5rem;padding:.3rem .75rem;font-size:.8125rem;max-width:100%;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.rule .rk{color:var(--muted);font-size:.75rem}
+.rule b{font-family:var(--f-num);font-size:1.1rem;font-weight:700;white-space:nowrap}
+.rule.r-dry{border-left-color:var(--cold)}.rule.r-dry b{color:var(--cold)}
+.rule.r-wet{border-left-color:var(--wet)}.rule.r-wet b{color:var(--wet)}
+.rule.r-lee{border-left-color:var(--warm)}.rule.r-lee b{color:var(--warm)}
+.rule.flash{animation:ruleflash 1.4s ease-out}
+@keyframes ruleflash{0%{transform:scale(1.06);box-shadow:0 0 0 .4rem rgba(240,135,74,.4)}100%{transform:none}}
+
+/* freies Feld mit der Vorhersagefrage */
+.free{grid-area:free;pointer-events:none!important;display:flex;align-items:flex-end;justify-content:center;min-height:0}
+.askov{pointer-events:auto;margin-bottom:.3rem;background:var(--glass-2);border:1px solid var(--accent);border-radius:.85rem;padding:.7rem 1rem .65rem;box-shadow:0 .5rem 2rem rgba(0,0,0,.5);display:flex;flex-direction:column;align-items:center;gap:.5rem;width:min(96%,29rem);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+.askov p{margin:0;font-weight:700;font-size:1.0625rem;text-align:center}
+.askov .opts{display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center}
+.askov button{font-size:1rem;font-weight:700;background:rgba(234,240,247,.08);border:1px solid var(--line-strong);border-radius:.5rem;padding:.5rem .95rem;min-height:2.75rem}
+.askov button:hover{border-color:var(--ink)}
+.askov span{font-size:.75rem;color:var(--muted)}
+
+/* Untertitel, wenn die Erklärkarte ausgeblendet ist (Vorführmodus) */
+.cap{grid-area:cap;justify-self:center;max-width:min(100%,62rem);text-align:center;background:var(--glass);border:1px solid var(--line);border-radius:.85rem;padding:.55rem 1rem .6rem;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.cap .step{font-size:.6875rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.cap .capq{font-size:1.25rem;font-weight:700;line-height:1.2;margin:.05rem 0 .2rem}
+.cap p{margin:0;font-size:1rem;line-height:1.4;color:#D5DEE9}
+.cap p b{color:var(--ink)}
+.cap .capres{margin-top:.3rem;font-family:var(--f-num);font-size:.95rem;color:var(--ink)}
+.cap .hot{color:var(--warm)}
+
+/* Erklärkarte */
+.panel{grid-area:panel;display:flex;flex-direction:column;min-height:0;background:var(--glass);border:1px solid var(--line);border-radius:.9rem;overflow:hidden;-webkit-backdrop-filter:blur(16px) saturate(1.15);backdrop-filter:blur(16px) saturate(1.15)}
+.app.narrow .panel{max-height:38vh;max-height:38dvh}
+.pane{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:1rem 1rem 1.2rem;display:flex;flex-direction:column;gap:1rem;min-height:0;scrollbar-width:thin}
+.pane>section,.pane>details{display:flex;flex-direction:column;gap:.6rem}
+.pane>*+*{border-top:1px solid var(--line);padding-top:.9rem}
+.kicker{font-size:.6875rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.kicker b{font-family:var(--f-num)}
+.q{margin:0;font-size:1.3125rem;line-height:1.2;font-weight:700}
+.expl{margin:0;font-size:.9375rem;line-height:1.5;color:#D5DEE9}
+.expl b{color:var(--ink)}
+.vals{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.5rem}
+.vals li{display:flex;flex-direction:column;gap:.05rem;border-left:3px solid var(--line-strong);padding:.1rem 0 .1rem .6rem}
+.vals li span{font-size:.75rem;color:var(--muted)}
+.vals li b{font-family:var(--f-num);font-weight:500;font-size:1rem}
+.vals li.rule-l{border-left-color:var(--cold)}
+.ask{background:rgba(240,135,74,.09);border:1px solid rgba(240,135,74,.38);border-radius:.75rem;padding:.7rem .8rem;display:flex;flex-direction:column;gap:.5rem}
+.ask p{margin:0;font-weight:700}
+.ask .opts{display:flex;flex-direction:column;gap:.4rem}
+.ask .opts button{text-align:left;font-size:.9375rem;background:rgba(234,240,247,.05);border:1px solid var(--line-strong);border-radius:.5rem;padding:.5rem .65rem;min-height:2.6rem}
+.ask .opts button:hover{border-color:var(--ink)}
+.cmp{width:100%;border-collapse:collapse;font-size:.875rem}
+.cmp th,.cmp td{padding:.3rem .35rem;text-align:right;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.cmp td{font-family:var(--f-num)}
+.cmp th{font-weight:500;color:var(--muted);font-size:.75rem}
+.cmp th:first-child,.cmp td:first-child{text-align:left;font-family:var(--f-ui);color:var(--muted);font-size:.8125rem}
+.cmp td.hot{color:var(--warm);font-weight:500}
+.cmp tr:last-child td{border-bottom:0}
+.cmp td.span{text-align:left;color:var(--muted);font-family:var(--f-ui);font-size:.8125rem}
+.cmp.exp{table-layout:fixed}
+.cmp.exp th{font-size:.6875rem;line-height:1.25;vertical-align:bottom;padding:.25rem .2rem}
+.cmp.exp th:first-child{width:33%}
+.cmp.exp td{padding:.3rem .2rem;font-size:.8125rem}
+.cmp.exp td:first-child{font-size:.75rem;line-height:1.2}
+.res{margin:0;font-size:.9375rem;color:#D5DEE9}
+.res b.hot{color:var(--warm)}
+.pred{margin:0;font-size:.875rem;border-left:3px solid var(--line-strong);padding-left:.6rem}
+.pred.ok{border-left-color:var(--ok)}
+.quote{margin:0;font-size:.875rem;border-left:3px solid var(--accent);padding-left:.6rem;color:#D5DEE9}
+.calc{background:rgba(240,135,74,.09);border:1px solid rgba(240,135,74,.38);border-radius:.75rem;padding:.7rem .8rem;display:flex;flex-direction:column;gap:.5rem}
+.calc label{font-weight:700}
+.calc .row{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap}
+.calc input{font-family:var(--f-num);width:5.2rem;padding:.4rem .5rem;min-height:2.4rem;border:1px solid var(--line-strong);border-radius:.5rem;background:var(--solid)}
+.calc p{margin:0;font-size:.875rem;min-height:1.3em}
+.btn{font-size:.875rem;font-weight:700;background:transparent;border:1px solid var(--line-strong);border-radius:.5rem;padding:.45rem .8rem;min-height:2.4rem;display:inline-flex;gap:.4rem;align-items:center}
+.btn:hover{border-color:var(--ink)}
+.btn.quiet{font-weight:500}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.linkbtn{background:none;border:0;padding:0;color:var(--focus);text-decoration:underline;font-size:.875rem;align-self:flex-start}
+.swrow{display:flex;justify-content:space-between;align-items:center;gap:.6rem;font-size:.875rem;cursor:pointer}
+.tg{appearance:none;-webkit-appearance:none;width:2.4rem;height:1.4rem;border-radius:.7rem;background:rgba(234,240,247,.2);position:relative;flex:none;cursor:pointer;margin:0;transition:background .15s}
+.tg::after{content:"";position:absolute;top:.15rem;left:.15rem;width:1.1rem;height:1.1rem;border-radius:50%;background:var(--ink);transition:transform .15s}
+.tg:checked{background:var(--accent)}
+.tg:checked::after{transform:translateX(1rem)}
+details.fold>summary{font-size:.6875rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;min-height:1.6rem}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary::after{content:"+";font-family:var(--f-num);font-size:1.1rem;line-height:1;letter-spacing:0}
+details.fold[open]>summary::after{content:"−"}
+details.fold>.body{display:flex;flex-direction:column;gap:.6rem;padding-top:.5rem}
+.field{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem;font-size:.875rem}
+.field label,.flabel{color:var(--muted)}
+output{font-family:var(--f-num);font-size:.9375rem;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;margin:0;accent-color:var(--accent);min-height:1.6rem}
+.derived{font-size:.8125rem;color:var(--muted);border-top:1px dashed var(--line);padding-top:.5rem;margin:0;line-height:1.5}
+.derived b{font-family:var(--f-num);font-weight:500;color:var(--ink)}
+.limits{margin:0;padding-left:1.1rem;font-size:.875rem;display:flex;flex-direction:column;gap:.4rem;color:#D5DEE9}
+.limits b{color:var(--ink)}
+
+/* Abspielleiste */
+.dock{grid-area:dock;display:flex;flex-direction:column;gap:.5rem}
+.drawer{background:var(--glass);border:1px solid var(--line);border-radius:.85rem;padding:.6rem .8rem .4rem;display:flex;flex-direction:column;gap:.35rem;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.phead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:.2rem 1rem}
+.phead h2{margin:0;font-size:.6875rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.stats{display:flex;flex-wrap:wrap;gap:.1rem 1rem;font-size:.75rem;color:var(--muted)}
+.stats b{font-family:var(--f-num);font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
+.stats b.hot{color:var(--warm)}
+.hyp{display:grid;grid-template-columns:auto 1fr;gap:1px .6rem;align-items:center;font-size:.6875rem;color:var(--muted);width:min(100%,27rem)}
+.hyp .hl{grid-row:span 2}
+.hbar{display:grid;grid-template-columns:repeat(9,1fr);height:.55rem;border-radius:.2rem;overflow:hidden}
+.hbar i{display:block}
+.hticks{display:grid;grid-template-columns:.5fr repeat(8,1fr) .5fr;font-family:var(--f-num);font-size:.625rem;text-align:center}
+.hticks span:last-child{text-align:right}
+.pwrap{position:relative;min-width:0}
+.pwrap canvas{display:block;width:100%}
+.rates{font-size:.75rem;color:var(--muted);margin:0}
+.transport{display:flex;align-items:center;gap:.5rem .6rem;flex-wrap:wrap}
+.play{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-width:8.6rem;min-height:2.9rem;border-radius:1.45rem;border:0;background:var(--ink);color:var(--solid);font-weight:700;font-size:1rem;padding:0 1.1rem}
+.play.cue{animation:cue 1.6s ease-in-out infinite}
+@keyframes cue{0%,100%{box-shadow:0 0 0 0 rgba(240,135,74,0)}50%{box-shadow:0 0 0 .45rem rgba(240,135,74,.5)}}
+.chapters{display:flex;align-items:center;list-style:none;margin:0;padding:.25rem .5rem;gap:0;background:var(--glass);border:1px solid var(--line);border-radius:1.45rem;min-height:2.9rem;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.chapters li{display:flex;align-items:center}
+.chapters li+li::before{content:"";width:.7rem;height:1px;background:var(--line-strong)}
+.chapters button{width:2.2rem;height:2.2rem;border-radius:50%;border:1px solid var(--line-strong);background:transparent;font-family:var(--f-num);font-size:.9375rem;padding:0;color:var(--muted)}
+.chapters button span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.chapters button.done{color:var(--ink);border-color:var(--ink)}
+.chapters button[aria-current="step"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.ibtn{min-width:2.9rem;min-height:2.9rem;border-radius:1.45rem;border:1px solid var(--line);background:var(--glass);font-size:.875rem;padding:0 .8rem;white-space:nowrap;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.ibtn:hover{border-color:var(--line-strong)}
+.ibtn:disabled{opacity:.35;cursor:not-allowed}
+.ibtn[aria-pressed="true"]{background:var(--ink);color:var(--solid);font-weight:700;border-color:var(--ink)}
+.spacer{flex:1}
+.scale-note{font-size:.6875rem;color:var(--faint)}
+
+/* 3D-Beschriftungen */
+.lbl{font-family:var(--f-ui);font-size:.75rem;font-weight:500;color:var(--ink);background:rgba(7,10,16,.8);border:1px solid var(--line-strong);padding:.08rem .55rem;border-radius:999px;white-space:nowrap;pointer-events:none;transition:opacity .25s}
+.lbl-side{background:none;border:0;font-size:1.15rem;font-weight:700;letter-spacing:.14em;text-align:center;text-shadow:0 1px 6px #000,0 0 2px #000}
+.lbl-side small{display:block;font-size:.6875rem;letter-spacing:.03em;font-weight:500;color:var(--muted)}
+.lbl-wall{background:none;border:0;color:var(--muted);font-family:var(--f-num);font-size:.6875rem;margin-left:.25rem;text-shadow:0 0 4px #000}
+.lbl-face{background:rgba(250,245,232,.86);border:0;color:#2c2418;font-family:var(--f-num);font-size:.6875rem;padding:0 .3rem;border-radius:.2rem}
+.lbl-lcl{background:#2F6DB5;color:#fff;border-color:transparent;font-weight:700}
+.lbl-tag{background:var(--ink);color:var(--solid);border-color:transparent;font-weight:700}
+.lbl-st{display:flex;flex-direction:column;align-items:center;line-height:1.25;padding:.2rem .6rem;border-radius:.5rem}
+.lbl-st b{font-size:.75rem}
+.lbl-st>span{font-family:var(--f-num);font-size:.75rem}
+.lbl-st.hot>span{color:var(--warm)}
+
+.toast{position:absolute;left:50%;top:4.5rem;transform:translateX(-50%);z-index:9;max-width:min(92%,34rem);background:var(--glass-2);border:1px solid var(--accent);border-radius:.75rem;padding:.6rem .9rem;font-size:.9375rem;text-align:center;box-shadow:0 .5rem 2rem rgba(0,0,0,.5)}
+.nonum .num{display:none!important}
+
+/* schmal (Seitenfenster, iPad hochkant, Handy) */
+.app.narrow h1{font-size:1.3rem}
+.app.narrow .sub,.app.narrow .scale-note{display:none}
+.app.compact .meter{grid-template-columns:repeat(4,1fr)}
+.app.compact .m-cell{padding:.3rem .45rem .4rem;border-top:1px solid var(--line)}
+.app.compact .m-cell:first-child{grid-column:span 4;border-top:0;padding:.3rem .5rem}
+.app.compact .m-cell:nth-child(2){border-left:0}
+.app.compact .m-cell .who{flex-direction:row;gap:.5rem;align-items:baseline}
+.app.compact .m-cell .k{font-size:.6875rem;white-space:normal;line-height:1.15}
+.app.compact .m-cell b{font-size:.8125rem}.app.compact .m-cell b.big{font-size:.9rem;line-height:1.2}
+.app.compact .m-cap,.app.compact .lticks,.app.compact .kk,.app.compact .rule .rk,.app.compact .eyebrow{display:none}
+.app.compact .rule{padding:.2rem .5rem;font-size:.6875rem}.app.compact .rule b{font-size:.8125rem}
+.app.compact .tbtn,.app.compact .seg span{padding:.35rem .5rem;font-size:.75rem}
+.app.compact .play{min-width:6.5rem}
+.app.compact .lbl-side{font-size:.9rem}.app.compact .lbl-side small{display:none}
+.app.midw .kk{display:none}
+.app.midw .m-cell{padding:.45rem .5rem .5rem}
+.app.midw .m-cell b.big{font-size:1.2rem}
+@media (prefers-reduced-motion:reduce){.rule.flash,.play.cue{animation:none}.play.cue{box-shadow:0 0 0 .3rem rgba(240,135,74,.5)}.lbl,.tg,.tg::after{transition:none}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="stage" id="viewport">
+    <svg class="lead-line" id="lead" aria-hidden="true"><line id="leadLine" x1="0" y1="0" x2="0" y2="0"/><circle id="leadDot" r="2.5" cx="0" cy="0"/></svg>
+  </div>
+
+  <div class="ui" id="ui">
+    <header class="hud">
+      <div class="title">
+        <div class="eyebrow">GEO GYM · <b>Wetter und Klima</b></div>
+        <h1>Föhn-Labor</h1>
+        <div class="sub">Vereinfachtes thermodynamisches Föhnmodell</div>
+      </div>
+      <div class="tools">
+        <div class="seg" role="radiogroup" aria-label="Arbeitsweise">
+          <label><input type="radio" name="mode" value="learn" checked><span>Schritt für Schritt</span></label>
+          <label><input type="radio" name="mode" value="exp"><span>Experimentieren</span></label>
+        </div>
+        <button class="tbtn" id="panelBtn" aria-pressed="true">Erklärung</button>
+        <button class="tbtn" id="presentBtn" aria-pressed="false">Vorführmodus</button>
+        <button class="tbtn" id="fsBtn" aria-pressed="false">Vollbild</button>
+      </div>
+    </header>
+
+    <div class="meterwrap">
+      <div class="meter" id="meter" aria-label="Messwerte des Luftpakets">
+        <div class="m-cell"><span class="m-dot" id="mDot"></span><div class="who"><b>Luftpaket</b><span id="mState"></span></div></div>
+        <div class="m-cell num"><span class="k">Höhe</span><b id="mH"></b></div>
+        <div class="m-cell"><span class="k">Temperatur <span class="kk">· Farbe der Luft</span><span id="lgOut" style="display:none;color:#B79CFF;font-weight:700"></span></span><b class="big num" id="mT"></b><div class="lbar" aria-label="Farbskala der Temperatur von −20 bis 40 °C"><i class="mark" id="lgMark"></i></div><div class="lticks"><span>−20</span><span>0</span><span>20</span><span>40 °C</span></div></div>
+        <div class="m-cell"><span class="k">relative Feuchte</span><b class="num" id="mRH"></b><div class="m-bar"><i id="mRHb"></i></div></div>
+        <div class="m-cell"><span class="k">Wasserdampf</span><b class="num" id="mW"></b><div class="m-bar"><i id="mWb"></i><u id="mWr"></u></div><span class="m-cap" id="mWn">schraffiert: als Niederschlag ausgefallen</span></div>
+      </div>
+      <div class="rule num r-dry" id="rule" aria-live="polite"><span class="rk">Gilt jetzt:</span><b id="ruleV">−1 °C je 100 m</b><span id="ruleS">Aufstieg · relative Feuchte unter 100 % (ungesättigt)</span></div>
+    </div>
+
+    <div class="free" id="free">
+      <div class="askov" id="askOv" hidden role="group" aria-label="Vorhersage">
+        <p>Welche Temperatur erwartest du im Lee-Tal?</p>
+        <div class="opts"><button data-pred="k">kälter</button><button data-pred="g">gleich warm</button><button data-pred="w">wärmer</button></div>
+        <span>als im Luv-Tal (gleiche Höhe)</span>
+      </div>
+    </div>
+
+    <div class="cap" id="cap" hidden aria-live="polite"></div>
+
+    <aside class="panel" id="panel" aria-label="Erklärung und Einstellungen">
+      <div class="pane">
+        <section id="card" aria-live="polite"></section>
+        <section>
+          <label class="swrow"><span>Rechenmodus: Werte im Lee-Tal selbst berechnen</span><input class="tg" type="checkbox" id="calcOn" aria-label="Rechenmodus"></label>
+        </section>
+        <details class="fold" id="setup">
+          <summary id="setupSum">Ausgangswerte ändern</summary>
+          <div class="body">
+            <div class="field"><label for="t0">Temperatur im Luv-Tal (500 m)</label><output id="t0Out" for="t0"></output></div>
+            <input type="range" id="t0" min="5" max="25" step="1" value="15">
+            <div class="field"><label for="rh">Relative Feuchte im Luv-Tal</label><output id="rhOut" for="rh"></output></div>
+            <input type="range" id="rh" min="0" max="100" step="5" value="70">
+            <div class="field"><label for="hc">Höhe des Passes</label><output id="hcOut" for="hc"></output></div>
+            <input type="range" id="hc" min="1500" max="3500" step="100" value="2500">
+            <p class="derived" id="derived"></p>
+            <button class="btn quiet" id="resetBtn" style="align-self:flex-start">Startwerte wiederherstellen</button>
+          </div>
+        </details>
+        <details class="fold" id="opts">
+          <summary>Darstellung</summary>
+          <div class="body">
+            <label class="swrow"><span>Zahlenwerte anzeigen</span><input class="tg" type="checkbox" id="numOn" checked aria-label="Zahlenwerte anzeigen"></label>
+            <label class="swrow"><span>Strömungsbahnen</span><input class="tg" type="checkbox" id="flowOn" checked aria-label="Strömungsbahnen anzeigen"></label>
+            <label class="swrow"><span>Höhenskala und Höhenschichten am Schnitt</span><input class="tg" type="checkbox" id="scaleOn" checked aria-label="Höhenskala anzeigen"></label>
+            <label class="swrow"><span>Beschriftungen</span><input class="tg" type="checkbox" id="labelsOn" checked aria-label="Beschriftungen anzeigen"></label>
+            <div class="field"><span class="flabel">Tempo</span></div>
+            <div class="seg" role="radiogroup" aria-label="Tempo">
+              <label><input type="radio" name="spd" value="0.5"><span>Langsam</span></label>
+              <label><input type="radio" name="spd" value="1" checked><span>Normal</span></label>
+              <label><input type="radio" name="spd" value="1.8"><span>Schnell</span></label>
+            </div>
+          </div>
+        </details>
+        <details class="fold" id="limits">
+          <summary>Grenzen des Modells</summary>
+          <div class="body">
+            <p class="quote">Dieses Modell zeigt einen Mechanismus der Föhnerwärmung. In der Atmosphäre kann Föhn auch ohne Niederschlag im Luv auftreten.</p>
+            <ul class="limits">
+              <li><b>Schulnäherungen:</b> ungesättigter Aufstieg −1 °C je 100 m, gesättigter Aufstieg −0,5 °C je 100 m, ungesättigter Abstieg +1 °C je 100 m.</li>
+              <li>Der Wert für gesättigte Luft <b>schwankt in Wirklichkeit</b>: je nach Temperatur und Luftdruck etwa 0,4 bis 0,9 °C je 100 m.</li>
+              <li><b>Modellannahme:</b> Das Kondensat, das beim Aufstieg entsteht, wird sofort als Niederschlag entfernt. In Wirklichkeit braucht Niederschlag Zeit, und ein Teil der Tröpfchen bleibt als Wolke in der Luft.</li>
+              <li>Das <b>Kondensationsniveau</b> folgt der Faustregel „125 m je 1 °C Abstand zwischen Temperatur und Taupunkt“. Sie weicht bei 30 bis 95 % relativer Feuchte höchstens 45 m von der genauen Rechnung ab. Für die Schulrechnung wird auf 100 m gerundet.</li>
+              <li>Luv-Tal und Lee-Tal liegen gleich hoch. Das Gelände ist erfunden und 4-fach überhöht; die Größe des Luftpakets ist nur schematisch.</li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </aside>
+
+    <footer class="dock" id="dock">
+      <section class="drawer" id="drawer" hidden aria-label="Profil durch den Pass">
+        <div class="phead">
+          <h2>Profil durch den Pass</h2>
+          <div class="stats num" id="stats"></div>
+          <div class="hyp" id="hypLegend" aria-label="Höhenschichten in Metern"><span class="hl">Höhenschichten</span><div class="hbar">/*@@HBAR@@*/</div><div class="hticks"><span></span><span>500</span><span>1 000</span><span>1 500</span><span>2 000</span><span>2 500</span><span>3 000</span><span>3 500</span><span>4 000</span><span>m</span></div></div>
+        </div>
+        <p class="rates num" id="rates" hidden></p>
+        <div class="pwrap"><canvas id="prof" aria-label="Profil durch das Gebirge mit dem Weg des Luftpakets, den Höhen und den Temperaturen"></canvas></div>
+      </section>
+      <div class="transport" id="transport">
+        <button class="play" id="playBtn" aria-pressed="true">Pause</button>
+        <button class="ibtn" id="prevBtn" aria-label="Vorheriger Abschnitt">‹</button>
+        <ol class="chapters" id="chapters" aria-label="Abschnitte"></ol>
+        <button class="ibtn" id="nextBtn" aria-label="Nächster Abschnitt">›</button>
+        <button class="ibtn" id="replayBtn">↺ Wiederholen</button>
+        <span class="spacer"></span>
+        <div class="seg" role="group" aria-label="Ansicht">
+          <button id="view3d" aria-pressed="true">Schrägansicht</button>
+          <button id="viewSide" aria-pressed="false">Querschnitt</button>
+        </div>
+        <button class="ibtn" id="viewReset" aria-label="Ansicht zurücksetzen" title="Ansicht zurücksetzen">⟲</button>
+        <button class="ibtn" id="profBtn" aria-pressed="false">Profil</button>
+      </div>
+      <div class="scale-note">Modellgebirge · Höhen 4-fach überhöht · Größe des Luftpakets schematisch · Tastatur: ← → Abschnitt, Leertaste Weiter/Pause, R wiederholen, F Vollbild</div>
+    </footer>
+  </div>
+  <div class="toast" id="toast" hidden role="status"></div>
+</div>
+

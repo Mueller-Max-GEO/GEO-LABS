@@ -1,0 +1,40 @@
+.cap{min-height:6.2rem;display:flex;flex-direction:column;justify-content:center}
+.chapters button{position:relative}
+html.present .scale-note,html.present .sub{display:none}
+html.present .transport{gap:.4rem}
+html.present #replayBtn{font-size:0;padding:0 .2rem}
+html.present #replayBtn::before{content:"↺";font-size:1.1rem}
+::backdrop{background:#05080C}
+.stage canvas{position:absolute;inset:0}
+.app.midw #prevBtn,.app.midw #nextBtn{display:none}
+.app.midw #replayBtn,.app.narrow #replayBtn{font-size:0;padding:0 .2rem}
+.app.midw #replayBtn::before,.app.narrow #replayBtn::before{content:"↺";font-size:1.1rem}
+.app.midw .play{min-width:7rem}
+.app.midw .scale-note{display:none}
+@media (hover:none){.scale-note{display:none}}
+.m-cap{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.app.narrow .panel{max-height:30vh;max-height:30dvh}
+.app.compact .panel{max-height:27vh;max-height:27dvh}
+.app.narrow .kk{display:none}
+.app.narrow .pane{padding:.75rem .9rem .9rem;gap:.7rem}
+.app.narrow .q{font-size:1.15rem}
+.app.narrow .drawer{padding:.45rem .6rem .3rem}
+@media (pointer:coarse){
+  .tbtn,.seg span,.seg button{min-height:2.75rem;line-height:1.85rem}
+  .chapters button{width:2.6rem;height:2.6rem}
+  .chapters{min-height:3.1rem}
+  input[type=range]{min-height:2.4rem}
+  .swrow{min-height:2.75rem}
+  details.fold>summary{min-height:2.75rem}
+  .askov button,.ask .opts button{min-height:3rem}
+}
+html.present{font-size:clamp(17px,1.5vw,26px)}
+html.present .eyebrow,html.present .lticks,html.present .m-cap{display:none}
+html.present .m-cell{padding:.4rem .8rem .5rem}
+html.present .cap{min-height:4.6rem;padding:.4rem 1rem .5rem}
+html.present .app:not(.narrow) .meterwrap{flex-direction:row;align-items:stretch;gap:.6rem}
+html.present .app:not(.narrow) .meter{flex:1 1 0;min-width:0}
+html.present .app:not(.narrow) .rule{flex:0 1 19rem;align-content:center;border-radius:.85rem;border-left-width:.5rem;font-size:.75rem;line-height:1.3}
+html.present .app:not(.narrow) .rule .rk{display:none}
+html.present .ui{gap:.5rem 1rem}
+html.present .kk{display:none}

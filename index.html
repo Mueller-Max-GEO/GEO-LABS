@@ -47,6 +47,10 @@ a.card:hover,a.card:focus-visible{border-color:var(--ice);outline:none}
       <span class="tag" data-k="t4">Bevölkerung · 3D-Modell</span>
       <h2 data-k="h4">Pyramiden-Labor</h2>
       <p data-k="p4">Bevölkerungsdiagramme lesen und einordnen: Luxemburg seit 1880 und 15 weitere Länder bis 2100, Pyramide, Glocke und Urne, Jahrgänge, demografischer Übergang. Mit Erklärfilm, Quiz und Vorführmodus.</p>
+    <a class="card" href="foehnlabor/">
+      <span class="tag" data-k="t5">Wetter und Klima · 3D-Modell</span>
+      <h2 data-k="h5">Föhn-Labor</h2>
+      <p data-k="p5">Vereinfachtes thermodynamisches Föhnmodell: Aufstieg im Luv, Kondensationsniveau, Stauwolke und Niederschlag, warmer und trockener Fallwind im Lee. Schritt für Schritt, Experimentieren, Rechenmodus und Vorführmodus.</p>
     </a>
   </div>
 </main>
@@ -56,17 +60,20 @@ de:{eyebrow:"Geographie · interaktive Übungen",lead:"Modelle und Übungen, die
  t1:"Glaziologie · 3D-Modell",h1:"Gletscherlabor Hintereisferner",p1:"Schnee, Firn und Eis im Zeitraffer und im Jahreslauf. Gleichgewichtslinie, Gletscherspalten und Moränen, mit Reglern für Temperatur und Niederschlag.",
  t2:"Endogene Kräfte · 3D-Modell",h2:"Tsunami-Labor",p2:"Vom Verhaken der Platten über das Seebeben bis zur Überflutung der Küste. Fünf Phasen, Querschnitt, Messkarte und Vorhersage-Modus.",
  t3:"Erde im Sonnensystem · 3D-Modell",h3:"Erdumlauf-Labor",p3:"Erdrevolution, schiefe Erdachse, Tageslänge, Einfallswinkel, Wendekreise und Beleuchtungszonen. Mit Kinoflug und Erklärfilm mit Sprecherstimme.",
- t4:"Bevölkerung · 3D-Modell",h4:"Pyramiden-Labor",p4:"Bevölkerungsdiagramme lesen und einordnen: Luxemburg seit 1880 und 15 weitere Länder bis 2100, Pyramide, Glocke und Urne, Jahrgänge, demografischer Übergang. Mit Erklärfilm, Quiz und Vorführmodus."},
+ t4:"Bevölkerung · 3D-Modell",h4:"Pyramiden-Labor",p4:"Bevölkerungsdiagramme lesen und einordnen: Luxemburg seit 1880 und 15 weitere Länder bis 2100, Pyramide, Glocke und Urne, Jahrgänge, demografischer Übergang. Mit Erklärfilm, Quiz und Vorführmodus.",
+ t5:"Wetter und Klima · 3D-Modell",h5:"Föhn-Labor",p5:"Vereinfachtes thermodynamisches Föhnmodell: Aufstieg im Luv, Kondensationsniveau, Stauwolke und Niederschlag, warmer und trockener Fallwind im Lee. Schritt für Schritt, Experimentieren, Rechenmodus und Vorführmodus."},
 fr:{eyebrow:"Géographie · exercices interactifs",lead:"Modèles et exercices qui fonctionnent directement dans le navigateur. Choisis un exercice.",
  t1:"Glaciologie · modèle 3D",h1:"Laboratoire du glacier Hintereisferner",p1:"Neige, névé et glace en accéléré et au fil de l'année. Ligne d'équilibre, crevasses et moraines, avec des curseurs pour la température et les précipitations.",
  t2:"Forces endogènes · modèle 3D",h2:"Laboratoire du tsunami",p2:"Du blocage des plaques au séisme sous-marin, jusqu'à l'inondation de la côte. Cinq phases, coupe, carte des mesures et mode prévision.",
  t3:"La Terre dans le système solaire · modèle 3D",h3:"Laboratoire de la révolution terrestre",p3:"Révolution de la Terre, axe incliné, durée du jour, angle d'incidence, tropiques et zones d'éclairement. Avec vol cinéma et film explicatif avec voix.",
- t4:"Population · modèle 3D",h4:"Laboratoire des pyramides",p4:"Lire et interpréter des diagrammes de population : le Luxembourg depuis 1880 et 15 autres pays jusqu'en 2100, pyramide, cloche et urne, générations, transition démographique. Avec film explicatif, quiz et mode présentation."},
+ t4:"Population · modèle 3D",h4:"Laboratoire des pyramides",p4:"Lire et interpréter des diagrammes de population : le Luxembourg depuis 1880 et 15 autres pays jusqu'en 2100, pyramide, cloche et urne, générations, transition démographique. Avec film explicatif, quiz et mode présentation.",
+ t5:"Météo et climat · modèle 3D",h5:"Laboratoire du foehn",p5:"Modèle thermodynamique simplifié du foehn (interface en allemand) : ascension au vent, niveau de condensation, nuage de barrage et précipitations, vent chaud et sec sous le vent."},
 en:{eyebrow:"Geography · interactive exercises",lead:"Models and exercises that run right in the browser. Choose an exercise.",
  t1:"Glaciology · 3D model",h1:"Hintereisferner Glacier Lab",p1:"Snow, firn and ice in time-lapse and through the year. Equilibrium line, crevasses and moraines, with controls for temperature and precipitation.",
  t2:"Endogenic forces · 3D model",h2:"Tsunami Lab",p2:"From locked plates to the undersea earthquake and the flooding of the coast. Five phases, cross-section, measurement map and prediction mode.",
  t3:"Earth in the solar system · 3D model",h3:"Earth Orbit Lab",p3:"Earth's revolution, tilted axis, day length, angle of incidence, tropics and lighting zones. With cinematic flight and an explainer film with narration.",
- t4:"Population · 3D model",h4:"Population Pyramid Lab",p4:"Read and interpret population charts: Luxembourg since 1880 and 15 more countries up to 2100, pyramid, bell and urn shapes, age cohorts, demographic transition. With explainer film, quiz and presentation mode."}};
+ t4:"Population · 3D model",h4:"Population Pyramid Lab",p4:"Read and interpret population charts: Luxembourg since 1880 and 15 more countries up to 2100, pyramid, bell and urn shapes, age cohorts, demographic transition. With explainer film, quiz and presentation mode.",
+ t5:"Weather and climate · 3D model",h5:"Foehn Lab",p5:"Simplified thermodynamic foehn model (German interface): rising air on the windward side, condensation level, cloud and precipitation, warm dry wind on the lee side."}};
 const $$=s=>document.querySelectorAll(s);
 function setLang(l){document.documentElement.lang=l;$$('[data-k]').forEach(e=>e.textContent=T[l][e.dataset.k]);$$('.lang button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.lang===l));try{localStorage.setItem('geogym-orbit-lang',l)}catch(e){}}
 let cur='de';try{const s=localStorage.getItem('geogym-orbit-lang');if(s&&T[s])cur=s;else{const n=(navigator.language||'de').slice(0,2);if(T[n])cur=n}}catch(e){}

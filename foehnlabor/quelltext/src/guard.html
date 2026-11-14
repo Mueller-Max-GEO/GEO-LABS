@@ -1,0 +1,34 @@
+<div id="bootFail" hidden style="position:fixed;left:16px;right:16px;bottom:16px;z-index:99;background:#fff;color:#17201B;border:2px solid #D2232A;border-radius:8px;padding:12px 14px;font:15px/1.4 system-ui,-apple-system,sans-serif;box-shadow:0 8px 30px rgba(0,0,0,.2)"></div>
+<script>
+// Kann die Animation nicht starten, wird der Grund angezeigt statt einer leeren Fläche
+(function () {
+  function show(msg) {
+    var b = document.getElementById('bootFail'); if (!b) return;
+    b.hidden = false;
+    b.innerHTML = '<b>Die 3D-Animation konnte nicht starten.</b><br>' + msg +
+      '<br><span style="color:#56625B;font-size:13px">Bitte diese Meldung an die Lehrkraft weitergeben. Browser: ' + navigator.userAgent.replace(/[<>]/g, '') + '</span>';
+  }
+  window.__bootFail = show;
+  window.addEventListener('error', function (e) {
+    if (e.target && e.target !== window) return;            // nicht geladene Schrift o. Ä.: kein Grund, die Animation als gestört zu melden
+    var m = String(e.message || '');
+    if (!m) return;
+    if (/ResizeObserver loop/.test(m)) { e.stopImmediatePropagation(); e.preventDefault(); return; }
+    if (!window.__foehn) show('Fehler: ' + m.replace(/[<>]/g, '') + (e.lineno ? ' (Zeile ' + e.lineno + ')' : ''));
+  }, true);
+  window.addEventListener('unhandledrejection', function (e) { if (!window.__foehn) show('Fehler: ' + String(e.reason && e.reason.message || e.reason).replace(/[<>]/g, '')); });
+  // ältere Safari-Versionen: Ersatz für Canvas roundRect
+  if (window.CanvasRenderingContext2D && !CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+      r = Math.min(typeof r === 'number' ? r : 0, w / 2, h / 2);
+      this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r);
+      this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath(); return this;
+    };
+  }
+  // ohne WebGL gar nicht erst versuchen
+  try {
+    var c = document.createElement('canvas');
+    if (!(c.getContext('webgl2') || c.getContext('webgl'))) document.addEventListener('DOMContentLoaded', function () { show('Dieser Browser stellt kein WebGL bereit. In Safari: Einstellungen → Erweitert → „Funktionen für Webentwickler“, dann im Menü Entwickler → Funktionen prüfen, ob WebGL aktiviert ist.'); });
+  } catch (err) {}
+})();
+</script>
