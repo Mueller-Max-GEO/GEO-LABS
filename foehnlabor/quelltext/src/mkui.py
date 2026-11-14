@@ -21,11 +21,31 @@ rep("  return `<div class=\"kicker\">Experimentieren</div><h2 class=\"q\">Was ge
     "  lastExpTxt = txt;\n  return `<div class=\"kicker\">Experimentieren</div><h2 class=\"q\">Was geschieht bei diesen Werten?</h2>")
 rep("function renderCard() {", """let lastExpTxt = '';
 // Untertitel unter dem Modell: ersetzt die Erklärkarte, wenn sie ausgeblendet ist (Vorführmodus)
+function renderXbar(el) {
+  if (el.dataset.kind !== 'exp') {
+    el.dataset.kind = 'exp';
+    const sl = (id, lab, min, max, step) => `<label class="xs"><span class="xl">${lab}</span><output id="x_${id}O"></output><input type="range" id="x_${id}" min="${min}" max="${max}" step="${step}" aria-label="${lab}"></label>`;
+    el.innerHTML = `<div class="xrow">${sl('t0', 'Temperatur Luv-Tal', 5, 25, 1)}${sl('rh', 'relative Feuchte', 0, 100, 5)}${sl('hc', 'Passhöhe', 1500, 3500, 100)}</div><div class="xres num" id="x_res"></div>`;
+    for (const id of ['t0', 'rh', 'hc']) el.querySelector('#x_' + id).addEventListener('input', e => setParams({ [id]: +e.target.value }));
+  }
+  for (const id of ['t0', 'rh', 'hc']) { const r = el.querySelector('#x_' + id); if (document.activeElement !== r) r.value = P[id]; }
+  el.querySelector('#x_t0O').textContent = P.t0 + NNBSP + '°C'; el.querySelector('#x_rhO').textContent = P.rh + NNBSP + '%'; el.querySelector('#x_hcO').textContent = fmtM(P.hc);
+  const hide = S.calc && !S.solved, q = '?';
+  const chip = (k, v, cls = '') => `<span class="xc ${cls}"><span>${k}</span><b>${v}</b></span>`;
+  let r = chip('Kondensationsniveau', M.noVapor ? 'keines' : fmtM(M.lcl) + (M.cond ? '' : ' (über dem Pass)'));
+  r += chip('am Pass', fmtT(M.tc));
+  r += chip('Lee-Tal', hide ? q : fmtT(M.t1) + ' · ' + rhTxt(M.rh1), !hide && M.dT > 0.05 ? 'hot' : '');
+  r += chip(M.cond ? 'wärmer als im Luv-Tal' : 'Unterschied zum Luv-Tal', hide ? q : (M.cond ? fmtTs(M.dT) : 'keiner'), !hide && M.dT > 0.05 ? 'hot' : '');
+  el.querySelector('#x_res').innerHTML = r;
+}
 function renderCap() {
   const el = $('cap'); el.hidden = S.panel; if (S.panel) return;
   const V = vis(); let h;
-  if (S.mode === 'exp') h = `<div class="step">Experimentieren</div><p>${lastExpTxt}</p>`;
-  else {
+  el.classList.toggle('xmode', S.mode === 'exp');
+  // Experimentieren ohne Erklärkarte: statt Fließtext drei Regler und die Ergebnisse als knappe Werte
+  if (S.mode === 'exp') { renderXbar(el); return; }
+  el.dataset.kind = 'learn';
+  {
     const k = S.chapter, ch = CH[k], arrived = S.phase === 'hold';
     h = `<div class="step">Abschnitt ${k} von 5 · ${ch.name}</div><div class="capq">${ch.q}</div>`;
     if (!(k === 5 && S.phase === 'ask')) {
