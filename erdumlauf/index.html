@@ -130,7 +130,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
   background:var(--glass);border:1px solid var(--line);border-radius:14px;backdrop-filter:blur(16px) saturate(1.15);-webkit-backdrop-filter:blur(16px) saturate(1.15);overflow:hidden}
 .app.panel-hidden .panel{display:none}
 .panel,.dock,.tools>*{transition:opacity .6s}
-.app.cine .dock,.app.cine .tools>*:not(#cineBtn):not(#erklBtn):not(#fsBtn){opacity:0;pointer-events:none}
+.app.cine .dock,.app.cine .tools>*:not(#cineBtn):not(#erklBtn):not(#fsBtn):not(.lang){opacity:0;pointer-events:none}
 .cinenav .cn-fs{border-left:1px solid var(--line);border-radius:0;margin-left:2px;font-size:15px}
 .app.cine:not(.film-erkl) #erklBtn,.app.cine.film-erkl #cineBtn{opacity:0;pointer-events:none}
 .tabs{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line);flex:none}
@@ -2111,7 +2111,8 @@ document.addEventListener('click',e=>{
   else if(t.dataset.mode){if(cine.on)stopCine();sumDone=false;state.mode=t.dataset.mode;state.speedI=4;if(state.mode==='year')state.hour=12;fillSpeeds();setPlaying(true);vis()}
   else if(t.dataset.beam){state.beamRound=t.dataset.beam==='round';renderButtons()}
   else if(t.dataset.jump){if(cine.on)stopCine();sumDone=false;if(state.mode==='year')setPlaying(false);state.d=+t.dataset.jump;if(state.mode==='year')state.hour=12;vis()}
-  else if(t.dataset.lang){legKey='';setTimeout(renderCineNav,0);state.lang=t.dataset.lang;lsSet('geogym-orbit-lang',state.lang);renderStatic()}
+  else if(t.dataset.lang){legKey='';setTimeout(renderCineNav,0);const nl=t.dataset.lang,ch=nl!==state.lang;state.lang=nl;lsSet('geogym-orbit-lang',state.lang);renderStatic();$('fsBtn').textContent=immersive?L().fsExit:L().fullscreen;
+    if(ch&&cine.on&&cine.film==='erkl')goShot(cine.i)}   // explanation film: start the current chapter again in the new language
   else if(t.dataset.tab){setTab(t.dataset.tab)}
   else if(t.dataset.q){qPref=t.dataset.q;lsSet('geogym-orbit-q',qPref);if(qPref!=='auto')qCur=qPref;else{fps.drops=0}applyQuality();renderButtons()}
 });
