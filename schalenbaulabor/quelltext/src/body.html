@@ -1,0 +1,170 @@
+<div class="app" id="app">
+  <div class="stage" id="stage">
+    <div class="labels" id="labels"></div>
+    <svg class="leaders" id="leaders" aria-hidden="true"></svg>
+    <div class="pop" id="pop" role="dialog" aria-labelledby="popT" hidden>
+      <div class="ph"><div><h3 id="popT"></h3><p class="psrc" id="popSrc"></p></div><button class="x" id="popX" aria-label="Schließen">×</button></div>
+      <ul id="popList"></ul><dl class="pf" id="popFacts"></dl><button class="go" id="popGo"></button>
+    </div>
+  </div>
+
+  <header class="hud">
+    <div class="title">
+      <div class="eyebrow"><b>GEO GYM</b><span> · Der Schalenbau der Erde</span></div>
+      <h1 class="big" id="bigTitle">Erdoberfläche</h1>
+      <div class="sub" id="bigSub"><span>Tippe auf eine Schale oder starte die Reise.</span></div>
+    </div>
+    <div class="tools">
+      <button class="tbtn accent" id="tourBtn">▶ Reise zum Erdmittelpunkt</button>
+      <button class="tbtn" id="infoBtn">Hinweise &amp; Quellen</button>
+      <button class="tbtn" id="panelBtn" aria-pressed="false">Bedienfeld aus</button>
+      <button class="tbtn" id="fsBtn">Vollbild</button>
+    </div>
+  </header>
+
+  <nav class="rail" id="rail" aria-label="Ansicht und Ebenen">
+    <button class="rbtn" data-view="oblique" aria-pressed="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 12L12 3.5M12 12L19.5 15.5"/><path d="M12 3.5A8.5 8.5 0 0 1 19.5 15.5" class="f"/></svg><span>Schräg</span></button>
+    <button class="rbtn" data-view="section" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M12 3.5A8.5 8.5 0 0 1 12 20.5Z" class="f"/><path d="M12 3.5V20.5"/><path d="M12 7.5A4.5 4.5 0 0 1 12 16.5"/></svg><span>Schnitt</span></button>
+    <button class="rbtn" data-view="half" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.6"/><circle cx="12" cy="12" r="1.8" class="f"/></svg><span>Querschnitt</span></button>
+    <button class="rbtn" data-view="globe" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12H20.5M12 3.5C8 7 8 17 12 20.5M12 3.5C16 7 16 17 12 20.5"/></svg><span>Ganze Erde</span></button>
+    <i class="sep"></i>
+    <button class="rbtn" id="tLabels" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M4 7H14L19 12L14 17H4Z"/><circle cx="8" cy="12" r="1.2" class="f"/></svg><span id="tLabelsTxt">Namen</span></button>
+    <button class="rbtn" id="tFlow" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M8 19C8 12 9 9 12 5M12 5L9.2 7.2M12 5L12.8 8.5"/><path d="M16 5C16 12 17 15 19 19M19 19L15.8 17.4M19 19L19.4 15.4" class="b"/></svg><span>Strömung</span></button>
+    <button class="rbtn" id="tPlates" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M3.5 9L9 7L13 11L20.5 9M3.5 16L8 14L14 17L20.5 15M9 7L8 14M13 11L14 17"/></svg><span>Platten</span></button>
+    <button class="rbtn" id="tClouds" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M7 17.5A3.8 3.8 0 0 1 7.6 10A5 5 0 0 1 17 11.2A3.2 3.2 0 0 1 17 17.5Z"/></svg><span>Wolken</span></button>
+    <button class="rbtn" id="tField" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 9C6 3 3 9 3 12C3 15 6 21 12 15M12 9C18 3 21 9 21 12C21 15 18 21 12 15"/></svg><span>Magnetfeld</span></button>
+    <button class="rbtn" id="tAurora" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M3 16c3-6 6-6 9 0s6 6 9 0"/><path d="M3 10c3-6 6-6 9 0s6 6 9 0" opacity=".55"/></svg><span>Polarlicht</span></button>
+  </nav>
+
+  <section class="probe" id="probe" aria-label="Messwerte der Tiefensonde">
+    <div class="pc main"><span class="k">Tiefensonde</span><b id="pDepth">0 km</b></div>
+    <div class="pc lay"><span class="k">Schale</span><div><i id="pSw"></i><b id="pLayer">Erdoberfläche</b><em class="st s" id="pState">fest</em></div></div>
+    <div class="pc"><span class="k">Temperatur</span><b id="pTemp">15 °C</b><span class="bar"><i id="pTb"></i></span><small id="pBook"></small></div>
+    <div class="pc"><span class="k">Druck</span><b id="pPress">1 bar</b><span class="bar"><i id="pPb"></i></span><small id="pFac"></small></div>
+    <div class="pc"><span class="k">Dichte</span><b id="pDens">2,6 g/cm³</b><span class="bar"><i id="pDb"></i></span></div>
+    <div class="pc wave"><span class="k">Wellen (km/s)</span><b id="pWave">P 5,8 · S 3,2</b></div>
+  </section>
+
+  <section class="seis" id="seisCard" hidden>
+    <div class="pr-h"><span>Zeit seit dem Beben</span><b id="sClock">0 min</b></div>
+    <div class="srow">
+      <label class="chk"><input type="checkbox" id="sP" checked><i class="sw" style="background:#3FA9FF"></i>P-Wellen</label>
+      <label class="chk"><input type="checkbox" id="sS" checked><i class="sw" style="background:#FF62C0"></i>S-Wellen</label>
+      <button class="mini" id="sReplay">↺ Beben neu</button>
+    </div>
+    <label class="srange" for="sStation"><span>Messstation: <b id="sDeg">60°</b> vom Beben entfernt (<span id="sKm">6 670 km</span>)</span>
+      <input type="range" id="sStation" min="2" max="180" step="1" value="60"></label>
+    <canvas id="sGram" width="600" height="150" aria-label="Seismogramm der Messstation"></canvas>
+    <div class="sarr" id="sArr"></div>
+  </section>
+
+  <aside class="panel" id="panel">
+    <div class="ptabs" role="tablist">
+      <button role="tab" data-mode="explore" aria-selected="true">Erkunden</button>
+      <button role="tab" data-mode="label" aria-selected="false">Beschriften</button>
+      <button role="tab" data-mode="quiz" aria-selected="false">Quiz</button>
+      <button role="tab" data-mode="free" aria-selected="false">Frei entdecken</button>
+    </div>
+    <div class="pscroll">
+      <div id="pExplore">
+        <div class="chips" id="stChips" role="group" aria-label="Stationen"></div>
+        <div class="kicker" id="exKick">Station 0 von 7</div>
+        <h2 id="exTitle"></h2>
+        <p class="lead" id="exText"></p>
+        <div class="vbtns" id="exViews" hidden></div>
+        <dl class="facts" id="exFacts"></dl>
+        <div class="obs"><div class="kicker">Beobachte</div><p id="exObs"></p>
+          <details id="exSolD"><summary>Lösung zeigen</summary><p id="exSol"></p></details></div>
+        <p class="note" id="exNote"></p>
+        <div class="pnav"><button class="ghost" id="exPrev">← Zurück</button><button class="solid" id="exNext">Weiter →</button></div>
+      </div>
+      <div id="pLabel" hidden>
+        <div class="kicker">Aufgabe</div>
+        <h2>Beschrifte das Modell</h2>
+        <div class="seg2" role="group" aria-label="Stufe"><button data-lvl="m1" aria-pressed="true">Arbeitsblatt M1</button><button data-lvl="pro" aria-pressed="false">Profi</button></div>
+        <p class="lead small">Ziehe jeden Begriff in ein Kästchen im Modell. Oder tippe zuerst den Begriff und dann das Kästchen an. Kästchen nochmals antippen legt den Begriff zurück.</p>
+        <div class="wchips" id="chips"></div>
+        <div class="pnav"><button class="solid" id="labCheck">Prüfen</button><button class="ghost" id="labSolve">Lösung</button><button class="ghost" id="labReset">Neu</button></div>
+        <div class="fb" id="labFb" aria-live="polite"></div>
+      </div>
+      <div id="pFree" hidden>
+        <div class="kicker">Freier Modus</div>
+        <h2>Entdecke die Erde selbst</h2>
+        <p class="lead small">Drehe und zoome das Modell, wie du willst. Schalte ein, was du sehen möchtest. Tippe auf eine Schale oder eine Beschriftung für mehr Infos.</p>
+        <div class="fgrid" id="freeTog">
+          <button data-ft="labels"><b>Namen</b><span>alle Beschriftungen</span></button>
+          <button data-ft="flow"><b>Konvektion</b><span>Strömung im Mantel</span></button>
+          <button data-ft="plates"><b>Platten</b><span>Plattengrenzen</span></button>
+          <button data-ft="clouds"><b>Wolken</b><span>Wolkendecke</span></button>
+          <button data-ft="field"><b>Magnetfeld</b><span>Feldlinien</span></button>
+          <button data-ft="aurora"><b>Sonnenwind</b><span>& Polarlicht</span></button>
+        </div>
+        <div class="kicker" style="margin-top:14px">Schnitt</div>
+        <div class="seg3" id="freeCut"><button data-fc="0">Geschlossen</button><button data-fc="90">Viertel</button><button data-fc="180">Halb</button></div>
+        <div class="kicker" style="margin-top:14px">Hinfliegen</div>
+        <div class="seg3" id="freeFly"><button data-ff="lux">Luxemburg</button><button data-ff="alps">Alpen</button><button data-ff="ocean">Nordmeer</button><button data-ff="core">Erdkern</button><button data-ff="aurora">Polarlicht</button><button data-ff="globe">Weltall</button></div>
+        <p class="note">Tipp: Mit „Maßstabsgetreu“ unten siehst du die echten Dicken der Schalen. Mit dem Tempo steuerst du die Konvektion.</p>
+      </div>
+      <div id="pQuiz" hidden>
+        <div class="kicker" id="qKick">Frage 1 von 10</div>
+        <h2 id="qText"></h2>
+        <div class="opts" id="qOpts"></div>
+        <div class="pnav"><button class="solid" id="qSubmit" disabled>Antwort prüfen</button><button class="solid" id="qNext" hidden>Nächste Frage →</button></div>
+        <div class="fb" id="qFb" aria-live="polite"></div>
+      </div>
+    </div>
+  </aside>
+
+  <footer class="dock" id="dock">
+    <div class="transport">
+      <button class="play" id="bPlay" aria-label="Reise starten"><svg viewBox="0 0 24 24" id="icoPlay"><path d="M7 4.5L20 12L7 19.5Z"/></svg><svg viewBox="0 0 24 24" id="icoPause" hidden><path d="M6.5 4.5H10.5V19.5H6.5ZM13.5 4.5H17.5V19.5H13.5Z"/></svg></button>
+      <div class="seg"><button id="bPrev" aria-label="Station zurück">‹</button><button id="bNext" aria-label="Station weiter">›</button></div>
+      <select class="sel" id="speed" aria-label="Tempo"><option value="0.5">Tempo: ruhig</option><option value="1" selected>Tempo: normal</option><option value="2.2">Tempo: schnell</option></select>
+      <label class="chk"><input type="checkbox" id="stopEach" checked>An jeder Station anhalten</label>
+      <div class="seg" role="group" aria-label="Maßstab"><button data-scale="did" aria-pressed="true">Gestreckt</button><button data-scale="real" aria-pressed="false">Maßstabsgetreu</button></div>
+      <label class="cutbox">Schnitt <input type="range" id="cut" min="0" max="180" step="1" value="90"><output id="cutOut">90°</output></label>
+      <span class="scale-note" id="scaleNote">Obere Schichten gestreckt · Zeitraffer</span>
+    </div>
+    <div class="track" id="track">
+      <div class="bands" id="bands"></div>
+      <input type="range" id="depth" min="0" max="1000" step="1" value="0" aria-label="Tiefe der Sonde">
+      <div class="kms" id="kms"></div>
+    </div>
+  </footer>
+
+  <div class="sheet" id="sheet" role="dialog" aria-labelledby="sheetT" hidden>
+    <div class="sheet-in">
+      <div class="ph"><h2 id="sheetT">Hinweise und Quellen</h2><button class="x" id="sheetX" aria-label="Schließen">×</button></div>
+      <div class="cols">
+        <section><h3>Fachliche Hinweise zum Buch</h3><ul>
+          <li><b>M3, unterer Erdmantel:</b> „Dadurch steigt heißes Magma auf.“ Genauer: Es steigt festes, aber verformbares Mantelgestein auf, wenige Zentimeter pro Jahr. Magma (geschmolzenes Gestein) entsteht erst nahe der Oberfläche.</li>
+          <li><b>M1, „zähflüssig“:</b> Die Asthenosphäre ist nicht flüssig. Sie ist fest, aber plastisch verformbar (M2: „plastisch“, M5: „verformbar“).</li>
+          <li><b>M3, äußerer Kern:</b> „Eisen und Schwefel“, „wahrscheinlich flüssig“. Er besteht vor allem aus Eisen mit Nickel und leichten Stoffen wie Schwefel und Sauerstoff. Dass er flüssig ist, gilt durch die S-Wellen als gesichert.</li>
+          <li><b>Abbildung „Schalenbau der Erde“ (Nr. 2):</b> „flüssiger Kern 2900–6200“ passt nicht zu M5. Die Grenze zum festen inneren Kern liegt bei ca. 5150 km.</li>
+          <li><b>Grenzen:</b> M5 nennt 700 km für die Grenze oberer/unterer Mantel, genauer sind es 660 km. Die Asthenosphäre wird je nach Buch mit 100–300 oder 100–400 km angegeben. Ihre Grenzen sind unscharf.</li>
+          <li><b>Temperaturen:</b> Die Sonde zeigt heutige Abschätzungen und daneben den Wert aus M5. Im Mantel liegen die heutigen Werte höher (Unterseite der Lithosphäre ca. 1300 °C, Grenze zum Kern ca. 3700 °C). Im Kern sind die Angaben auf einige hundert Grad unsicher.</li>
+        </ul></section>
+        <section><h3>So ist das Modell vereinfacht</h3><ul>
+          <li><b>Gestreckt:</b> Kruste, Lithosphäre und Asthenosphäre sind stark überhöht gezeichnet, auch die Gebirge. „Maßstabsgetreu“ zeigt die echten Verhältnisse.</li>
+          <li><b>Mantelkonvektion:</b> live gerechnet, aber nur in der Schnittebene (2D), mit überall gleich zähem Gestein und stark gerafft. Die Temperaturunterschiede sind überzeichnet. Die echte Erde ist dreidimensional, ihre Platten sind starr.</li>
+          <li><b>Kruste und Lithosphäre:</b> Dicken aus dem Erdmodell LITHO1.0 (Raster ca. 100 km, geglättet). Örtlich kann die wahre Dicke um einige Kilometer abweichen. Gebirgswurzeln sind nach dem Schwimmgleichgewicht ergänzt. Die Gesteinsbilder sind schematisch.</li>
+          <li><b>Äußerer Kern:</b> Die Strömung ist nur angedeutet. In Wirklichkeit fließt das Eisen dort rund eine Million Mal schneller als das Mantelgestein.</li>
+          <li><b>Erdbebenwellen:</b> berechnet mit PREM, einer überall gleich geschichteten Erde. Gezeigt sind nur direkte Wellen, das Beben liegt zur Vereinfachung am Nordpol.</li>
+          <li><b>Magnetfeld und Sonnenwind:</b> Das Feld ist wie ein geneigter Stabmagnet gezeichnet (Neigung ca. 9° wie heute). Der Sonnenwind drückt es auf der Sonnenseite zusammen und zieht es auf der Nachtseite zum Schweif. Die Magnetopause liegt in Wirklichkeit bei ca. 10 Erdradien, der Schweif ist hunderte Erdradien lang; im Modell ist alles stark verkleinert. Die Polarlichter sind höher gezeichnet als in Wirklichkeit (100–300 km).</li>
+          <li><b>Lithosphäre unter der Antarktis:</b> Das Erdmodell LITHO1.0 gibt unter der Ostantarktis bis ca. 280 km an. Neuere Messungen liegen eher bei ca. 150–220 km; im Labor ist die Dicke dort auf höchstens ca. 210 km gedämpft. Unter der Westantarktis ist die Lithosphäre dünn (ca. 50–100 km).</li>
+        </ul></section>
+        <section><h3>Quellen</h3><ul>
+          <li>Buch (Westermann): M1 bis M5 zum Schalenbau der Erde. Alle Texte im Labor sind sinngemäß neu formuliert.</li>
+          <li>Dziewonski &amp; Anderson (1981): Preliminary Reference Earth Model (PREM). Dichte, Druck, Wellengeschwindigkeiten.</li>
+          <li>Pasyanos, Masters, Laske &amp; Ma (2014): LITHO1.0; Laske u. a. (2013): CRUST1.0. Dicke von Kruste und Lithosphäre.</li>
+          <li>Bird (2003): Plattenmodell PB2002. Plattengrenzen.</li>
+          <li>Katsura u. a. (2010) und Anzellini u. a. (2013): Temperaturen in Mantel und Kern.</li>
+          <li>NASA Blue Marble: Erdkarte, Wolken und Relief (wie im Erdumlauf-Labor).</li>
+        </ul></section>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="veil" id="veil"><div><b>Schalenbau der Erde</b><span id="veilTxt">Erdkarte und Messdaten werden geladen …</span></div></div>
+  <div id="diag" hidden><b>Darstellung – Hinweise</b><ul></ul></div>
+</div>
