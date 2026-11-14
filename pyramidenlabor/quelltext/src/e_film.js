@@ -169,7 +169,7 @@ function init(){
   // Gibt es Aufnahmen neben der Seite (audio/de_k01.mp3 …)? Einmal vorab nachsehen, damit der Klick auf „Erklärfilm“ sofort die Browserstimme startet
   if(/^https?:/.test(location.protocol))for(const l of['de','fr'])fetch('audio/'+l+'_k01.mp3',{method:'HEAD'}).then(r=>{if(!r.ok)FILM.noAudio[l]=true}).catch(()=>{FILM.noAudio[l]=true});
   if(S.pres)setPres(true,true);
-  applyTheme(S.theme);applyLang();goStation(0);resize();flyTo(S.view,0);fig.p=S.pstage;fig.snap=true;
+  applyTheme(S.theme);applyLang();goStation(0);if(S.pres)presStart();resize();flyTo(S.view,0);fig.p=S.pstage;fig.snap=true;
   wake(3000);
   setTimeout(()=>{$('veil').classList.add('done');window.__ready=true},350);setTimeout(()=>{$('veil').hidden=true},1400);
   if(TOUCH&&!S.pres&&!lsGet('geogym-pyr-prestip')){lsSet('geogym-pyr-prestip','1');setTimeout(()=>toast(T('presTip')),2200)}}

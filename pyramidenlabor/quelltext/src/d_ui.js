@@ -83,9 +83,12 @@ $('panelBtn').addEventListener('click',()=>{app.classList.toggle('panel-hidden')
 $('fsBtn').addEventListener('click',()=>{const d=document;if(d.fullscreenElement){d.exitFullscreen&&d.exitFullscreen()}else{const p=app.requestFullscreen&&app.requestFullscreen();if(p&&p.catch)p.catch(()=>{})}});
 document.querySelector('.lang').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.lang!==S.lang){S.lang=b.dataset.lang;lsSet('geogym-pyr-lang',S.lang);applyLang()}});
 /* Vorführmodus: iPad am Beamer oder Fernseher – große Schrift, große Touch-Flächen, Bedienfeld eingeklappt, sparsam */
+// Vorführmodus startet immer gleich: Ansicht „Diagramm“, Luxemburg, erstes Jahr im blauen Bereich der Zeitleiste (Schätzung der UN)
+function presStart(){const c=DATA.by.LU;let y=c.y0;while(y<c.y1&&kindOf(c,y)!=='est')y++;
+  goStation(STATIONS.length-1);setS({c:'LU',view:'front',people:false,rates:false,cmp:null,cohort:null,year:y},true);flyTo('front',0)}
 function setPres(on,quiet){S.pres=on;lsSet('geogym-pyr-pres',on?'1':'0');app.classList.toggle('pres',on);if(on)app.classList.add('panel-hidden');
   applyTheme(S.theme);chartColors();drawChart.k=null;wakeLock(on);syncUI();resize();buildTimeline();if(!quiet){if(VIEWS[S.view])flyTo(S.view,.6);toast(T(on?'presOn':'presOff'))}}
-$('presBtn').addEventListener('click',()=>setPres(!S.pres));
+$('presBtn').addEventListener('click',()=>{const on=!S.pres;setPres(on);if(on)presStart()});
 $('themeBtn').addEventListener('click',()=>{applyTheme(S.theme==='dark'?'light':'dark');chartColors();drawChart.t=null;syncUI()});
 $('chX').addEventListener('click',()=>setS({rates:false}));
 $('chMode').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setS({chartMode:b.dataset.cm})});
