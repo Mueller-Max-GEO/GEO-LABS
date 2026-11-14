@@ -665,7 +665,7 @@ function eqDir(raDeg,decDeg,out){const ra=raDeg*DEG,dec=decDeg*DEG;const x=Math.
 
 /* ---------- state ---------- */
 const now=new Date(); const todayD=Math.floor((Date.UTC(now.getFullYear(),now.getMonth(),now.getDate())-Date.UTC(now.getFullYear(),0,1))/864e5);
-const state={topic:'orbit',emode:'day',tilt0:false,beamRound:true,d:Math.min(todayD,364)+0.5,hour:12,playing:!reduce,mode:'year',speedI:4,exag:false,place:'lux',view:'tilt',lang:'de',tab:'data',
+const state={topic:'orbit',emode:'day',tilt0:false,beamRound:true,d:Math.min(todayD,364)+0.5,hour:12,playing:!reduce,mode:'both',speedI:1,exag:false,place:'lux',view:'tilt',lang:'de',tab:'data',
   show:{beam:true,tiltAngle:true,orbit:true,months:true,events:true,axis:true,lat:true,rays:false,plane:true,place:false,clouds:true,constell:false,borders:true,zones:false,daycircle:false,ghosts:false,snow:true,insol:false,aurora:true,moon:false}};
 function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
@@ -1984,7 +1984,7 @@ function buildTimeline(){
 const TOPICS=['orbit','axis','sun','day','energy']; let dayAuto=null;
 const BASE_SHOW={orbit:true,months:true,events:true,plane:true,axis:true,clouds:true,borders:true,constell:false,tiltAngle:false,lat:false,beam:false,rays:false,place:false,ghosts:false,daycircle:false,zones:false,snow:true,insol:false,aurora:true,moon:false};
 const TOPIC_SET={
-  orbit:{view:'tilt',mode:'year',speedI:4,show:{}},
+  orbit:{view:'tilt',mode:'both',speedI:1,show:{}},
   axis:{view:'tilt',mode:'year',speedI:3,show:{ghosts:true,tiltAngle:true}},
   sun:{view:'follow',mode:'year',speedI:3,show:{beam:true,lat:true,place:true}},
   day:{view:'daylen',mode:'day',speedI:4,show:{daycircle:true,place:true,rays:true,orbit:false,months:false,events:false,aurora:false}},
