@@ -69,7 +69,7 @@ a.card:hover,a.card:focus-visible{border-color:var(--ice);outline:none}
 const T={
 de:{eyebrow:"Geographie · interaktive Übungen",lead:"Modelle und Übungen, die direkt im Browser laufen. Wähle eine Übung.",
  t1:"Glaziologie · 3D-Modell",h1:"Gletscherlabor Hintereisferner",p1:"Schnee, Firn und Eis im Zeitraffer und im Jahreslauf. Gleichgewichtslinie, Gletscherspalten und Moränen, mit Reglern für Temperatur und Niederschlag.",
- t2:"Endogene Kräfte · 3D-Modell",h2:"Tsunami-Labor",p2:"Vom Verhaken der Platten über das Seebeben bis zur Überflutung der Küste. Fünf Phasen, Querschnitt, Messkarte und Vorhersage-Modus.",
+ t2:"Endogene Kräfte · 3D-Modell",h2:"Tsunami-Labor",p2:"Vom Verhaken der Platten über das Seebeben bis zur Überflutung der Küste und zum Rückstrom. Berechnetes Wasser, fünf Phasen, Erklärfilm, Querschnitt, Messkarte und Vorhersage-Modus.",
  t3:"Erde im Sonnensystem · 3D-Modell",h3:"Erdumlauf-Labor",p3:"Erdrevolution, schiefe Erdachse, Tageslänge, Einfallswinkel, Wendekreise und Beleuchtungszonen. Mit Kinoflug und Erklärfilm mit Sprecherstimme.",
  t4:"Bevölkerung · 3D-Modell",h4:"Pyramiden-Labor",p4:"Bevölkerungsdiagramme lesen und einordnen: Luxemburg seit 1880 und 15 weitere Länder bis 2100, Pyramide, Glocke und Urne, Jahrgänge, demografischer Übergang. Mit Erklärfilm, Quiz und Vorführmodus.",
  t5:"Wetter und Klima · 3D-Modell",h5:"Föhn-Labor",p5:"Vereinfachtes thermodynamisches Föhnmodell: Aufstieg im Luv, Kondensationsniveau, Stauwolke und Niederschlag, warmer und trockener Fallwind im Lee. Schritt für Schritt, Experimentieren, Rechenmodus und Vorführmodus.",
@@ -88,9 +88,11 @@ en:{eyebrow:"Geography · interactive exercises",lead:"Models and exercises that
  t2:"Endogenic forces · 3D model",h2:"Tsunami Lab",p2:"From locked plates to the undersea earthquake and the flooding of the coast. Five phases, cross-section, measurement map and prediction mode.",
  t3:"Earth in the solar system · 3D model",h3:"Earth Orbit Lab",p3:"Earth's revolution, tilted axis, day length, angle of incidence, tropics and lighting zones. With cinematic flight and an explainer film with narration.",
  t4:"Population · 3D model",h4:"Population Pyramid Lab",p4:"Read and interpret population charts: Luxembourg since 1880 and 15 more countries up to 2100, pyramid, bell and urn shapes, age cohorts, demographic transition. With explainer film, quiz and presentation mode.",
- t5:"Weather and climate · 3D model",h5:"Foehn Lab",p5:"Simplified thermodynamic foehn model (German interface): rising air on the windward side, condensation level, cloud and precipitation, warm dry wind on the lee side."}};
+ t5:"Weather and climate · 3D model",h5:"Foehn Lab",p5:"Simplified thermodynamic foehn model (German interface): rising air on the windward side, condensation level, cloud and precipitation, warm dry wind on the lee side.",
+ t6:"Endogenic forces · 3D model",h6:"Earth's Layers Lab",p6:"Journey to the centre of the Earth (German interface): the crust from measured data in a cross-section through Luxembourg, live-computed mantle convection, a depth probe with temperature and pressure, seismic waves and shadow zones, magnetic field, solar wind and aurora.",
+ t7:"Endogenic forces · 3D model",h7:"San Andreas Lab",p7:"A transform fault in 3D with real terrain (German interface): from Luxembourg to California, sliding or locking, stress build-up, earthquakes and the offset Wallace Creek. Also works offline on the iPad."}};
 const $$=s=>document.querySelectorAll(s);
-function setLang(l){document.documentElement.lang=l;$$('[data-k]').forEach(e=>e.textContent=T[l][e.dataset.k]);$$('.lang button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.lang===l));try{localStorage.setItem('geogym-orbit-lang',l)}catch(e){}}
+function setLang(l){document.documentElement.lang=l;$$('[data-k]').forEach(e=>e.textContent=T[l][e.dataset.k]??T.de[e.dataset.k]??e.textContent);$$('.lang button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.lang===l));try{localStorage.setItem('geogym-orbit-lang',l)}catch(e){}}
 let cur='de';try{const s=localStorage.getItem('geogym-orbit-lang');if(s&&T[s])cur=s;else{const n=(navigator.language||'de').slice(0,2);if(T[n])cur=n}}catch(e){}
 $$('.lang button').forEach(b=>b.onclick=()=>setLang(b.dataset.lang));setLang(cur);
 </script>
