@@ -405,7 +405,8 @@ const PHOTOS={
   sf:[{src:'fotos/sf.jpg',t:'San Francisco: die Innenstadt, vom Twin Peaks aus gesehen. Dahinter die Bucht von San Francisco.',c:'Foto: Peter Kaminski · CC BY 2.0 · Wikimedia Commons'},
       {src:'fotos/ggb.jpg',t:'Die Golden Gate Bridge an der Einfahrt zur Bucht von San Francisco.',c:'Foto: Rich Niewiroski Jr. · CC BY 2.5 · Wikimedia Commons'}],
   la:[{src:'fotos/la.jpg',t:'Los Angeles: die Hochhäuser der Innenstadt, dahinter die verschneiten San Gabriel Mountains.',c:'Foto: Nserrano · CC BY-SA 3.0 · Wikimedia Commons'},
-      {src:'fotos/hollywood.jpg',t:'Das Hollywood-Schild in den Hollywood Hills von Los Angeles.',c:'Foto: Thomas Wolf, www.foto-tw.de · CC BY-SA 3.0 · Wikimedia Commons'}],
+      {src:'fotos/hollywood.jpg',t:'Das Hollywood-Schild in den Hollywood Hills von Los Angeles.',c:'Foto: Thomas Wolf, www.foto-tw.de · CC BY-SA 3.0 · Wikimedia Commons'},
+      {src:'fotos/venice.jpg',t:'Venice Beach in Los Angeles: breiter Sandstrand am Pazifik, Skatepark und Palmen.',c:'Foto: Carol M. Highsmith · gemeinfrei (Library of Congress) · Wikimedia Commons'}],
   sierra:[{src:'fotos/sierra.jpg',t:'Sierra Nevada: das Yosemite-Tal mit seinen Granitwänden (links El Capitan, rechts der Bridalveil-Wasserfall).',c:'Foto: David Iliff · CC BY-SA 3.0 · Wikimedia Commons'}],
   saf:[{src:'fotos/saf.jpg',t:'Die San-Andreas-Verwerfung in der Carrizo-Ebene aus dem Flugzeug: Die Verwerfung zieht als gerade Linie durch die Landschaft. Bäche, die sie kreuzen, knicken an ihr ab – wie der Wallace Creek.',c:'Foto: Ian Kluft · CC BY-SA 4.0 · Wikimedia Commons'}]};
 const LBX={el:$('lbox'),img:$('lbImg'),t:$('lbT'),c:$('lbC'),dots:$('lbDots'),msg:$('lbMsg'),key:null,i:0,wasPlaying:false};
