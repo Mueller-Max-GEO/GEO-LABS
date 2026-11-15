@@ -8,7 +8,7 @@ const lerp=(a,b,u)=>a+(b-a)*u;
 const sstep=(a,b,x)=>{ const u=clamp((x-a)/(b-a),0,1); return u*u*(3-2*u); };
 
 /* Zeitleiste (Sekunden der Animation bei Tempo 1×) */
-const TG=6, T0=TG+8, T1=T0+10, T2=T1+16, T3=T2+26, T4=T3+28, TEND=T4;
+const TG=10, T0=TG+8, T1=T0+10, T2=T1+16, T3=T2+26, T4=T3+28, TEND=T4;
 const PH_T=[[TG,T0],[T0,T1],[T1,T2],[T2,T3],[T3,T4]];
 const phaseAt=t=>t<T0?0:(t<T1?1:(t<T2?2:(t<T3?3:4)));
 const scaleOfPhase=p=>p===0?'W':(p===1?'A':(p===4?'C':'B'));

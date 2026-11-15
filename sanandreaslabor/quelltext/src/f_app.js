@@ -96,7 +96,7 @@ function update(){
   if(AX.simple){ const all=state.lvl==='all'&&!state.film; AX.simple.forEach(m=>m.visible=!all); AX.line.visible=AX.dark.visible=BX.south.visible=BX.southDark.visible=all; }
   /* --- Erdkugel: von Luxemburg nach Kalifornien drehen --- */
   if(shown==='G'&&!pendingScale&&(state.film||(state.autoCam&&state.view==='oblique'))&&!tween&&lastGT!==t){ lastGT=t; const [lo,la,gd]=GLON(t); CAMS.g_t=gpose(lo,la,gd); const a=camPose('g_t'); camera.position.copy(a.p1); controls.target.copy(a.t1); needsRender=true; }
-  if(GX.atm){ const k=clamp((camera.position.length()/RG-2.15)/0.4,0,1); GX.atm.uniforms.uA.value=k; GX.mat.uniforms.uSpec.value=k; }
+  if(GX.atm){ const k=clamp((camera.position.length()/RG-2.15)/0.4,0,1); GX.atm.uniforms.uA.value=k; GX.mat.uniforms.uSpec.value=0.35*clamp((camera.position.length()/RG-3.4)/0.6,0,1); }
   if(GX.mat) GX.mat.uniforms.uSun.value.copy(camera.position).normalize().applyAxisAngle(new THREE.Vector3(0,1,0),-0.5).add(new THREE.Vector3(0,0.35,0)).normalize();
   /* --- Regionalmodell --- */
   { const U=UNI.B, S=SCL.B, kx=S.k*XB; let F=0,S0=0,S1=0,front=1e9,tense=0,glow=0,waveR=-10,waveA=0,waveT=0;
@@ -197,7 +197,7 @@ function updateChart(ph){ if(!CD) return; const c=$('cCur'); if(!c) return; let 
 const NORTH=[0.743,0.669];
 const topCam=(tx,tz,h)=>({p:[tx-NORTH[0]*h*0.04,h,tz-NORTH[1]*h*0.04],t:[tx,0,tz]});
 const gpose=(lo,la,dist,tgt=0)=>{ const d=gdir(lo,la); return {p:d.clone().multiplyScalar(RG*dist).toArray(),t:d.clone().multiplyScalar(RG*tgt).toArray()}; };
-const GLON=t=>{ const u=sstep(0.9,TG-1.8,t); return [lerp(6,-119.4,u),lerp(48,37.3,u),1.75+(3.6-1.75)*sstep(0.3,1.9,t)-(3.6-1.42)*sstep(TG-2.9,TG-0.3,t)]; };
+const GLON=t=>{ const u=sstep(1.2,TG-2.6,t); return [lerp(6,-119.4,u),lerp(48,37.3,u),1.75+(3.6-1.75)*sstep(0.4,3.2,t)-(3.6-1.42)*sstep(TG-4.6,TG-0.4,t)]; };
 const CAMS={
   g_eu:gpose(6,48,1.75), g_ca:gpose(-119.4,37.3,1.42), g_t:gpose(6,48,1.75), g_top:gpose(-119.4,37.3,1.42), g_near:gpose(-119.5,36.8,1.12,1),
   w_top:topCam(0,0.6,36), w_obl:{p:[-11.5,17,-19],t:[0.2,0,1.4]}, w_low:{p:[-24,4.5,-2],t:[0,0,0.8]}, w_zoom:{p:[-3.2,6.2,-6.5],t:[1.0,0,0.6]}, w_south:{p:[-15,7,-8.5],t:[-7.5,0,0.5]}, w_north:{p:[1.5,6.5,-8.5],t:[6.5,0,2.4]},

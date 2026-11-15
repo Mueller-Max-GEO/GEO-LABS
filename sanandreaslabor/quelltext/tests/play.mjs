@@ -8,19 +8,19 @@ await p.waitForFunction(()=>window.__sa&&window.__sa.ready(),null,{timeout:12000
 const log=[]; const snap=tag=>p.evaluate(tag=>({tag,t:+window.__sa.state.t.toFixed(2),pl:window.__sa.state.playing,title:document.getElementById('clockTitle').textContent,time:document.getElementById('clockTime').textContent,m:document.getElementById('meterLab').textContent+' | '+document.getElementById('meterTxt').textContent,sh:window.__sa.cur().shown,h:document.getElementById('exTitle').textContent}),tag);
 const stopped=()=>p.waitForFunction(()=>!window.__sa.state.playing&&!document.getElementById('fade').classList.contains('on'),null,{timeout:240000});
 // 1) Abspielen bis zum Halt am Ende jeder Phase (Start jeweils kurz vor dem Ende)
-for(const t of [5.6,13.6,23.6,39.6,65.6,93.6]){ await p.evaluate(t=>window.__sa.setTime(t),t); await p.waitForTimeout(700); await p.click('#bPlay'); await stopped(); log.push(await snap('halt')); }
+for(const t of [9.6,17.6,27.6,43.6,69.6,97.6]){ await p.evaluate(t=>window.__sa.setTime(t),t); await p.waitForTimeout(700); await p.click('#bPlay'); await stopped(); log.push(await snap('halt')); }
 // 2) Tasten
 await p.keyboard.press('2'); await p.waitForTimeout(1500); log.push(await snap('Taste 2')); await p.keyboard.press('Space'); await p.waitForTimeout(300);
 await p.keyboard.press('ArrowRight'); await p.waitForTimeout(1500); log.push(await snap('Pfeil rechts')); await p.click('#bPlay'); await p.waitForTimeout(200);
 await p.click('#bReset'); await p.waitForTimeout(1200); log.push(await snap('Zurücksetzen'));
 // 3) Ansichten und Schalter in jedem Maßstab
-for(const t of [3,10,20,30,50,80]){ await p.evaluate(t=>window.__sa.setTime(t),t); await p.waitForTimeout(600);
+for(const t of [3,14,24,34,54,84]){ await p.evaluate(t=>window.__sa.setTime(t),t); await p.waitForTimeout(600);
   for(const v of ['top','section','near','oblique']){ await p.click(`[data-view=${v}]`); await p.waitForTimeout(250); } }
 await p.click('#bPanel'); await p.waitForTimeout(300); await p.click('#tab-view'); for(const id of ['tArrows','tLines','tFault','tCreek','tShake','tCam','stopEach']){ await p.click('#'+id); await p.waitForTimeout(120); await p.click('#'+id); }
 for(const v of ['all','off','imp']){ await p.click(`input[name=lvl][value=${v}]`,{force:true}); await p.waitForTimeout(300); }
 await p.click('#zin'); await p.click('#zout'); await p.click('#bPanel'); await p.waitForTimeout(300); await p.click('#bPanel');
 // 4) Vergleich „gleichmäßig gleiten“
-await p.click('#tab-ex'); await p.evaluate(()=>window.__sa.setMode('creep',true)); for(const t of [20,30,50,80]){ await p.evaluate(t=>window.__sa.setTime(t),t); await p.waitForTimeout(900); log.push(await snap('Vergleich')); }
+await p.click('#tab-ex'); await p.evaluate(()=>window.__sa.setMode('creep',true)); for(const t of [24,34,54,84]){ await p.evaluate(t=>window.__sa.setTime(t),t); await p.waitForTimeout(900); log.push(await snap('Vergleich')); }
 await p.evaluate(()=>window.__sa.setMode('lock',true));
 // 5) Erklärfilm: jede Einstellung kurz anspielen, Ende erreichen
 await p.click('#bFilm'); await p.waitForTimeout(500);
