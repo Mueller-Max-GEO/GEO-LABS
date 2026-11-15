@@ -341,6 +341,9 @@ function buildBounds(){
   const runs=(pts,ok)=>{ const out=[]; let cur=[]; for(const q of pts){ if(ok(q)) cur.push(q); else { if(cur.length>1) out.push(cur); cur=[]; } } if(cur.length>1) out.push(cur); return out; };
   const CH=boundChains(BD); BX.chains=CH;
   drawChains('W',CH,inW,lw('W'),0.04,26e3,70e3);
+  /* Staatsgrenze USA – Mexiko: dünn, weiß gestrichelt (keine Plattengrenze) */
+  { const P=densify([[-393234, -23076], [-526399, 159723], [-540191, 136659], [-866114, 326077], [-1035240, 541337], [-995262, 571873], [-1091737, 700400], [-1140356, 703952], [-1278738, 746890], [-1378679, 735216], [-1465363, 739894], [-1530422, 772863], [-1533006, 825794], [-1494991, 870442], [-1566071, 978087], [-1671374, 997467], [-1767051, 975738], [-1888692, 992428], [-2012077, 959564], [-2091863, 1006461], [-2172126, 1099195]],4e3), ok=P.map(inW); const seg=Math.round(36e3/4e3), gap=Math.round(22e3/4e3);
+    for(let i=0;i+1<P.length;i+=seg+gap){ const b=Math.min(P.length-1,i+seg); if(ok[i]&&ok[b]) chainRibbon('W',P,3.4e3,0.045,0xF4F6F8,5,i,b,false).material.opacity=0.9; } }
   /* Ausschnitt Kalifornien auf der Übersicht */
   const A=SCL.A, cs=[[A.bs0,A.bw0],[A.bs1,A.bw0],[A.bs1,A.bw1],[A.bs0,A.bw1],[A.bs0,A.bw0]], rp=[];
   for(let e=0;e<4;e++)for(let i=0;i<=30;i++){ const s=lerp(cs[e][0],cs[e+1][0],i/30), w=lerp(cs[e][1],cs[e+1][1],i/30); rp.push(new THREE.Vector3(W.X(s),W.Y(s,w)+0.05,W.Z(w))); }

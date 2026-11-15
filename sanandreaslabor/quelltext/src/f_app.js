@@ -9,7 +9,8 @@ const PHN=()=>st.ph+1;
 /* ===================== Beschriftungen ===================== */
 function buildLabels(){
   { const face=(lo,la)=>()=>{ if(shown!=='G') return false; const v=gdir(lo,la), c=camera.position.clone().normalize(); return v.dot(c)>0.25; };
-    addLabel('Luxemburg<small>hier sind wir</small>','k',()=>GP(6.13,49.61,0.01),[0],{prio:9,cond:face(6.13,49.61)});
+    addLabel('USA','country',()=>WP('W',-800e3,700e3,0.1),[1],{prio:6,point:false}); addLabel('Mexiko','country',()=>WP('W',-1500e3,450e3,0.1),[1],{prio:6,point:false});
+  addLabel('Luxemburg<small>hier sind wir</small>','k',()=>GP(6.13,49.61,0.01),[0],{prio:9,cond:face(6.13,49.61)});
     addLabel('Kalifornien (USA)','k',()=>GP(-119.2,36.6,0.01),[0],{prio:9,cond:()=>face(-119.2,36.6)()&&state.t>TG*0.45});
     addLabel('Nordamerika','plate',()=>GP(-100,45,0.01),[0],{point:false,prio:()=>state.film?7:5,cond:face(-100,45)});
     addLabel('Europa','plate',()=>GP(15,52,0.01),[0],{point:false,prio:()=>state.film?7:5,cond:face(15,52)});

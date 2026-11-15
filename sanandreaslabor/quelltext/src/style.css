@@ -367,3 +367,5 @@ button,[role=tab],.tick,label,.seg button{touch-action:manipulation;-webkit-tap-
 .lbox.multi .lb-btn{display:flex}
 .lb-prev{left:max(10px,env(safe-area-inset-left))}.lb-next{right:max(10px,env(safe-area-inset-right))}
 .lb-btn:hover,.lb-x:hover{background:rgba(40,52,64,.9)}
+
+.lab.country{background:none;border:0;box-shadow:none;color:#F4F6F8;font-size:13px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;text-shadow:0 1px 3px #000,0 0 8px #000}.lab.country::before{display:none}
