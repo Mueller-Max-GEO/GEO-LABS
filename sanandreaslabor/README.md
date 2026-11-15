@@ -23,5 +23,6 @@ Der Quelltext liegt in `quelltext/` (`npm install`, dann `python3 build.py`; Off
 Die Rohdaten (Kachelaufnahmen, Höhenmodelle) liegen nicht im Repository; `src/a_data.js` enthält die fertig
 aufbereiteten Gelände- und Bilddaten.
 
+Fotos (Wikimedia Commons): Peter Kaminski (CC BY 2.0), Rich Niewiroski Jr. (CC BY 2.5), Nserrano (CC BY-SA 3.0), Thomas Wolf www.foto-tw.de (CC BY-SA 3.0), David Iliff (CC BY-SA 3.0), Ian Kluft (CC BY-SA 4.0); verkleinert und zugeschnitten.
 Datenquellen: USGS 3DEP und Luftbilder (USGSImageryOnly, NAIP Plus), NOAA DEM Global Mosaic, NASA Blue Marble,
 PB2002 (Bird 2003), us-atlas (Natural Earth), Wikimedia Commons (Stadtfotos). three.js (MIT).

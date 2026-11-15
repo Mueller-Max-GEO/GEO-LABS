@@ -5,6 +5,13 @@
     <div id="labels" aria-hidden="true"></div>
   </div>
   <div class="fade" id="fade"></div>
+  <div class="lbox" id="lbox" role="dialog" aria-modal="true" aria-label="Foto" hidden>
+    <div class="lb-stage"><img id="lbImg" alt=""><p class="lb-msg" id="lbMsg"></p></div>
+    <button class="lb-btn lb-prev" id="lbPrev" type="button" aria-label="Vorheriges Foto">‹</button>
+    <button class="lb-btn lb-next" id="lbNext" type="button" aria-label="Nächstes Foto">›</button>
+    <button class="lb-x" id="lbClose" type="button" aria-label="Foto schließen">✕</button>
+    <div class="lb-cap"><div class="lb-dots" id="lbDots"></div><p id="lbT"></p><small id="lbC"></small></div>
+  </div>
   <canvas class="xfade" id="xfade" aria-hidden="true"></canvas>
 
   <header class="hud">
@@ -201,7 +208,8 @@
         <li><a href="https://central.scec.org/node/4080" target="_blank" rel="noopener">Zielke u. a. (2010)</a>: Slip in the 1857 and earlier large earthquakes along the Carrizo Plain. Science 327.</li>
         <li>Rechenmodell: Reid (1910), elastischer Rückprall; Savage &amp; Burford (1973), Verformung an einer verhakten Verwerfung.</li>
         <li>Höhendaten: USGS 3D Elevation Program (3DEP); NOAA NCEI, ETOPO / DEM Global Mosaic (mit Meeresboden). Luft- und Satellitenbilder: USGS The National Map („USGS Imagery Only“, „NAIP Plus“).</li>
-        <li>Fotos San Francisco und Los Angeles: Wikimedia Commons („San_Francisco_01.jpg“, „Downtown_Los_Angeles_Skyline.jpg“).</li>
+        <li>Fotos (Wikimedia Commons, bearbeitet: verkleinert, zugeschnitten): San Francisco – Peter Kaminski, „Downtown San Francisco - March 2013“, CC BY 2.0; Golden Gate Bridge – Rich Niewiroski Jr., „GoldenGateBridge-001“, CC BY 2.5; Los Angeles – Nserrano, „LA Skyline Mountains2“, CC BY-SA 3.0; Hollywood-Schild – Thomas Wolf (www.foto-tw.de), „Hollywood Sign (Zuschnitt)“, CC BY-SA 3.0; Sierra Nevada – David Iliff, „Tunnel View, Yosemite Valley, Yosemite NP“, CC BY-SA 3.0; San-Andreas-Verwerfung – Ian Kluft, „Kluft-photo-Carrizo-Plain-Nov-2007“, CC BY-SA 4.0.</li>
+        <li>Erdkugel: Bilder aus dem Erdumlauf-Labor (NASA Blue Marble, Europa in hoher Auflösung).</li>
         <li>Satellitenbild Blue Marble Next Generation: NASA Earth Observatory, über NASA GIBS (gemeinfrei).</li>
         <li>Plattengrenzen: Bird, P. (2003): An updated digital model of plate boundaries. Geochemistry, Geophysics, Geosystems 4 (PB2002).</li>
         <li><a href="https://pubs.usgs.gov/publication/fs20253013" target="_blank" rel="noopener">USGS Fact Sheet 2025-3013</a>: Mendocino-Tripelpunkt und Cascadia.</li>

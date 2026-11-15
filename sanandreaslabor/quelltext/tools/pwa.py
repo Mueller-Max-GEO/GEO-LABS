@@ -15,10 +15,13 @@ if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostn
 """
 html=html.replace('</body>',reg+'</body>',1) if '</body>' in html else html+reg
 (OUT/'index.html').write_text(html,encoding='utf8')
+FOT=sorted(p.name for p in pathlib.Path('/home/claude/sa2/data/photos').glob('*.jpg')); (OUT/'fotos').mkdir(exist_ok=True)
+for n in FOT: shutil.copy('/home/claude/sa2/data/photos/'+n, OUT/'fotos'/n)
+ver=hashlib.sha1((html+''.join(FOT)).encode()).hexdigest()[:10]
 FONT='https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;500&family=Atkinson+Hyperlegible+Next:wght@400;500;700&display=swap'
 sw="""/* San-Andreas-Labor – Offline-Speicher. Version: %s */
 const CACHE='sal-%s';
-const CORE=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
+const CORE=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png',%s];
 self.addEventListener('install',e=>{ e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>caches.open(CACHE)).then(c=>fetch(%s,{mode:'no-cors'}).then(r=>c.put(%s,r)).catch(()=>{})).then(()=>self.skipWaiting())); });
 self.addEventListener('activate',e=>{ e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith('sal-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())); });
 /* Zuerst aus dem Speicher (schnell, offline), im Hintergrund aktualisieren */
@@ -28,7 +31,7 @@ self.addEventListener('fetch',e=>{ const r=e.request; if(r.method!=='GET') retur
   e.respondWith(caches.open(CACHE).then(async c=>{ const hit=await c.match(key,{ignoreSearch:own});
     const net=fetch(r).then(res=>{ if(res&&(res.ok||res.type==='opaque')) c.put(key,res.clone()); return res; }).catch(()=>null);
     if(hit){ e.waitUntil(net); return hit; } const res=await net; return res||new Response('Offline – bitte einmal mit Internet öffnen.',{status:503,headers:{'Content-Type':'text/plain; charset=utf-8'}}); })); });
-"""%(ver,ver,json.dumps(FONT),json.dumps(FONT))
+"""%(ver,ver,",".join(json.dumps("./fotos/"+n) for n in FOT),json.dumps(FONT),json.dumps(FONT))
 (OUT/'sw.js').write_text(sw,encoding='utf8')
 man={"name":"San-Andreas-Labor","short_name":"San Andreas","description":"Transformstörung, Spannung und Erdbeben an der San-Andreas-Verwerfung – 3D-Modell mit echtem Gelände.","lang":"de","start_url":"./","scope":"./","display":"fullscreen","orientation":"any","background_color":"#04060A","theme_color":"#04060A",
  "icons":[{"src":"icon-192.png","sizes":"192x192","type":"image/png"},{"src":"icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]}

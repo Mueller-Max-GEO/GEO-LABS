@@ -16,7 +16,7 @@ await p.click('#bReset'); await p.waitForTimeout(1200); log.push(await snap('Zur
 // 3) Ansichten und Schalter in jedem Maßstab
 for(const t of [3,10,20,30,50,80]){ await p.evaluate(t=>window.__sa.setTime(t),t); await p.waitForTimeout(600);
   for(const v of ['top','section','near','oblique']){ await p.click(`[data-view=${v}]`); await p.waitForTimeout(250); } }
-await p.click('#tab-view'); for(const id of ['tArrows','tLines','tFault','tCreek','tShake','tCam','stopEach']){ await p.click('#'+id); await p.waitForTimeout(120); await p.click('#'+id); }
+await p.click('#bPanel'); await p.waitForTimeout(300); await p.click('#tab-view'); for(const id of ['tArrows','tLines','tFault','tCreek','tShake','tCam','stopEach']){ await p.click('#'+id); await p.waitForTimeout(120); await p.click('#'+id); }
 for(const v of ['all','off','imp']){ await p.click(`input[name=lvl][value=${v}]`,{force:true}); await p.waitForTimeout(300); }
 await p.click('#zin'); await p.click('#zout'); await p.click('#bPanel'); await p.waitForTimeout(300); await p.click('#bPanel');
 // 4) Vergleich „gleichmäßig gleiten“
