@@ -15,7 +15,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostn
 """
 html=html.replace('</body>',reg+'</body>',1) if '</body>' in html else html+reg
 (OUT/'index.html').write_text(html,encoding='utf8')
-FOT=sorted(p.name for p in pathlib.Path('/home/claude/sa2/data/photos').glob('*.jpg')); (OUT/'fotos').mkdir(exist_ok=True)
+FOT=sorted(p.name for p in pathlib.Path('/home/claude/sa2/data/photos').glob('*.*')); (OUT/'fotos').mkdir(exist_ok=True)
 for n in FOT: shutil.copy('/home/claude/sa2/data/photos/'+n, OUT/'fotos'/n)
 ver=hashlib.sha1((html+''.join(FOT)).encode()).hexdigest()[:10]
 FONT='https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;500&family=Atkinson+Hyperlegible+Next:wght@400;500;700&display=swap'

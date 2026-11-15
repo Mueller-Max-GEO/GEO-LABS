@@ -409,11 +409,11 @@ function GP(lon,lat,lift=0){ return gdir(lon,lat).multiplyScalar(RG*(1+lift)).to
 const GX={};
 function buildGlobe(){
   const grp=new THREE.Group(); grp.visible=false; scene.add(grp); G.G=grp;
-  const tDay=tex(IMG.G_day,true), tWat=tex(IMG.G_wat,false), tCa=tex(IMG.G_ca,true), tNa=tex(IMG.G_na,true), tEu=tex(IMG.G_eu,true), tHgt=tex(IMG.G_hgt,false); tDay.wrapS=tWat.wrapS=tHgt.wrapS=THREE.RepeatWrapping; tDay.anisotropy=tCa.anisotropy=renderer.capabilities.getMaxAnisotropy();
+  const tDay=tex(IMG.G_day,true), tWat=tex(IMG.G_wat,false), tCa=tex(IMG.G_ca,true), tNa=tex(IMG.G_na,true), tEu=tex(IMG.G_eu,true), tHgt=tex(IMG.G_hgt,false); tDay.wrapS=tWat.wrapS=tHgt.wrapS=THREE.RepeatWrapping; tDay.anisotropy=tCa.anisotropy=tEu.anisotropy=tNa.anisotropy=renderer.capabilities.getMaxAnisotropy();
   const cb=SA_META.globe.cab;
-  const mat=new THREE.ShaderMaterial({uniforms:{tDay:{value:tDay},tWat:{value:tWat},tCa:{value:tCa},uCab:{value:new THREE.Vector4(...cb)},tNa:{value:tNa},tEu:{value:tEu},tHgt:{value:tHgt},uNab:{value:new THREE.Vector4(...SA_META.globe.nab)},uEub:{value:new THREE.Vector4(...SA_META.globe.eub)},uSun:{value:new THREE.Vector3()},uSpec:{value:1}},
+  const mat=new THREE.ShaderMaterial({uniforms:{tDay:{value:tDay},tWat:{value:tWat},tCa:{value:tCa},uCab:{value:new THREE.Vector4(...cb)},tNa:{value:tNa},tEu:{value:tEu},tHgt:{value:tHgt},uNab:{value:new THREE.Vector4(...SA_META.globe.nab)},tEuH:{value:tEu},uEuH:{value:new THREE.Vector4(-12,36,35,65)},uEuHOn:{value:0},uEub:{value:new THREE.Vector4(...SA_META.globe.eub)},uSun:{value:new THREE.Vector3()},uSpec:{value:1}},
     vertexShader:`varying vec2 vUv;varying vec3 vN;varying vec3 vP;void main(){vUv=vec2(uv.x,1.0-uv.y);vN=normalize(mat3(modelMatrix)*normal);vec4 w=modelMatrix*vec4(position,1.0);vP=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}`,
-    fragmentShader:`uniform sampler2D tDay,tWat,tCa,tNa,tEu,tHgt;uniform vec4 uCab,uNab,uEub;uniform vec3 uSun;uniform float uSpec;varying vec2 vUv;varying vec3 vN;varying vec3 vP;
+    fragmentShader:`uniform sampler2D tDay,tWat,tCa,tNa,tEu,tHgt,tEuH;uniform vec4 uCab,uNab,uEub,uEuH;uniform float uEuHOn;uniform vec3 uSun;uniform float uSpec;varying vec2 vUv;varying vec3 vN;varying vec3 vP;
 vec2 puv(vec2 ll,vec4 b){ return vec2((ll.x-b.x)/(b.y-b.x),(b.w-ll.y)/(b.w-b.z)); }
 float pin(vec2 u){ vec2 e=min(u,1.0-u); return smoothstep(0.0,0.06,min(e.x,e.y)); }
 void main(){ vec3 N=normalize(vN),V=normalize(cameraPosition-vP),L=normalize(uSun);
@@ -421,6 +421,7 @@ void main(){ vec3 N=normalize(vN),V=normalize(cameraPosition-vP),L=normalize(uSu
   vec2 ll=vec2(vUv.x*360.0-180.0,90.0-vUv.y*180.0);
   vec2 nu=puv(ll,uNab); float na=pin(nu); if(na>0.0) alb=mix(alb,texture2D(tNa,nu).rgb,na);
   vec2 eu=puv(ll,uEub); float ea=pin(eu); if(ea>0.0) alb=mix(alb,texture2D(tEu,eu).rgb,ea);
+  if(uEuHOn>0.5){ vec2 hu=puv(ll,uEuH); if(hu.x>0.0&&hu.x<1.0&&hu.y>0.0&&hu.y<1.0){ vec4 h=texture2D(tEuH,hu); alb=mix(alb,h.rgb,h.a); } }
   vec2 cu=puv(ll,uCab); if(cu.x>0.0&&cu.x<1.0&&cu.y>0.0&&cu.y<1.0){ vec4 c=texture2D(tCa,cu); alb=mix(alb,c.rgb,c.a); }
   /* Relief aus der Höhenkarte (wie im Erdumlauf-Labor) */
   { float st=1.0/2048.0; float h0=texture2D(tHgt,vUv).r, hx=texture2D(tHgt,vUv+vec2(st,0.0)).r, hy=texture2D(tHgt,vUv+vec2(0.0,st*2.0)).r;
@@ -436,6 +437,8 @@ void main(){ vec3 N=normalize(vN),V=normalize(cameraPosition-vP),L=normalize(uSu
   #include <colorspace_fragment>
 }`});
   const earth=new THREE.Mesh(new THREE.SphereGeometry(RG,LOWQ?128:256,LOWQ?64:128),mat); grp.add(earth); GX.mat=mat;
+  /* Europa in hoher Auflösung (Sentinel-2) – eigene Datei neben der HTML-Datei; fehlt sie, bleibt das eingebettete Bild */
+  new THREE.TextureLoader().load('fotos/europa.webp',t=>{ t.flipY=false; t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=renderer.capabilities.getMaxAnisotropy(); t.needsUpdate=true; mat.uniforms.tEuH.value=t; mat.uniforms.uEuHOn.value=1; try{ needsRender=true; }catch(e){} },undefined,()=>{});
   /* Atmosphäre: leuchtender Rand */
   const atm=new THREE.Mesh(new THREE.SphereGeometry(RG*1.035,96,48),new THREE.ShaderMaterial({side:THREE.BackSide,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
     vertexShader:`varying vec3 vN;varying vec3 vP;void main(){vN=normalize(mat3(modelMatrix)*normal);vec4 w=modelMatrix*vec4(position,1.0);vP=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}`,

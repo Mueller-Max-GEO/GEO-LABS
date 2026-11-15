@@ -1,0 +1,21 @@
+import { chromium } from 'playwright';
+const OUT='/home/claude/sa2/build/';
+const args=process.argv.slice(2); const W=+(args[0]||1280), H=+(args[1]||780);
+const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist']});
+const p=await b.newPage({viewport:{width:W,height:H}});
+const errs=[]; p.on('pageerror',e=>errs.push('PAGEERR '+e.message)); p.on('console',m=>{ if(m.type()==='error'||m.type()==='warning') errs.push(m.type()+': '+m.text().slice(0,400)); });
+await p.goto('http://localhost:8766/san-andreas-labor-v2.html'+(args[3]||''));
+await p.waitForFunction(()=>window.__sa&&window.__sa.ready(),null,{timeout:120000}).catch(e=>errs.push('TIMEOUT ready'));
+await p.waitForTimeout(1500);
+const steps=JSON.parse(args[2]||'[["t",0,"s0"]]');
+for(const st of steps){ const [cmd,arg,name,wait]=st;
+  if(cmd==='t') await p.evaluate(t=>{ window.__sa.state.playing=false; window.__sa.state.stopAt=null; window.__sa.setTime(t); },arg);
+  else if(cmd==='view') await p.evaluate(v=>window.__sa.setView(v),arg);
+  else if(cmd==='eval') console.log('EVAL',JSON.stringify(await p.evaluate(arg)));
+  else if(cmd==='click') await p.click(arg);
+  await p.waitForTimeout(wait||2200);
+  if(name) await p.screenshot({path:OUT+name+'.png'});
+}
+const d=await p.evaluate(()=>document.getElementById('diag')?.textContent||'');
+console.log(errs.slice(0,12).join('\n')||'no errors', d?('\nDIAG: '+d):'');
+await b.close();
