@@ -1172,13 +1172,16 @@ let pr=1;
 function applyQuality(){resize(); loadEarth(); fps.n=0;fps.t=0;fps.skip=40}
 const fps={n:0,t:0,skip:60,drops:0};
 const dyn={n:0,t:0,cool:0,slow:0,lastDown:-1e9};
+function resPending(){if(dyn.pend&&dyn.pend>dynScale+0.02){dynScale=dyn.pend;resize();dyn.cool=45;dyn.lastDown=performance.now()-10000}dyn.pend=0}
 function fpsWatch(dt){ if(document.hidden)return;
   // 1) resolution: steady 60 frames per second comes first. Step down only after two slow windows in a row,
   //    step up only after 10 s without a step down and when frames are clearly fast: no back-and-forth, no stutter.
   if(dyn.cool>0)dyn.cool--; else {dyn.n++;dyn.t+=dt;
     if(dyn.n>=45){const avg=dyn.t/dyn.n;dyn.n=0;dyn.t=0;let ns=dynScale;const now=performance.now();
       if(avg>1/50){dyn.slow++;if(dyn.slow>=2){ns=Math.max(0.65,dynScale*0.88);dyn.slow=0;dyn.lastDown=now}}
-      else{dyn.slow=0;if(avg<1/58&&now-dyn.lastDown>10000&&!(typeof cine!=='undefined'&&cine.on))ns=Math.min(1,dynScale*1.08)}
+      else{dyn.slow=0;if(avg<1/58&&now-dyn.lastDown>10000){ns=Math.min(1,dynScale*1.08);
+        // in a film the sharper picture comes at the next chapter (a change of resolution costs one frame)
+        if(typeof cine!=='undefined'&&cine.on&&!cine.atEnd&&!cine.hold){dyn.pend=Math.max(dyn.pend||0,ns);ns=dynScale}}}
       if(Math.abs(ns-dynScale)>0.02){dynScale=ns;resize();dyn.cool=45}}}
   // 2) quality tier: only if the lowest resolution is still too slow
   if(qPref!=='auto'||fps.drops>=2)return; if(fps.skip>0){fps.skip--;return}
@@ -1711,7 +1714,7 @@ function enterShot(sh){cine.snapS=true;cine.autoT=0;
   Object.assign(state.show,CINE_SHOW,sh.show||{});cine.allow=new Set(['orbit'].concat(sh.allow||[]));if(sh.start)sh.start();vis();syncToggles();cine.capKey='';cine.capT=0;legKey='';
   if(cine.film==='erkl')erklSpeak()}
 // jump to a scene (cut with a short fade-in); the film can also be held on one scene
-function goShot(i){if(!cine.on)return;cine.i=mod(i,SHOTS.length);cine.t=0;cine.bt=0;cine.blend=null;cine.jump=true;cine.ended=false;
+function goShot(i){if(!cine.on)return;resPending();cine.i=mod(i,SHOTS.length);cine.t=0;cine.bt=0;cine.blend=null;cine.jump=true;cine.ended=false;
   if(cine.free)endFree(true);if(cine.film==='erkl')cine.hold=false;enterShot(SHOTS[cine.i]);renderCineNav()}
 function setHold(v){if(!cine.on)return;
   // at the end of a chapter: hold = stay here, continue = next chapter
@@ -1742,7 +1745,7 @@ function startCine(film){ film=film==='erkl'?'erkl':'kino'; warmUp(); if(cine.on
   controls.enabled=false;state.view='cine';cine.hold=false;filmBtn().setAttribute('aria-pressed','true');
   $('app').classList.add('cine');$('app').classList.toggle('film-erkl',film==='erkl');$('cap').classList.toggle('erkl',film==='erkl');
   enterShot(SHOTS[0]);renderCineNav();renderButtons();resize()}
-function stopCine(){ if(!cine.on)return; const film=cine.film; if(film==='erkl')narrStop(); if(cine.free)endFree(true); cine.on=false; const s=cine.saved; camera.up.set(0,1,0);
+function stopCine(){ if(!cine.on)return; const film=cine.film; if(film==='erkl'){narrStop();keepSoundOn(false)} if(cine.free)endFree(true); cine.on=false; const s=cine.saved; camera.up.set(0,1,0);
   Object.assign(state.show,s.show);state.mode=s.mode;state.speedI=s.speedI;state.playing=s.playing;state.hour=s.hour;state.d=s.d;state.emode=s.emode;sumDone=s.sumDone;if(state.place!==s.place)setPlace(s.place);
   if(state.tilt0!==s.tilt0)setTilt0(s.tilt0);
   fillSpeeds();setPlayIcon();syncToggles();finalMat.uniforms.uFade.value=1;$('cap').classList.remove('on');legKey='';
@@ -2354,7 +2357,7 @@ function ap(){if(!NARR.ap){const a=new Audio();a.preload='auto';NARR.ap=a;
 /* recorded voice through Web Audio: each chapter file is decoded once, the paragraphs are scheduled ahead
    with exact pauses in between. No pause/play of an audio element (which stutters on iPad), and the
    picture runs on the audio clock, which is smooth. Falls back to the audio element if Web Audio fails. */
-const WA={ctx:null,cache:new Map(),nodes:[],c0:0,T0:0,run:false,key:'',lastCT:-1,lastNow:0};
+const WA={ctx:/[?&#]audio=alt/.test(location.href)?false:null,cache:new Map(),nodes:[],c0:0,T0:0,run:false,key:'',lastCT:-1,lastNow:0};
 function waCtx(){if(WA.ctx===false)return null;
   if(!WA.ctx){const C=window.AudioContext||window.webkitAudioContext;if(!C){WA.ctx=false;return null}
     try{WA.ctx=new C();if(navigator.audioSession)try{navigator.audioSession.type='playback'}catch(e){}}catch(e){WA.ctx=false;return null}}
@@ -2386,9 +2389,16 @@ function waClock(){return WA.T0+Math.max(0,WA.ctx.currentTime-WA.c0)}
 const useWA=()=>!!waCtx();
 
 // a click on the film button unlocks sound on iPad/iPhone
+// iPad/iPhone: Web Audio is silent when the device is set to silent mode, unless an audio element plays at the same time.
+// A looping silent clip keeps the sound on (as before with the audio element alone).
+const SILENT_URI='data:audio/wav;base64,UklGRsQPAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YaAPAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA';let keepAlive=null;
+function keepSoundOn(on){try{if(on){if(!keepAlive){keepAlive=new Audio(SILENT_URI);keepAlive.loop=true;keepAlive.setAttribute('playsinline','');keepAlive.setAttribute('x-webkit-airplay','deny')}
+  const p=keepAlive.play();if(p&&p.catch)p.catch(()=>{})}else if(keepAlive)keepAlive.pause()}catch(e){}}
 function unlockSpeech(){if(!NARR.voice)return;
   if(hasRec()&&useWA()){const ctx=waCtx();try{ctx.resume();const b=ctx.createBuffer(1,1,22050),n=ctx.createBufferSource();n.buffer=b;n.connect(ctx.destination);n.start(0)}catch(e){}}
-  else if(hasRec()){const a=ap();a.muted=true;a.src=AUDIO_BASE+state.lang+'_k01_film.mp3';const p=a.play();if(p&&p.then)p.then(()=>{a.pause();a.muted=false}).catch(()=>{a.muted=false})}
+  // the audio element is unlocked too: it takes over if Web Audio does not work
+  if(hasRec()){const a=ap();a.muted=true;a.src=AUDIO_BASE+state.lang+'_k01_film.mp3';const p=a.play();if(p&&p.then)p.then(()=>{a.pause();a.muted=false}).catch(()=>{a.muted=false})}
+  if(hasRec()&&useWA())setTimeout(()=>keepSoundOn(true),0)
   if(synthOK())try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u)}catch(e){}}
 function voiceActive(){return NARR.voice&&(NARR.rec||synthOK())}
 function narrStop(){NARR.gen++;clearTimeout(NARR.timer);NARR.paused=false;NARR.gapEnd=0;if(synthOK())try{speechSynthesis.cancel()}catch(e){}
@@ -2424,7 +2434,7 @@ function voiceBroken(){if(!NARR.voice||NARR.rec)return;NARR.voice=false;narrStop
 function narrPause(){if(NARR.rec){NARR.gapLeft=NARR.gapEnd?Math.max(0,NARR.gapEnd-performance.now()):0;narrStop();return}
   const i=NARR.i;narrStop();NARR.resumeI=Math.max(0,i)}
 function narrResume(){if(!isErkl()||!NARR.voice||cine.atEnd||NARR.done)return;const g=NARR.gen;
-  if(NARR.rec&&useWA()){const ctx=waCtx();try{ctx.resume()}catch(e){}const e=WA.cache.get(WA.key);if(WA.key===audioKey()&&e&&e.buf)waPlayFrom(cine.t);else erklSpeak();return}
+  if(NARR.rec&&useWA()){const ctx=waCtx();try{ctx.resume()}catch(e){}keepSoundOn(true);const e=WA.cache.get(WA.key);if(WA.key===audioKey()&&e&&e.buf)waPlayFrom(cine.t);else erklSpeak();return}
   if(NARR.rec){if(cine.t<LEAD){erklSpeak();return}
     if(NARR.gapLeft>0){NARR.gapStart=performance.now()-(PARA_GAP*1000-NARR.gapLeft);NARR.gapEnd=performance.now()+NARR.gapLeft;NARR.gapLeft=0;return}
     recPlay(recSeek(cine.t));return}
@@ -2463,7 +2473,7 @@ function erklAdvance(sh,dt){if(cine.hold||cine.atEnd)return cine.t;
 function erklMayEnd(){return !NARR.voice||!voiceActive()||NARR.done}
 // end of a chapter: the film waits for the next click
 const AUTO_WAIT=3.5;
-function erklAtEnd(){if(cine.atEnd)return;cine.atEnd=true;narrStop();
+function erklAtEnd(){if(cine.atEnd)return;cine.atEnd=true;narrStop();resPending();
   cine.autoT=cine.auto&&cine.i<SHOTS.length-1&&!cine.hold?performance.now()+AUTO_WAIT*1000:0;renderCineNav()}
 cine.auto=lsGet('geogym-orbit-auto')!=='off';
 function setAuto(v){cine.auto=v;lsSet('geogym-orbit-auto',v?'on':'off');
