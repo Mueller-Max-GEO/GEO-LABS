@@ -12,6 +12,7 @@ und läuft direkt im Browser.
 | Föhn-Labor | Vereinfachtes thermodynamisches Föhnmodell in 3D: Aufstieg im Luv, Kondensationsniveau, Stauwolke (Föhnmauer), Regen und Schnee, Abstieg im Lee. Schritt für Schritt, Experimentieren, Rechenmodus, Vorführmodus und Vollbild fürs iPad | [`foehnlabor/`](foehnlabor/) |
 | Schalenbau-Labor | Reise zum Erdmittelpunkt in 3D: Erdkruste nach Messdaten (Schnitt durch Luxemburg), live gerechnete Mantelkonvektion, Tiefensonde (PREM), Erdbebenwellen mit Schattenzonen, Magnetfeld, Sonnenwind und Polarlicht | [`schalenbaulabor/`](schalenbaulabor/) |
 | San-Andreas-Labor | Transformstörung in 3D mit echtem Gelände und Luftbildern: Einordnung auf der Erdkugel, Plattengrenzen, Gleiten oder Verhaken, Spannungsaufbau und zwei Erdbeben, Wallace Creek mit 130 m Versatz. Für das iPad optimiert, auch offline (Web-App) | [`sanandreaslabor/`](sanandreaslabor/) |
+| Isolinien-Labor | Matterhorn in 3D mit echten Höhendaten (SRTM) und Luftbild (swisstopo): Isolinien, Höhenschichten, Hangneigung, drehbare Schnittachse mit Profil, vom Relief zur Karte | [`isolinienlabor/`](isolinienlabor/) |
 
 ## Online ansehen (GitHub Pages)
 
@@ -23,7 +24,8 @@ das Erdumlauf-Labor unter `https://mueller-max-geo.github.io/GEO-LABS/erdumlauf/
 das Pyramiden-Labor unter `https://mueller-max-geo.github.io/GEO-LABS/pyramidenlabor/`,
 das Föhn-Labor unter `https://mueller-max-geo.github.io/GEO-LABS/foehnlabor/`,
 das Schalenbau-Labor unter `https://mueller-max-geo.github.io/GEO-LABS/schalenbaulabor/`,
-das San-Andreas-Labor unter `https://mueller-max-geo.github.io/GEO-LABS/sanandreaslabor/`.
+das San-Andreas-Labor unter `https://mueller-max-geo.github.io/GEO-LABS/sanandreaslabor/`,
+das Isolinien-Labor unter `https://mueller-max-geo.github.io/GEO-LABS/isolinienlabor/`.
 
 ## Neue Übung hinzufügen
 

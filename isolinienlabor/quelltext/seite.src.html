@@ -1,0 +1,1119 @@
+<title>Isolinien-Labor</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;500&family=Atkinson+Hyperlegible+Next:wght@400;500;700&display=swap">
+<style>
+/* Layout: Kopf mit Landschaftswahl · 3D-Bühne + Bedienleiste rechts · Profilband in voller Breite darunter */
+:root{
+  --bg:#EDF0EE; --surface:#FFFFFF; --ink:#17201B; --muted:#56625B; --line:#D3D9D5;
+  --accent:#D2232A; --accent-ink:#FFFFFF; --contour:#7A4A22; --focus:#1F5FD1;
+  --stage-a:#F7F8F7; --stage-b:#DDE3DF; --grid:#E4E8E5; --grid-strong:#C9D0CB;
+  --earth:#D3C2A6; --earth-deep:#9B8466;
+  --font:"Atkinson Hyperlegible Next","Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Atkinson Hyperlegible Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --r:6px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1311; --surface:#161B18; --ink:#E5EBE7; --muted:#97A39C; --line:#29312D;
+    --accent:#FF4E57; --accent-ink:#1A0606; --contour:#D49C66; --focus:#7FA8FF;
+    --stage-a:#1B221E; --stage-b:#0B0E0C; --grid:#212825; --grid-strong:#36403B;
+    --earth:#8C7A61; --earth-deep:#4F4334; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1311; --surface:#161B18; --ink:#E5EBE7; --muted:#97A39C; --line:#29312D;
+  --accent:#FF4E57; --accent-ink:#1A0606; --contour:#D49C66; --focus:#7FA8FF;
+  --stage-a:#1B221E; --stage-b:#0B0E0C; --grid:#212825; --grid-strong:#36403B;
+  --earth:#8C7A61; --earth-deep:#4F4334; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.45}
+.app{max-width:1360px;margin:0 auto;padding-block:20px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+
+/* Kopf */
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px}
+.eyebrow{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500}
+h1{margin:2px 0 0;font-size:clamp(24px,3.2vw,32px);line-height:1.1;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tab{font:inherit;font-size:14px;font-weight:500;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:var(--r);padding:7px 12px;cursor:pointer;display:inline-flex;gap:6px;align-items:baseline}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.tab:disabled{cursor:not-allowed;color:var(--muted)}
+.tab small{font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+
+/* Bühne */
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 312px;gap:16px;align-items:start}
+.viewport{position:relative;height:clamp(420px,64vh,700px);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;
+  background:radial-gradient(120% 90% at 50% 20%,var(--stage-a),var(--stage-b));touch-action:none}
+.viewport canvas{display:block}
+.hud{position:absolute;display:flex;gap:6px;align-items:center;z-index:3}
+.hud-tl{top:12px;left:12px;flex-direction:column;align-items:flex-start;gap:2px;pointer-events:none}
+.hud-tl strong{font-size:14px}
+.hud-tl span{font-size:12px;color:var(--muted)}
+.hud-bl{bottom:12px;left:12px}
+.hud-br{bottom:12px;right:12px;font-size:12px;color:var(--muted);pointer-events:none;text-align:right;max-width:46%}
+.vbtn{font:inherit;font-size:13px;font-weight:500;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:6px 10px;cursor:pointer}
+.vbtn[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.tip{position:absolute;z-index:4;pointer-events:none;background:var(--ink);color:var(--surface);font-family:var(--mono);font-size:12px;padding:3px 7px;border-radius:4px;transform:translate(12px,-120%);white-space:nowrap}
+
+/* 3D-Beschriftungen */
+/* Kartenschrift: ohne Kasten, mit hellem Schriftrand; Punkt markiert die Stelle */
+.lbl{position:relative;font-family:var(--font);font-size:11.5px;font-weight:700;letter-spacing:.01em;color:#1B231E;white-space:nowrap;pointer-events:none;
+  text-shadow:0 0 1px #fff,0 0 2px #fff,0 0 3px rgba(255,255,255,.95),0 0 6px rgba(255,255,255,.6);transform:translateY(-11px);transition:opacity .3s}
+.lbl b{font-weight:400;color:#3B463F}
+.lbl.lbl-pt::after{content:"";position:absolute;left:50%;top:calc(100% + 3px);width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:#1B231E;box-shadow:0 0 0 1.5px rgba(255,255,255,.9)}
+.lbl.lbl-area{font-style:italic;font-weight:500;font-size:12px;letter-spacing:.06em;color:#2D3A33;transform:none}
+.lbl.occ{opacity:0}
+.lbl-ab{background:var(--accent);color:#fff;text-shadow:none;font-weight:700;font-size:13px;padding:2px 6px;border-radius:4px;min-width:22px;text-align:center;transform:translateY(-18px)}
+.lbl-n{text-shadow:none;color:var(--ink);font-weight:700;font-size:14px;transform:none}
+.lbl-map{text-shadow:none;color:var(--muted);font-weight:500;font-size:11px;letter-spacing:.12em;text-transform:uppercase;transform:none}
+
+/* Bedienleiste */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);display:flex;flex-direction:column;max-height:clamp(420px,64vh,700px);overflow:auto}
+.group{padding:14px 16px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid var(--line)}
+.group:last-child{border-bottom:0}
+.ghead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.group h2{margin:0;font-size:15px;font-weight:700}
+.note{margin:0;font-size:13px;color:var(--muted)}
+.field{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px}
+.field label,.flabel{color:var(--muted)}
+output{font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums}
+.sw{position:relative;display:inline-block;width:40px;height:24px;flex:none}
+.sw input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer;z-index:1}
+.sw .track{position:absolute;inset:0;border-radius:12px;background:var(--grid-strong);transition:background .15s}
+.sw .track::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+.sw input:checked+.track{background:var(--ink)}
+.sw input:checked+.track::after{transform:translateX(16px)}
+.sw input:focus-visible+.track{outline:2px solid var(--focus);outline-offset:2px}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;border:1px solid var(--line);border-radius:var(--r);padding:2px;gap:2px}
+.seg.two-rows{grid-auto-flow:row;grid-template-columns:1fr 1fr}
+.seg .span2{grid-column:span 2}
+.seg label{position:relative;display:block}
+.seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.seg span{display:block;text-align:center;font-size:13px;font-weight:500;padding:6px 4px;border-radius:4px;color:var(--muted)}
+.seg input:checked+span{background:var(--ink);color:var(--surface)}
+.seg input:focus-visible+span{outline:2px solid var(--focus);outline-offset:1px}
+.chk{display:flex;gap:8px;align-items:center;font-size:13px;cursor:pointer}
+.chk input{width:16px;height:16px;margin:0;accent-color:var(--ink)}
+.chk.dim{opacity:.45}
+input[type=range]{width:100%;margin:0;accent-color:var(--accent)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+.btn{font:inherit;font-size:13px;font-weight:700;color:var(--ink);background:transparent;border:1px solid var(--ink);border-radius:var(--r);padding:6px 12px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.btn[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.btn:focus-visible,.vbtn:focus-visible,.tab:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.legend{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+.legend canvas{width:100%;height:14px;border-radius:3px;display:block}
+.legend .ticks{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px}
+.swatches{display:flex;flex-wrap:wrap;gap:4px 10px}
+.swatches span{display:inline-flex;gap:5px;align-items:center}
+.swatches i{width:12px;height:12px;border-radius:2px;display:inline-block;border:1px solid rgba(0,0,0,.12)}
+
+/* Profil */
+.profile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px 10px;display:flex;flex-direction:column;gap:10px}
+.phead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px 20px}
+.phead h2{margin:0;font-size:18px;font-weight:700;display:flex;align-items:baseline;gap:10px}
+.phead h2 .dir{font-family:var(--mono);font-size:13px;font-weight:400;color:var(--muted)}
+.stats{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:13px;color:var(--muted)}
+.stats b{font-family:var(--mono);font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
+.popts{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+.popts .seg{min-width:270px}
+.pwrap{position:relative;min-width:0}
+.pwrap canvas{display:block;width:100%;touch-action:pan-y}
+.ptip{position:absolute;pointer-events:none;background:var(--ink);color:var(--surface);font-family:var(--mono);font-size:12px;padding:3px 7px;border-radius:4px;white-space:nowrap;transform:translate(-50%,-130%)}
+.foot{font-size:12px;color:var(--muted);margin:0}
+.hint{margin-top:-6px}
+
+@media (max-width:900px){
+  .stage{grid-template-columns:minmax(0,1fr)}
+  .viewport{height:clamp(340px,58vh,520px)}
+  .panel{max-height:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+  .group{border-bottom:1px solid var(--line)}
+  .hud-br{display:none}
+}
+@media (prefers-reduced-motion:reduce){ .sw .track,.sw .track::after{transition:none} }
+</style>
+
+<div class="app">
+  <header class="top">
+    <div>
+      <div class="eyebrow">GEO GYM · Topographie</div>
+      <h1>Isolinien-Labor</h1>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Landschaft wählen">
+      <button class="tab" role="tab" aria-selected="true" id="tab-alpine">Hochgebirge · Matterhorn</button>
+      <button class="tab" role="tab" aria-selected="false" disabled>Mittelgebirge <small>bald</small></button>
+      <button class="tab" role="tab" aria-selected="false" disabled>Grand Canyon <small>bald</small></button>
+    </nav>
+  </header>
+
+  <section class="stage">
+    <div class="viewport" id="viewport">
+      <div class="hud hud-tl"><strong>Matterhorn</strong><span>Wallis (CH) / Aostatal (I) · Ausschnitt 9 × 9 km</span></div>
+      <div class="hud hud-bl" role="group" aria-label="Kamera">
+        <button class="vbtn" id="view3d" aria-pressed="true">3D-Ansicht</button>
+        <button class="vbtn" id="viewTop" aria-pressed="false">Draufsicht</button>
+      </div>
+      <div class="tip" id="tip" hidden></div>
+    </div>
+
+    <aside class="panel" aria-label="Einstellungen">
+      <section class="group">
+        <div class="ghead"><h2>Isolinien</h2>
+          <span class="sw"><input type="checkbox" id="isoOn" aria-label="Isolinien anzeigen"><span class="track"></span></span></div>
+        <p class="note">Isolinien verbinden Punkte gleicher Höhe.</p>
+        <div class="field"><span class="flabel">Äquidistanz (Höhenabstand)</span></div>
+        <div class="seg" role="radiogroup" aria-label="Äquidistanz">
+          <label><input type="radio" name="iv" id="iv50" value="50"><span>50 m</span></label>
+          <label><input type="radio" name="iv" id="iv100" value="100" checked><span>100 m</span></label>
+          <label><input type="radio" name="iv" id="iv200" value="200"><span>200 m</span></label>
+        </div>
+        <label class="chk"><input type="checkbox" id="majorOn" checked> Zählkurven: jede 5. Linie kräftig</label>
+      </section>
+
+      <section class="group">
+        <h2>Farben</h2>
+        <div class="seg two-rows" role="radiogroup" aria-label="Farbgebung">
+          <label><input type="radio" name="mode" id="mPhoto" value="4" checked><span>Luftbild</span></label>
+          <label><input type="radio" name="mode" id="mNat" value="0"><span>Natur</span></label>
+          <label><input type="radio" name="mode" id="mHyp" value="1"><span>Höhenschichten</span></label>
+          <label><input type="radio" name="mode" id="mSlope" value="2"><span>Hangneigung</span></label>
+          <label class="span2"><input type="radio" name="mode" id="mNone" value="3"><span>Ohne Farbe</span></label>
+        </div>
+        <label class="chk dim" id="stepWrap"><input type="checkbox" id="stepOn" disabled> Farbstufen an den Isolinien</label>
+        <div class="legend" id="legend"></div>
+      </section>
+
+      <section class="group">
+        <div class="ghead"><h2>Schnittachse</h2>
+          <span class="sw"><input type="checkbox" id="cutOn" checked aria-label="Schnittachse anzeigen"><span class="track"></span></span></div>
+        <div class="field"><label for="angle">Richtung</label><output id="angleOut" for="angle">60° · SW → NO</output></div>
+        <input type="range" id="angle" min="0" max="359" step="1" value="60">
+        <div class="row">
+          <button class="btn" id="rotBtn" aria-pressed="false">▶ Drehen</button>
+          <label class="chk"><input type="checkbox" id="openOn"> Modell aufschneiden</label>
+        </div>
+      </section>
+
+      <section class="group">
+        <div class="ghead"><h2>Vom Relief zur Karte</h2>
+          <span class="sw"><input type="checkbox" id="mapOn" aria-label="Karte unter dem Modell zeigen"><span class="track"></span></span></div>
+        <p class="note">Senke die Höhenlinien senkrecht auf die Grundfläche ab. So entsteht die Karte.</p>
+        <div class="field"><label for="drop">Absenken</label><output id="dropOut" for="drop">0 %</output></div>
+        <input type="range" id="drop" min="0" max="100" step="1" value="0">
+        <div class="row"><button class="btn" id="dropBtn">▼ Absenken</button><label class="chk"><input type="checkbox" id="hideRelief"> Relief ausblenden</label></div>
+        <label class="chk"><input type="checkbox" id="mapColors"> Karte mit Farbstufen (Höhenschichten)</label>
+      </section>
+
+      <section class="group">
+        <h2>Darstellung</h2>
+        <div class="field"><label for="exag">Überhöhung im 3D-Modell</label><output id="exagOut" for="exag">1,0-fach</output></div>
+        <input type="range" id="exag" min="1" max="2.5" step="0.1" value="1">
+        <label class="chk"><input type="checkbox" id="labelsOn" checked> Gipfel, Orte und Täler beschriften</label>
+      </section>
+    </aside>
+  </section>
+
+  <p class="foot hint">Maus: ziehen zum Drehen · rechte Maustaste zum Verschieben · Mausrad zum Zoomen. Tablet: ein Finger dreht, zwei Finger verschieben und zoomen. Die roten Punkte A und B lassen sich ziehen, um die Schnittachse zu drehen.</p>
+
+  <section class="profile" aria-label="Topographisches Profil">
+    <div class="phead">
+      <h2>Profil A – B <span class="dir" id="profDir">W → O</span></h2>
+      <div class="popts">
+        <div class="seg" role="radiogroup" aria-label="Überhöhung im Profil">
+          <label><input type="radio" name="pex" id="pex1" value="1" checked><span>1-fach</span></label>
+          <label><input type="radio" name="pex" id="pex2" value="2"><span>2-fach</span></label>
+          <label><input type="radio" name="pex" id="pexAuto" value="auto"><span>Ganze Breite</span></label>
+        </div>
+        <label class="chk"><input type="checkbox" id="constrOn" checked> Hilfslinien an den Isolinien</label>
+      </div>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="pwrap" id="pwrap"><canvas id="prof" aria-label="Höhenprofil entlang der Schnittachse"></canvas><div class="ptip" id="ptip" hidden></div></div>
+    <p class="foot">Echte Geländedaten: SRTM, 1 Bogensekunde (NASA/USGS), auf ein Gitter von etwa 32 m umgerechnet. Höhen in Metern über Meer. Die Daten geben den Gipfel mit rund 4 470 m an (amtlich 4 478 m). Luftbild: swisstopo SWISSIMAGE (freie Geodaten); unten links (Italien) stammt es aus einer anderen Aufnahme. Die Bodenbedeckung bei „Natur“ ist vereinfacht aus dem Luftbild abgeleitet. Das Profil zeigt den Schnitt entlang der roten Achse von A nach B.</p>
+  </section>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
+import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+
+/*TERRAIN*/
+/*HF*/
+/*PHOTO*/
+
+// ================= Landschaft =================
+const E = 9000;            // Ausschnitt in Metern (9 × 9 km, Matterhorn-Gipfel in der Mitte)
+const SIZE = 10;           // Weltgröße des Modells
+const BASE = 1500;         // Unterkante des Blocks (m)
+const N = 281;             // Gitterpunkte pro Seite (≈ 32 m Abstand)
+const M2W = SIZE / E;
+const CELL = E / (N - 1);
+const MAP_GAP = 5.5;       // Abstand Karte unter dem Block
+const H = new Float32Array(N * N), SL = new Float32Array(N * N);
+let hmin = Infinity, hmax = -Infinity;
+{ // Höhendaten: SRTM 1″ (NASA/USGS), auf ein 281 × 281-Gitter umgerechnet, in Dezimetern
+  const bin = atob(DEM_B64);
+  for (let k = 0; k < N * N; k++) {
+    const h = (bin.charCodeAt(2 * k) | (bin.charCodeAt(2 * k + 1) << 8)) / 10; H[k] = h;
+    if (h < hmin) hmin = h; if (h > hmax) hmax = h;
+  }
+}
+for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+  const i0 = Math.max(i - 1, 0), i1 = Math.min(i + 1, N - 1), j0 = Math.max(j - 1, 0), j1 = Math.min(j + 1, N - 1);
+  const gx = (H[j * N + i1] - H[j * N + i0]) / ((i1 - i0) * CELL);
+  const gz = (H[j1 * N + i] - H[j0 * N + i]) / ((j1 - j0) * CELL);
+  SL[j * N + i] = Math.atan(Math.hypot(gx, gz)) * 180 / Math.PI;
+}
+function gridAt(G, X, Z) {
+  const gx = Math.min(Math.max(X / CELL, 0), N - 1.0001), gz = Math.min(Math.max(Z / CELL, 0), N - 1.0001);
+  const i = Math.floor(gx), j = Math.floor(gz), fx = gx - i, fz = gz - j;
+  const a = G[j * N + i], b = G[j * N + i + 1], c = G[(j + 1) * N + i], d = G[(j + 1) * N + i + 1];
+  return a * (1 - fx) * (1 - fz) + b * fx * (1 - fz) + c * (1 - fx) * fz + d * fx * fz;
+}
+const hAt = (X, Z) => gridAt(H, X, Z);
+// Generalisiertes Höhenfeld nur für die Isolinien (wie in der Kartographie), vorab berechnet:
+// geglättet (flach stärker, steil schwächer), auf 16-m-Raster verfeinert, Mini-Inseln und Mini-Senken < 0,05 km² entfernt
+const NF = 561, CF = E / (NF - 1);
+const HF = new Float32Array(NF * NF);
+const hfBytes = new Uint8Array(NF * NF * 4);   // als Textur: Höhe in dm, oberes und unteres Byte
+{
+  const bin = atob(DEM_HF_B64);
+  for (let k = 0; k < NF * NF; k++) {
+    const lo = bin.charCodeAt(2 * k), hi = bin.charCodeAt(2 * k + 1);
+    HF[k] = (lo | (hi << 8)) / 10; hfBytes[k * 4] = hi; hfBytes[k * 4 + 1] = lo; hfBytes[k * 4 + 3] = 255;
+  }
+}
+function hcAt(X, Z) {
+  const gx = Math.min(Math.max(X / CF, 0), NF - 1.0001), gz = Math.min(Math.max(Z / CF, 0), NF - 1.0001);
+  const i = Math.floor(gx), j = Math.floor(gz), fx = gx - i, fz = gz - j;
+  const a = HF[j * NF + i], b = HF[j * NF + i + 1], c = HF[(j + 1) * NF + i], d = HF[(j + 1) * NF + i + 1];
+  return a * (1 - fx) * (1 - fz) + b * fx * (1 - fz) + c * (1 - fx) * fz + d * fx * fz;
+}
+const hfTex = new THREE.DataTexture(hfBytes, NF, NF, THREE.RGBAFormat);
+hfTex.minFilter = hfTex.magFilter = THREE.NearestFilter; hfTex.needsUpdate = true;
+const S = { iso:false, iv:100, major:true, mode:4, stepped:false, cut:true, angle:60, open:false, map:false, drop:0, exag:1, labels:true, profEx:'1', constr:true, rotating:false };
+const wx = X => X * M2W - SIZE / 2, wz = Z => Z * M2W - SIZE / 2;
+const yOf = h => (h - BASE) * M2W * S.exag;
+const mapY = () => -MAP_GAP;
+
+// Farbskalen (gleich für 3D, Legende und Profil)
+const RAMP = [[0, [80,146,84]], [.16, [139,184,103]], [.33, [212,214,140]], [.5, [228,186,120]], [.66, [196,140,90]], [.8, [158,116,92]], [.9, [196,188,182]], [1, [255,255,255]]];
+function rampRGB(t) {
+  t = Math.min(1, Math.max(0, t));
+  for (let k = 1; k < RAMP.length; k++) if (t <= RAMP[k][0]) {
+    const [t0, c0] = RAMP[k - 1], [t1, c1] = RAMP[k], f = (t - t0) / (t1 - t0);
+    return c0.map((v, i) => Math.round(v + (c1[i] - v) * f));
+  }
+  return RAMP[RAMP.length - 1][1];
+}
+const ss = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+const mix3 = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+function slopeRGB(s) {
+  let c = [.95,.94,.88];
+  c = mix3(c, [.85,.90,.62], ss(0,10,s)); c = mix3(c, [.96,.80,.40], ss(10,20,s));
+  c = mix3(c, [.92,.56,.26], ss(20,30,s)); c = mix3(c, [.80,.28,.22], ss(30,42,s)); c = mix3(c, [.45,.12,.25], ss(42,55,s));
+  return c.map(v => Math.round(v * 255));
+}
+const rampData = new Uint8Array(256 * 4);
+for (let k = 0; k < 256; k++) { const c = rampRGB(k / 255); rampData.set([c[0], c[1], c[2], 255], k * 4); }
+const rampTex = new THREE.DataTexture(rampData, 256, 1, THREE.RGBAFormat);
+rampTex.magFilter = rampTex.minFilter = THREE.LinearFilter; rampTex.needsUpdate = true;
+
+// ================= Renderer, Szene, Kamera =================
+const vp = document.getElementById('viewport');
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.localClippingEnabled = true;
+vp.prepend(renderer.domElement);
+const labelR = new CSS2DRenderer();
+Object.assign(labelR.domElement.style, { position: 'absolute', inset: '0', pointerEvents: 'none', zIndex: 2 });
+vp.appendChild(labelR.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200);
+camera.position.set(11.5, 6, -13);
+
+// Griffe der Schnittachse (vor OrbitControls registrieren, damit Ziehen am Griff Vorrang hat)
+const raycaster = new THREE.Raycaster(); const ndc = new THREE.Vector2();
+let dragHandle = null;
+function setNdc(e) { const r = renderer.domElement.getBoundingClientRect(); ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); }
+renderer.domElement.addEventListener('pointerdown', e => {
+  if (!S.cut) return;
+  setNdc(e); raycaster.setFromCamera(ndc, camera);
+  const hit = raycaster.intersectObjects([hitA, hitB])[0];
+  if (hit) { dragHandle = hit.object; e.stopImmediatePropagation(); renderer.domElement.setPointerCapture(e.pointerId); stopRotate(); vp.style.cursor = 'grabbing'; }
+});
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.08;
+controls.minDistance = 5; controls.maxDistance = 40; controls.maxPolarAngle = Math.PI * 0.62;
+controls.target.set(0, 1.4, 0);
+
+// ================= Shader =================
+// Luftbild (swisstopo SWISSIMAGE) und daraus abgeleitete Bodenbedeckung, als Texturen
+function imgTex(src) {
+  const img = new Image(), t = new THREE.Texture(img);
+  t.colorSpace = THREE.NoColorSpace; t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  img.onload = () => { t.needsUpdate = true; }; img.src = src; return t;
+}
+const photoTex = imgTex('data:image/jpeg;base64,' + PHOTO_B64);
+const landTex = imgTex('data:image/png;base64,' + LAND_B64);
+const terrainMat = new THREE.ShaderMaterial({
+  uniforms: {
+    uRamp: { value: rampTex }, uHmin: { value: hmin }, uHmax: { value: hmax }, uIv: { value: 100 }, uIso: { value: 0 },
+    uMajor: { value: 1 }, uMode: { value: 4 }, uStep: { value: 0 }, uCut: { value: 1 }, uCutDir: { value: new THREE.Vector2(1, 0) },
+    uMark: { value: new THREE.Vector3() }, uMarkOn: { value: 0 },
+    uHF: { value: hfTex }, uNF: { value: NF }, uSize: { value: SIZE }, uPhoto: { value: photoTex }, uLand: { value: landTex }
+  },
+  clipping: true,
+  vertexShader: /* glsl */`
+    attribute float aH; attribute float aS;
+    varying float vH; varying float vS; varying vec3 vN; varying vec3 vP;
+    #include <clipping_planes_pars_vertex>
+    void main(){
+      vH = aH; vS = aS; vN = normal; vP = position;
+      vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+      #include <clipping_planes_vertex>
+      gl_Position = projectionMatrix * mvPosition;
+    }`,
+  fragmentShader: /* glsl */`
+    uniform sampler2D uRamp; uniform float uHmin, uHmax, uIv, uIso, uMajor, uMode, uStep, uCut, uMarkOn;
+    uniform vec2 uCutDir; uniform vec3 uMark;
+    uniform sampler2D uHF, uPhoto, uLand; uniform float uNF, uSize;
+    varying float vH; varying float vS; varying vec3 vN; varying vec3 vP;
+    #include <clipping_planes_pars_fragment>
+    float hfAt(ivec2 p){ vec4 t = texelFetch(uHF, p, 0); return (floor(t.r * 255. + .5) * 256. + floor(t.g * 255. + .5)) / 10.; }
+    float hfield(vec2 xz){   // bilineare Interpolation im feinen Isolinienfeld
+      vec2 g = clamp((xz / uSize + .5) * (uNF - 1.), vec2(0.), vec2(uNF - 1.001));
+      ivec2 i = ivec2(floor(g)); vec2 f = g - floor(g);
+      float a = hfAt(i), b = hfAt(i + ivec2(1, 0)), c = hfAt(i + ivec2(0, 1)), d = hfAt(i + ivec2(1, 1));
+      return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+    }
+    vec3 slopeCol(float s){
+      vec3 c = vec3(.95,.94,.88);
+      c = mix(c, vec3(.85,.90,.62), smoothstep(0.,10.,s)); c = mix(c, vec3(.96,.80,.40), smoothstep(10.,20.,s));
+      c = mix(c, vec3(.92,.56,.26), smoothstep(20.,30.,s)); c = mix(c, vec3(.80,.28,.22), smoothstep(30.,42.,s));
+      c = mix(c, vec3(.45,.12,.25), smoothstep(42.,55.,s));
+      return c;
+    }
+    float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
+    vec3 natCol(vec2 p, vec2 uv){
+      // Bodenbedeckung aus dem Luftbild abgeleitet: r = Eis/Firn, g = Vegetation, b = Wald
+      float n = hash(floor(p * 40.0)) * 0.05 - 0.025;
+      vec3 lc = texture2D(uLand, uv).rgb;
+      vec3 c = vec3(.57,.55,.52);
+      c = mix(c, vec3(.60,.65,.42), smoothstep(.25, .6, lc.g));
+      c = mix(c, vec3(.24,.40,.24), smoothstep(.25, .6, lc.b));
+      c = mix(c, vec3(.88,.93,.97), smoothstep(.3, .6, lc.r));
+      return c + n;
+    }
+    void main(){
+      #include <clipping_planes_fragment>
+      float h = vH; float hg = hfield(vP.xz); vec3 col;
+      vec2 uv = vec2(vP.x / uSize + .5, .5 - vP.z / uSize);
+      if (uMode > 3.5) col = texture2D(uPhoto, uv).rgb;
+      else if (uMode < .5) col = natCol(vP.xz, uv);
+      else if (uMode < 1.5) {
+        float hc = uStep > .5 ? (floor(hg / uIv) + .5) * uIv : h;
+        col = texture2D(uRamp, vec2(clamp((hc - uHmin) / (uHmax - uHmin), .002, .998), .5)).rgb;
+      } else if (uMode < 2.5) col = slopeCol(vS);
+      else col = vec3(.91,.90,.87);
+      vec3 L = normalize(vec3(-.55, .8, -.5));
+      float dif = max(dot(normalize(vN), L), 0.);
+      col *= uMode > 3.5 ? .8 + .3 * dif : .48 + .62 * dif;
+      // Isolinien
+      // Abstand zur nächsten Isolinie in Bildschirmpixeln (Gradientenlänge statt fwidth: gleichmäßige Breite)
+      float f = hg / uIv; float gl = max(length(vec2(dFdx(f), dFdy(f))), 1e-5);
+      float d = abs(fract(f + .5) - .5) / gl;
+      float idx = floor(f + .5);
+      float maj = (uMajor > .5 && mod(idx, 5.) < .5) ? 1. : 0.;
+      float w = mix(.8, 1.45, maj);
+      float ln = 1. - smoothstep(w - .55, w + .55, d);
+      ln *= 1. - smoothstep(.3, .6, gl) * (1. - maj * .5);   // sehr dichte Linien (steile Wände in der Ferne) ausblenden statt flimmern
+      vec3 isoCol = (uMode > 3.5) ? vec3(.52,.24,.04) : (uMode > 1.5) ? vec3(.16,.14,.13) : vec3(.40,.21,.07);
+      col = mix(col, isoCol, ln * uIso * mix(.78, .96, maj));
+      // Schnittlinie
+      float cd = abs(vP.x * uCutDir.y - vP.z * uCutDir.x);
+      float cl = 1. - smoothstep(1.1, 2.3, cd / max(fwidth(cd), 1e-4));
+      col = mix(col, vec3(.84,.11,.15), cl * uCut);
+      // Markierung aus dem Profil
+      float md = length(vP.xz - uMark.xz);
+      float ring = 1. - smoothstep(.0, max(fwidth(md), 1e-4) * 1.6, abs(md - .14));
+      col = mix(col, vec3(.84,.11,.15), ring * uMarkOn);
+      gl_FragColor = vec4(col, 1.);
+    }`
+});
+function makeSectionMat(clip) {
+  return new THREE.ShaderMaterial({
+    uniforms: { uIv: { value: 100 }, uLines: { value: 0 }, uTop: { value: hmax }, uBase: { value: BASE } },
+    side: THREE.DoubleSide, clipping: clip,
+    vertexShader: /* glsl */`
+      attribute float aH; varying float vH; varying vec3 vN;
+      #include <clipping_planes_pars_vertex>
+      void main(){ vH = aH; vN = normal;
+        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+        #include <clipping_planes_vertex>
+        gl_Position = projectionMatrix * mvPosition; }`,
+    fragmentShader: /* glsl */`
+      uniform float uIv, uLines, uTop, uBase; varying float vH; varying vec3 vN;
+      #include <clipping_planes_pars_fragment>
+      void main(){
+        #include <clipping_planes_fragment>
+        float t = clamp((vH - uBase) / (uTop - uBase), 0., 1.);
+        vec3 c = mix(vec3(.52,.43,.33), vec3(.80,.71,.57), pow(t, .7));
+        vec3 L = normalize(vec3(-.55,.8,-.5));
+        c *= .78 + .3 * abs(dot(normalize(vN), L));
+        float f = vH / uIv; float d = abs(fract(f + .5) - .5) / max(fwidth(f), 1e-4);
+        c = mix(c, vec3(.33,.22,.12), (1. - smoothstep(.4, 1.3, d)) * .55 * uLines);
+        gl_FragColor = vec4(c, 1.);
+      }`
+  });
+}
+const wallMat = makeSectionMat(true), capMat = makeSectionMat(false);
+
+// ================= Geländemodell =================
+const tGeo = new THREE.BufferGeometry();
+const tPos = new Float32Array(N * N * 3);
+for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+  const k = j * N + i; tPos[k * 3] = wx(i * CELL); tPos[k * 3 + 2] = wz(j * CELL);
+}
+const idx = [];
+for (let j = 0; j < N - 1; j++) for (let i = 0; i < N - 1; i++) {
+  const a = j * N + i, b = a + 1, c = a + N, d = c + 1; idx.push(a, c, b, b, c, d);
+}
+tGeo.setIndex(idx);
+tGeo.setAttribute('position', new THREE.BufferAttribute(tPos, 3));
+tGeo.setAttribute('aH', new THREE.BufferAttribute(H, 1));
+tGeo.setAttribute('aS', new THREE.BufferAttribute(SL, 1));
+const terrain = new THREE.Mesh(tGeo, terrainMat);
+scene.add(terrain);
+
+// Seitenwände des Blocks
+const walls = [];
+const EDGES = [
+  { n: [0, 0, -1], at: t => [t, 0] }, { n: [0, 0, 1], at: t => [t, N - 1] },
+  { n: [-1, 0, 0], at: t => [0, t] }, { n: [1, 0, 0], at: t => [N - 1, t] }
+];
+for (const ed of EDGES) {
+  const g = new THREE.BufferGeometry();
+  const pos = new Float32Array(N * 2 * 3), hh = new Float32Array(N * 2), nn = new Float32Array(N * 2 * 3), ix = [];
+  for (let t = 0; t < N; t++) {
+    const [i, j] = ed.at(t); hh[t * 2] = H[j * N + i]; hh[t * 2 + 1] = BASE;
+    for (const q of [0, 1]) { pos[(t * 2 + q) * 3] = wx(i * CELL); pos[(t * 2 + q) * 3 + 2] = wz(j * CELL); nn.set(ed.n, (t * 2 + q) * 3); }
+    if (t < N - 1) { const a = t * 2; ix.push(a, a + 1, a + 2, a + 2, a + 1, a + 3); }
+  }
+  g.setIndex(ix); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('aH', new THREE.BufferAttribute(hh, 1)); g.setAttribute('normal', new THREE.BufferAttribute(nn, 3));
+  const m = new THREE.Mesh(g, wallMat); m.userData.ed = ed; walls.push(m); scene.add(m);
+}
+const bottom = new THREE.Mesh(new THREE.PlaneGeometry(SIZE, SIZE).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x5a4a39, side: THREE.DoubleSide }));
+bottom.position.y = 0.001; scene.add(bottom);
+
+function applyHeights() {
+  for (let k = 0; k < N * N; k++) tPos[k * 3 + 1] = yOf(H[k]);
+  tGeo.attributes.position.needsUpdate = true; tGeo.computeVertexNormals(); tGeo.computeBoundingSphere();
+  for (const w of walls) {
+    const p = w.geometry.attributes.position, hh = w.geometry.attributes.aH;
+    for (let t = 0; t < N; t++) { p.array[t * 6 + 1] = yOf(hh.array[t * 2]); p.array[t * 6 + 4] = 0; }
+    p.needsUpdate = true; w.geometry.computeBoundingSphere();
+  }
+}
+
+// ================= Schnittachse =================
+const cutGroup = new THREE.Group(); scene.add(cutGroup);
+const planeMesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).translate(0, 0.5, 0),
+  new THREE.MeshBasicMaterial({ color: 0xd2232a, transparent: true, opacity: 0.1, side: THREE.DoubleSide, depthWrite: false }));
+const planeEdge = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(1, 1).translate(0, 0.5, 0)),
+  new THREE.LineBasicMaterial({ color: 0xd2232a, transparent: true, opacity: 0.55 }));
+cutGroup.add(planeMesh, planeEdge);
+const handleMat = new THREE.MeshBasicMaterial({ color: 0xd2232a });
+const handleA = new THREE.Mesh(new THREE.SphereGeometry(0.16, 24, 16), handleMat);
+const handleB = handleA.clone();
+const hitGeo = new THREE.SphereGeometry(0.45, 12, 8), hitMat = new THREE.MeshBasicMaterial({ visible: false });
+const hitA = new THREE.Mesh(hitGeo, hitMat), hitB = new THREE.Mesh(hitGeo, hitMat);
+hitA.userData.end = 'A'; hitB.userData.end = 'B';
+cutGroup.add(handleA, handleB, hitA, hitB);
+function mkLabel(html, cls) {
+  const outer = document.createElement('div'), d = document.createElement('div');
+  d.className = 'lbl ' + (cls || ''); d.innerHTML = html; outer.appendChild(d); return new CSS2DObject(outer);
+}
+const lblA = mkLabel('A', 'lbl-ab'), lblB = mkLabel('B', 'lbl-ab');
+cutGroup.add(lblA, lblB);
+const capGeo = new THREE.BufferGeometry();
+const cap = new THREE.Mesh(capGeo, capMat); cap.visible = false; scene.add(cap);
+const clipPlane = new THREE.Plane(new THREE.Vector3(1, 0, 0), 0);
+const marker = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 12), new THREE.MeshBasicMaterial({ color: 0xd2232a }));
+marker.visible = false; scene.add(marker);
+
+// ================= Karte (Grundriss) und abgesenkte Isolinien =================
+const mapGroup = new THREE.Group(); mapGroup.visible = false; scene.add(mapGroup);
+// Kartenblatt: Kartenfeld genau unter dem Modell, Kartenrand mit Legende rechts (Osten)
+const PX = 120, MARG = 0.5, SIDE = 4.3;                      // Pixel je Einheit, Rand, Legendenbreite (Welteinheiten)
+const SHEET_W = SIZE + MARG + SIDE, SHEET_H = SIZE + 2 * MARG;
+const mapCanvas = document.createElement('canvas'); mapCanvas.width = SHEET_W * PX; mapCanvas.height = SHEET_H * PX;
+const mapTex = new THREE.CanvasTexture(mapCanvas); mapTex.anisotropy = 8; mapTex.colorSpace = THREE.SRGBColorSpace;
+function drawMap() {
+  const g = mapCanvas.getContext('2d'), W = mapCanvas.width, Hh = mapCanvas.height;
+  const M = SIZE * PX, ox = MARG * PX, oy = MARG * PX;       // Kartenfeld
+  const INK = '#17201B', MUT = '#56625B', PAPER = '#FBFBF7';
+  const FF = '"Atkinson Hyperlegible Next","Atkinson Hyperlegible",system-ui,sans-serif';
+  g.fillStyle = PAPER; g.fillRect(0, 0, W, Hh);
+  if (S.mapColors) {
+    const img = g.createImageData(M, M), d = img.data, iv = S.iv, cache = new Map();
+    for (let py = 0; py < M; py++) {
+      const Z = (py + 0.5) / M * E;
+      for (let px = 0; px < M; px++) {
+        const band = Math.floor(hcAt((px + 0.5) / M * E, Z) / iv);
+        let c = cache.get(band);
+        if (!c) { c = rampRGB(((band + 0.5) * iv - hmin) / (hmax - hmin)); cache.set(band, c); }
+        const o = (py * M + px) * 4; d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;
+      }
+    }
+    g.putImageData(img, ox, oy);
+  }
+  const km = M / (E / 1000);
+  g.strokeStyle = S.mapColors ? 'rgba(30,60,100,.28)' : 'rgba(40,90,140,.3)'; g.lineWidth = 1.5;
+  for (let k = 0; k * km <= M + 1; k++) { const p = k * km; g.beginPath(); g.moveTo(ox + p, oy); g.lineTo(ox + p, oy + M); g.moveTo(ox, oy + p); g.lineTo(ox + M, oy + p); g.stroke(); }
+  g.strokeStyle = INK; g.lineWidth = 5; g.strokeRect(ox, oy, M, M);
+
+  // ---- Kartenrand mit Legende ----
+  let x = ox + M + 0.45 * PX, y = oy + 10; const colW = W - x - 30;
+  g.fillStyle = INK; g.textBaseline = 'top';
+  g.font = `700 46px ${FF}`; g.fillText('Matterhorn', x, y); y += 58;
+  g.font = `400 28px ${FF}`; g.fillStyle = MUT; g.fillText(S.mapColors ? 'Höhenschichtenkarte' : 'Isolinienkarte', x, y); y += 36;
+  g.fillText('Ausschnitt 9 × 9 km', x, y); y += 60;
+  // Nordpfeil
+  g.fillStyle = INK; const nx = x + 26;
+  g.beginPath(); g.moveTo(nx, y); g.lineTo(nx + 22, y + 66); g.lineTo(nx, y + 52); g.lineTo(nx - 22, y + 66); g.closePath(); g.fill();
+  g.font = `700 32px ${FF}`; g.fillText('N', nx + 40, y + 16);
+  // Maßstab
+  const sx0 = x + 120, sw = 2 * km, sy0 = y + 30;
+  g.fillRect(sx0, sy0, sw, 12); g.fillStyle = PAPER; g.fillRect(sx0 + km, sy0 + 2, km - 2, 8);
+  g.fillStyle = INK; g.font = `400 24px ${FF}`; g.fillText('0', sx0 - 6, sy0 + 20); g.fillText('1', sx0 + km - 6, sy0 + 20); g.fillText('2 km', sx0 + sw - 20, sy0 + 20);
+  y += 110;
+  // Linien
+  const line = (w, col, label) => { g.strokeStyle = col; g.lineWidth = w; g.beginPath(); g.moveTo(x, y + 15); g.lineTo(x + 70, y + 15); g.stroke(); g.fillStyle = INK; g.font = `400 26px ${FF}`; g.fillText(label, x + 88, y); y += 44; };
+  line(3, '#7a4a22', `Isolinie (alle ${S.iv} m)`);
+  if (S.major) line(6, '#5b3412', `Zählkurve (alle ${5 * S.iv} m)`);
+  if (S.cut) line(5, '#d2232a', 'Schnittachse A – B');
+  g.strokeStyle = 'rgba(40,90,140,.6)'; g.lineWidth = 2; g.strokeRect(x + 18, y + 2, 34, 26); g.fillStyle = INK; g.fillText('Gitter: 1 km', x + 88, y); y += 58;
+  // Farbstufen
+  if (S.mapColors) {
+    g.font = `700 28px ${FF}`; g.fillText('Höhe (m ü. M.)', x, y); y += 44;
+    const lo = Math.floor(hmin / S.iv) * S.iv, hi = Math.ceil(hmax / S.iv) * S.iv;
+    const barH = Math.min(Hh - y - oy - 20, 620), bw = 54, n = (hi - lo) / S.iv, bh = barH / n;
+    for (let k = 0; k < n; k++) {
+      const h = lo + k * S.iv; g.fillStyle = `rgb(${rampRGB((h + S.iv / 2 - hmin) / (hmax - hmin))})`;
+      g.fillRect(x, y + barH - (k + 1) * bh, bw, bh + 0.5);
+    }
+    g.strokeStyle = INK; g.lineWidth = 1.5; g.strokeRect(x, y, bw, barH);
+    g.fillStyle = INK; g.font = `400 24px ${FF}`; g.textBaseline = 'middle';
+    const step = 500;
+    for (let h = Math.ceil(lo / step) * step; h <= hi; h += step) {
+      const yy = y + barH - (h - lo) / S.iv * bh; g.fillRect(x + bw, yy - 1, 10, 2); g.fillText(fmt(h), x + bw + 18, yy);
+    }
+    g.textBaseline = 'top';
+  }
+  mapTex.needsUpdate = true;
+}
+const mapPlane = new THREE.Mesh(
+  new THREE.PlaneGeometry(SHEET_W, SHEET_H).rotateX(-Math.PI / 2).translate((SIDE - MARG) / 2, 0, 0),
+  new THREE.MeshBasicMaterial({ map: mapTex, side: THREE.DoubleSide }));
+mapGroup.add(mapPlane);
+const lineMats = [
+  new LineMaterial({ color: 0x7a4a22, linewidth: 1.4, transparent: true }),
+  new LineMaterial({ color: 0x5b3412, linewidth: 2.6, transparent: true })
+];
+const dropLines = lineMats.map(m => { const l = new LineSegments2(new LineSegmentsGeometry(), m); l.visible = false; l.frustumCulled = false; scene.add(l); return l; });
+const mapCut = new LineSegments2(new LineSegmentsGeometry(), new LineMaterial({ color: 0xd2232a, linewidth: 3 }));
+mapCut.frustumCulled = false; mapGroup.add(mapCut);
+let contoursFor = null;
+
+function contourSegs(level, out) {
+  // Marching Squares auf dem Höhengitter
+  for (let j = 0; j < NF - 1; j++) for (let i = 0; i < NF - 1; i++) {
+    const a = HF[j * NF + i], b = HF[j * NF + i + 1], c = HF[(j + 1) * NF + i + 1], d = HF[(j + 1) * NF + i];
+    const id = (a >= level ? 8 : 0) | (b >= level ? 4 : 0) | (c >= level ? 2 : 0) | (d >= level ? 1 : 0);
+    if (id === 0 || id === 15) continue;
+    const e = n => {
+      let gx, gz;
+      if (n === 0) { gx = i + (level - a) / (b - a); gz = j; }
+      else if (n === 1) { gx = i + 1; gz = j + (level - b) / (c - b); }
+      else if (n === 2) { gx = i + (level - d) / (c - d); gz = j + 1; }
+      else { gx = i; gz = j + (level - a) / (d - a); }
+      return [wx(gx * CF), wz(gz * CF)];
+    };
+    const seg = (p, q) => { const P = e(p), Q = e(q); out.push(P[0], (level - BASE) * M2W, P[1], Q[0], (level - BASE) * M2W, Q[1]); };
+    const center = (a + b + c + d) / 4 >= level;
+    switch (id) {
+      case 1: case 14: seg(2, 3); break;
+      case 2: case 13: seg(1, 2); break;
+      case 3: case 12: seg(1, 3); break;
+      case 4: case 11: seg(0, 1); break;
+      case 6: case 9: seg(0, 2); break;
+      case 7: case 8: seg(0, 3); break;
+      case 5: if (center) { seg(0, 3); seg(1, 2); } else { seg(0, 1); seg(2, 3); } break;
+      case 10: if (center) { seg(0, 1); seg(2, 3); } else { seg(0, 3); seg(1, 2); } break;
+    }
+  }
+}
+function buildContours() {
+  const key = S.iv + '|' + S.major;
+  if (contoursFor === key) return; contoursFor = key;
+  const minor = [], major = [];
+  for (let L = Math.ceil(hmin / S.iv) * S.iv; L <= hmax; L += S.iv) {
+    const isMaj = S.major && Math.round(L / S.iv) % 5 === 0;
+    contourSegs(L, isMaj ? major : minor);
+  }
+  [minor, major].forEach((arr, k) => {
+    dropLines[k].geometry.dispose();
+    const g = new LineSegmentsGeometry(); if (arr.length) g.setPositions(arr); dropLines[k].geometry = g;
+  });
+}
+const ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+function updateDrop() {
+  const t = ease(S.drop);
+  const show = S.drop > 0.001;
+  if (show) buildContours();
+  for (const l of dropLines) {
+    l.visible = show;
+    l.scale.y = Math.max(S.exag * (1 - t), 1e-4);
+    l.position.y = -MAP_GAP * t + 0.012 * (1 - t) + 0.01 * t;
+  }
+  lineMats.forEach(m => m.opacity = Math.min(1, S.drop * 6));
+}
+
+// ================= Beschriftungen =================
+const landmarks = new THREE.Group(); scene.add(landmarks);
+const fmt = n => Math.round(n).toLocaleString('de-DE').replace(/\./g, '\u202F');
+const fmtKm = m => (m / 1000).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+function gridMax(cx, cz, r) {
+  let best = -1, bi = 0, bj = 0;
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    if (Math.hypot(i * CELL - cx, j * CELL - cz) > r) continue;
+    if (H[j * N + i] > best) { best = H[j * N + i]; bi = i; bj = j; }
+  }
+  return [bi * CELL, bj * CELL, best];
+}
+function gridMin(cx, cz, r) {
+  let best = 1e9, bi = 0, bj = 0;
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    if (Math.hypot(i * CELL - cx, j * CELL - cz) > r) continue;
+    if (H[j * N + i] < best) { best = H[j * N + i]; bi = i; bj = j; }
+  }
+  return [bi * CELL, bj * CELL, best];
+}
+// Lage aus geographischen Koordinaten (Mitte = Matterhorn-Gipfel 45,9767° N / 7,6578° O); Höhenangaben amtlich (swisstopo)
+const pt = (X, Z) => [X, Z, hAt(X, Z)];
+const MH = gridMax(4500, 4500, 300), DH = gridMax(440, 5208, 450);
+const LM = [
+  { p: MH, html: `Matterhorn <b>${fmt(4478)}</b>`, cls: 'lbl-pt' },
+  { p: DH, html: `Dent d’Hérens <b>${fmt(4171)}</b>`, cls: 'lbl-pt' },
+  { p: pt(5554, 3885), html: `Hörnlihütte <b>${fmt(3260)}</b>`, cls: 'lbl-pt' },
+  { p: pt(8432, 2773), html: `Schwarzsee <b>${fmt(2583)}</b>`, cls: 'lbl-pt' },
+  { p: pt(8517, 8177), html: `Theodulpass <b>${fmt(3301)}</b>`, cls: 'lbl-pt' },
+  { p: gridMin(6000, 1100, 1300), html: 'Zmutttal', cls: 'lbl-area' },
+  { p: [E / 2, -350, BASE], html: 'SCHWEIZ', cls: 'lbl-map' },
+  { p: [E / 2, E + 350, BASE], html: 'ITALIEN', cls: 'lbl-map' }
+].map(o => { const l = mkLabel(o.html, o.cls); l.userData.p = o.p; landmarks.add(l); return l; });
+const north = mkLabel('↑ N', 'lbl-n'); scene.add(north);
+function placeLabels() {
+  for (const l of LM) l.position.set(wx(l.userData.p[0]), l.userData.p[2] <= BASE ? 0 : yOf(l.userData.p[2]) + 0.05, wz(l.userData.p[1]));
+  north.position.set(-SIZE / 2 - 0.5, 0, -SIZE / 2 - 0.5);
+}
+
+// ================= Profil =================
+let prof = null;
+const DIRS = ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW'];
+const dirName = b => DIRS[Math.round((((b % 360) + 360) % 360) / 45) % 8];
+function computeProfile() {
+  const a = S.angle * Math.PI / 180, dx = Math.sin(a), dz = -Math.cos(a), half = E / 2;
+  const t = Math.min(Math.abs(dx) > 1e-6 ? half / Math.abs(dx) : 1e9, Math.abs(dz) > 1e-6 ? half / Math.abs(dz) : 1e9) - 0.01;
+  const len = 2 * t, n = 520;
+  const X = new Float32Array(n), Z = new Float32Array(n), D = new Float32Array(n), Hs = new Float32Array(n), Hg = new Float32Array(n);
+  let mn = Infinity, mx = -Infinity, imx = 0, imn = 0;
+  for (let k = 0; k < n; k++) {
+    const s = k / (n - 1) * len; D[k] = s; X[k] = half - t * dx + s * dx; Z[k] = half - t * dz + s * dz; Hs[k] = hAt(X[k], Z[k]); Hg[k] = hcAt(X[k], Z[k]);
+    if (Hs[k] > mx) { mx = Hs[k]; imx = k; } if (Hs[k] < mn) { mn = Hs[k]; imn = k; }
+  }
+  prof = { dx, dz, len, n, X, Z, D, H: Hs, HG: Hg, mn, mx, imx, imn, t };
+}
+function updateCut() {
+  computeProfile();
+  const { dx, dz, t } = prof;
+  terrainMat.uniforms.uCutDir.value.set(dx, dz);
+  const lenW = 2 * t * M2W, top = yOf(hmax) + 0.7;
+  planeMesh.scale.set(lenW, top, 1); planeEdge.scale.copy(planeMesh.scale);
+  planeMesh.rotation.y = planeEdge.rotation.y = Math.atan2(-dz, dx);
+  const ax = -dx * t * M2W, az = -dz * t * M2W;
+  handleA.position.set(ax, top, az); handleB.position.set(-ax, top, -az);
+  hitA.position.copy(handleA.position); hitB.position.copy(handleB.position);
+  lblA.position.copy(handleA.position); lblB.position.copy(handleB.position);
+  lblA.element.firstChild.textContent = 'A'; lblB.element.firstChild.textContent = 'B';
+  // Schnittfläche (Deckel) für das aufgeschnittene Modell
+  const n = prof.n, pos = new Float32Array(n * 2 * 3), hh = new Float32Array(n * 2), nn = new Float32Array(n * 2 * 3), ix = [];
+  for (let k = 0; k < n; k++) {
+    const x = wx(prof.X[k]), z = wz(prof.Z[k]);
+    pos.set([x, yOf(prof.H[k]), z, x, 0, z], k * 6); hh[k * 2] = prof.H[k]; hh[k * 2 + 1] = BASE;
+    nn.set([-dz, 0, dx, -dz, 0, dx], k * 6);
+    if (k < n - 1) { const a = k * 2; ix.push(a, a + 1, a + 2, a + 2, a + 1, a + 3); }
+  }
+  capGeo.setIndex(ix); capGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  capGeo.setAttribute('aH', new THREE.BufferAttribute(hh, 1)); capGeo.setAttribute('normal', new THREE.BufferAttribute(nn, 3));
+  capGeo.computeBoundingSphere();
+  // Achse auf der Karte
+  mapCut.geometry.dispose(); const mg = new LineSegmentsGeometry();
+  mg.setPositions([ax, 0.02, az, -ax, 0.02, -az]); mapCut.geometry = mg;
+  // Texte
+  const from = dirName(S.angle + 180), to = dirName(S.angle);
+  document.getElementById('angleOut').textContent = `${S.angle}° · ${from} → ${to}`;
+  document.getElementById('profDir').textContent = `${from} → ${to}`;
+  document.getElementById('stats').innerHTML =
+    `<span>Länge <b>${fmtKm(prof.len)} km</b></span><span>Höchster Punkt <b>${fmt(prof.mx)} m</b></span>` +
+    `<span>Tiefster Punkt <b>${fmt(prof.mn)} m</b></span><span>Höhenunterschied <b>${fmt(prof.mx - prof.mn)} m</b></span>`;
+  drawProfile();
+}
+
+const pc = document.getElementById('prof'), pwrap = document.getElementById('pwrap'), ptip = document.getElementById('ptip');
+let pGeom = null, hoverK = -1;
+const Y_LO = Math.floor((hmin - 60) / 100) * 100, Y_HI = Math.ceil((hmax + 120) / 100) * 100;
+function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function drawProfile() {
+  if (!prof) return;
+  const W = pwrap.clientWidth; if (!W) return;
+  const narrow = W < 600;
+  const pad = { l: narrow ? 46 : 58, r: 16, t: 30, b: 34 };
+  const pwMax = W - pad.l - pad.r, phMax = narrow ? 240 : 400, L = prof.len, R = Y_HI - Y_LO;
+  let pw, ph;
+  if (S.profEx === 'auto') { pw = pwMax; ph = phMax; }
+  else { const ex = +S.profEx; ph = Math.min(phMax, ex * R * pwMax / L); pw = Math.min(pwMax, ph * L / (ex * R)); }
+  const ex = (ph / R) / (pw / L);
+  const Hc = Math.round(ph + pad.t + pad.b), dpr = Math.min(devicePixelRatio || 1, 2);
+  pc.style.height = Hc + 'px'; pc.width = Math.round(W * dpr); pc.height = Math.round(Hc * dpr);
+  const g = pc.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, Hc);
+  const x0 = pad.l + (pwMax - pw) / 2;
+  const sx = s => x0 + s / L * pw, sy = h => pad.t + (Y_HI - h) / R * ph;
+  pGeom = { x0, pw, L, sx, sy, pad, ph };
+  const ink = css('--ink'), muted = css('--muted'), grid = css('--grid'), gridS = css('--grid-strong'), accent = css('--accent');
+  const font = getComputedStyle(document.body).fontFamily, mono = css('--mono');
+  const iv = S.iv;
+  // Gitter: eine Linie je Isolinienhöhe
+  for (let h = Math.ceil(Y_LO / iv) * iv; h <= Y_HI; h += iv) {
+    const y = Math.round(sy(h)) + 0.5, maj = h % 500 === 0;
+    g.strokeStyle = maj ? gridS : grid; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(x0, y); g.lineTo(x0 + pw, y); g.stroke();
+  }
+  // Fläche unter dem Profil
+  g.save(); g.beginPath(); g.moveTo(sx(0), sy(Y_LO));
+  for (let k = 0; k < prof.n; k++) g.lineTo(sx(prof.D[k]), sy(prof.H[k]));
+  g.lineTo(sx(L), sy(Y_LO)); g.closePath(); g.clip();
+  if (S.mode === 1) {
+    if (S.stepped) {
+      for (let h = Math.floor(Y_LO / iv) * iv; h < Y_HI; h += iv) {
+        const c = rampRGB((h + iv / 2 - hmin) / (hmax - hmin)); g.fillStyle = `rgb(${c})`;
+        g.fillRect(x0, sy(h + iv), pw, sy(h) - sy(h + iv) + 0.5);
+      }
+    } else {
+      const gr = g.createLinearGradient(0, sy(hmax), 0, sy(hmin));
+      for (let k = 0; k <= 20; k++) { const c = rampRGB(1 - k / 20); gr.addColorStop(k / 20, `rgb(${c})`); }
+      g.fillStyle = gr; g.fillRect(x0, pad.t, pw, ph);
+    }
+  } else {
+    const gr = g.createLinearGradient(0, sy(hmax), 0, sy(Y_LO));
+    gr.addColorStop(0, css('--earth')); gr.addColorStop(1, css('--earth-deep'));
+    g.fillStyle = gr; g.fillRect(x0, pad.t, pw, ph);
+  }
+  g.restore();
+  // Hilfslinien: Schnittpunkte der Achse mit den Isolinien
+  if (S.constr) {
+    g.strokeStyle = css('--contour'); g.fillStyle = css('--contour'); g.lineWidth = 1; g.setLineDash([2, 3]);
+    const pts = [];
+    for (let k = 1; k < prof.n; k++) {
+      const h0 = prof.HG[k - 1], h1 = prof.HG[k];
+      const lo = Math.min(h0, h1), hi = Math.max(h0, h1);
+      for (let L2 = Math.ceil(lo / iv) * iv; L2 < hi; L2 += iv) {
+        const f = (L2 - h0) / (h1 - h0); pts.push([prof.D[k - 1] + f * (prof.D[k] - prof.D[k - 1]), L2]);
+      }
+    }
+    for (const [s, h] of pts) { const x = Math.round(sx(s)) + 0.5; g.beginPath(); g.moveTo(x, sy(h)); g.lineTo(x, sy(Y_LO)); g.stroke(); }
+    g.setLineDash([]);
+    for (const [s, h] of pts) { g.beginPath(); g.arc(sx(s), sy(h), 2.6, 0, Math.PI * 2); g.fill(); }
+    // Markierungen auf der Grundlinie (wie auf dem Papierstreifen)
+    for (const [s] of pts) { const x = Math.round(sx(s)) + 0.5; g.beginPath(); g.moveTo(x, sy(Y_LO)); g.lineTo(x, sy(Y_LO) + 5); g.stroke(); }
+  }
+  // Profillinie
+  g.strokeStyle = ink; g.lineWidth = 2; g.lineJoin = 'round'; g.beginPath();
+  for (let k = 0; k < prof.n; k++) { const x = sx(prof.D[k]), y = sy(prof.H[k]); k ? g.lineTo(x, y) : g.moveTo(x, y); }
+  g.stroke();
+  // Achsen
+  g.strokeStyle = ink; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(x0 + .5, pad.t); g.lineTo(x0 + .5, sy(Y_LO) + .5); g.lineTo(x0 + pw, sy(Y_LO) + .5); g.stroke();
+  g.fillStyle = muted; g.font = `12px ${mono}`; g.textAlign = 'right'; g.textBaseline = 'middle';
+  const yStep = ph < 160 ? 1000 : 500;
+  for (let h = Math.ceil(Y_LO / yStep) * yStep; h <= Y_HI; h += yStep) { g.fillText(fmt(h), x0 - 7, sy(h)); g.fillRect(x0 - 4, Math.round(sy(h)), 4, 1); }
+  g.textAlign = 'left'; g.textBaseline = 'bottom'; g.fillText('m', x0 - (narrow ? 38 : 48), pad.t - 10);
+  g.textAlign = 'center'; g.textBaseline = 'top';
+  const xStep = pw / L * 500 < 60 ? 1000 : 500;
+  for (let s = 0; s <= L + 1; s += xStep) {
+    const x = sx(s); g.fillRect(Math.round(x), sy(Y_LO), 1, 4);
+    if (sx(L) - x > 64 || s === 0) g.fillText(fmtKm(s).replace(',0', ''), x, sy(Y_LO) + 7);
+  }
+  g.textAlign = 'right'; g.fillText(`${fmtKm(L)} km`, x0 + pw, sy(Y_LO) + 7);
+  // A und B
+  const from = dirName(S.angle + 180), to = dirName(S.angle);
+  g.font = `700 13px ${font}`; g.textBaseline = 'bottom';
+  g.fillStyle = accent; g.textAlign = 'left'; g.fillText(`A (${from})`, x0, pad.t - 8);
+  g.textAlign = 'right'; g.fillText(`(${to}) B`, x0 + pw, pad.t - 8);
+  g.fillStyle = muted; g.font = `12px ${font}`; g.textAlign = 'center';
+  g.fillText(Math.abs(ex - 1) < 0.05 ? 'Nicht überhöht (1-fach)' : `Überhöhung ${ex.toLocaleString('de-DE', { maximumFractionDigits: 1, minimumFractionDigits: 1 })}-fach`, x0 + pw / 2, pad.t - 8);
+  // Hover
+  if (hoverK >= 0) {
+    const x = sx(prof.D[hoverK]), y = sy(prof.H[hoverK]);
+    g.strokeStyle = accent; g.lineWidth = 1; g.beginPath(); g.moveTo(Math.round(x) + .5, pad.t); g.lineTo(Math.round(x) + .5, sy(Y_LO)); g.stroke();
+    g.fillStyle = accent; g.beginPath(); g.arc(x, y, 4.5, 0, Math.PI * 2); g.fill();
+    ptip.hidden = false; ptip.style.left = x + 'px'; ptip.style.top = y + 'px';
+    ptip.textContent = `${fmtKm(prof.D[hoverK])} km · ${fmt(prof.H[hoverK])} m`;
+  } else ptip.hidden = true;
+}
+function profHover(e) {
+  if (!pGeom) return;
+  const r = pc.getBoundingClientRect(), x = e.clientX - r.left;
+  const s = (x - pGeom.x0) / pGeom.pw * pGeom.L;
+  if (s < 0 || s > pGeom.L) return profLeave();
+  hoverK = Math.round(s / prof.len * (prof.n - 1));
+  const X = prof.X[hoverK], Z = prof.Z[hoverK];
+  terrainMat.uniforms.uMark.value.set(wx(X), 0, wz(Z)); terrainMat.uniforms.uMarkOn.value = 1;
+  marker.position.set(wx(X), yOf(prof.H[hoverK]) + 0.07, wz(Z)); marker.visible = true;
+  drawProfile();
+}
+function profLeave() { hoverK = -1; terrainMat.uniforms.uMarkOn.value = 0; marker.visible = false; drawProfile(); }
+pc.addEventListener('pointermove', profHover);
+pc.addEventListener('pointerdown', profHover);
+pc.addEventListener('pointerleave', profLeave);
+
+// ================= Legende =================
+const legend = document.getElementById('legend');
+function drawLegend() {
+  if (S.mode === 0) {
+    const items = [['Wald', [.24,.40,.24]], ['Wiese, Weide', [.60,.65,.42]], ['Fels, Schutt', [.57,.55,.52]], ['Gletscher, Firn', [.88,.93,.97]]];
+    legend.innerHTML = '<div class="swatches">' + items.map(([n, c]) => `<span><i style="background:rgb(${c.map(v => Math.round(v * 255))})"></i>${n}</span>`).join('') + '</div><span>Aus dem Luftbild abgeleitet, vereinfacht. Schuttbedeckte Gletscherzungen erscheinen als Schutt.</span>';
+    return;
+  }
+  if (S.mode === 4) { legend.innerHTML = '<span>Luftbild swisstopo (SWISSIMAGE). Unten links (Italien) stammt das Bild aus einer anderen Aufnahme.</span>'; return; }
+  if (S.mode === 3) { legend.innerHTML = '<span>Nur Licht und Schatten. Licht kommt aus Nordwesten.</span>'; return; }
+  const c = document.createElement('canvas'); c.width = 280; c.height = 14; const g = c.getContext('2d');
+  let ticks;
+  if (S.mode === 1) {
+    for (let x = 0; x < 280; x++) {
+      let h = hmin + x / 279 * (hmax - hmin);
+      if (S.stepped) h = (Math.floor(h / S.iv) + .5) * S.iv;
+      g.fillStyle = `rgb(${rampRGB((h - hmin) / (hmax - hmin))})`; g.fillRect(x, 0, 1, 14);
+    }
+    const a = Math.ceil(hmin / 500) * 500; ticks = [];
+    ticks.push(`${fmt(hmin)}`); for (let h = a; h < hmax - 200; h += 500) if (h - hmin > 200) ticks.push(fmt(h)); ticks.push(`${fmt(hmax)} m`);
+  } else {
+    for (let x = 0; x < 280; x++) { g.fillStyle = `rgb(${slopeRGB(x / 279 * 60)})`; g.fillRect(x, 0, 1, 14); }
+    ticks = ['0°', '15°', '30°', '45°', '60°'];
+  }
+  legend.innerHTML = ''; legend.appendChild(c);
+  const t = document.createElement('div'); t.className = 'ticks'; t.innerHTML = ticks.map(x => `<span>${x}</span>`).join(''); legend.appendChild(t);
+  if (S.mode === 2) { const n = document.createElement('span'); n.textContent = 'Je enger die Isolinien, desto steiler der Hang.'; legend.appendChild(n); }
+}
+
+// ================= Kamera =================
+let camTween = null;
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function goView(kind) {
+  const V = (x, y, z) => new THREE.Vector3(x, y, z);
+  let to;
+  if (S.map && S.hideRelief) // nur die Karte: nah und von schräg oben
+    to = kind === 'top' ? { p: V(1.9, 19.5 - MAP_GAP, 0.01), t: V(1.9, -MAP_GAP, 0) } : { p: V(13, 13 - MAP_GAP, -12), t: V(1.9, -MAP_GAP - 0.8, 0) };
+  else if (S.map)
+    to = kind === 'top' ? { p: V(1.9, 24, 0.01), t: V(1.9, 0, 0) } : { p: V(17, 11, -15), t: V(1, -2.1, 0) };
+  else
+    to = kind === 'top' ? { p: V(0, 21, 0.01), t: V(0, 1.2, 0) } : { p: V(11.5, 6, -13), t: V(0, 1.4, 0) };
+  document.getElementById('view3d').setAttribute('aria-pressed', kind !== 'top');
+  document.getElementById('viewTop').setAttribute('aria-pressed', kind === 'top');
+  controls.maxPolarAngle = Math.PI * 0.62;
+  if (reduce) { camera.position.copy(to.p); controls.target.copy(to.t); return; }
+  camTween = { p0: camera.position.clone(), t0: controls.target.clone(), p1: to.p, t1: to.t, k: 0 };
+}
+document.getElementById('view3d').onclick = () => goView('3d');
+document.getElementById('viewTop').onclick = () => goView('top');
+
+// ================= Bedienung =================
+const $ = id => document.getElementById(id);
+$('isoOn').onchange = e => { S.iso = e.target.checked; terrainMat.uniforms.uIso.value = S.iso ? 1 : 0; wallMat.uniforms.uLines.value = capMat.uniforms.uLines.value = S.iso ? 1 : 0; };
+document.querySelectorAll('input[name=iv]').forEach(r => r.onchange = () => {
+  S.iv = +r.value; terrainMat.uniforms.uIv.value = S.iv; wallMat.uniforms.uIv.value = capMat.uniforms.uIv.value = S.iv;
+  if (S.map) drawMap();
+  if (S.drop > 0) updateDrop(); drawProfile(); drawLegend();
+});
+$('majorOn').onchange = e => { S.major = e.target.checked; if (S.map) drawMap(); terrainMat.uniforms.uMajor.value = S.major ? 1 : 0; if (S.drop > 0) updateDrop(); };
+document.querySelectorAll('input[name=mode]').forEach(r => r.onchange = () => {
+  S.mode = +r.value; terrainMat.uniforms.uMode.value = S.mode;
+  $('stepOn').disabled = S.mode !== 1; $('stepWrap').classList.toggle('dim', S.mode !== 1);
+  drawLegend(); drawProfile();
+});
+$('stepOn').onchange = e => { S.stepped = e.target.checked; terrainMat.uniforms.uStep.value = S.stepped ? 1 : 0; drawLegend(); drawProfile(); };
+$('cutOn').onchange = e => {
+  S.cut = e.target.checked; cutGroup.visible = lblA.visible = lblB.visible = S.cut && !S.hideRelief; mapCut.visible = S.cut; terrainMat.uniforms.uCut.value = S.cut ? 1 : 0; if (S.map) drawMap();
+  if (!S.cut) { stopRotate(); $('openOn').checked = false; setOpen(false); }
+  $('openOn').disabled = !S.cut;
+};
+const angleEl = $('angle');
+function setAngle(a) { S.angle = ((Math.round(a) % 360) + 360) % 360; angleEl.value = S.angle; updateCut(); }
+angleEl.oninput = () => { stopRotate(); setAngle(+angleEl.value); };
+function stopRotate() { S.rotating = false; $('rotBtn').setAttribute('aria-pressed', 'false'); $('rotBtn').textContent = '▶ Drehen'; }
+$('rotBtn').onclick = () => {
+  if (S.rotating) return stopRotate();
+  if (!S.cut) { $('cutOn').checked = true; $('cutOn').onchange({ target: $('cutOn') }); }
+  S.rotating = true; $('rotBtn').setAttribute('aria-pressed', 'true'); $('rotBtn').textContent = '❚❚ Anhalten';
+};
+function setOpen(on) {
+  S.open = on; cap.visible = on && !S.hideRelief;
+  const planes = on ? [clipPlane] : [];
+  terrainMat.clippingPlanes = planes; wallMat.clippingPlanes = planes; bottom.material.clippingPlanes = planes;
+  planeMesh.material.opacity = on ? 0.04 : 0.1;
+}
+$('openOn').onchange = e => setOpen(e.target.checked);
+function setHideRelief(on) {
+  S.hideRelief = on; $('hideRelief').checked = on;
+  terrain.visible = bottom.visible = !on; walls.forEach(w => w.visible = !on); cap.visible = S.open && !on;
+  cutGroup.visible = lblA.visible = lblB.visible = S.cut && !on;
+  goView($('viewTop').getAttribute('aria-pressed') === 'true' ? 'top' : '3d');
+}
+$('mapColors').onchange = e => { S.mapColors = e.target.checked; if (S.mapColors && !S.map) setMap(true); drawMap(); };
+$('hideRelief').onchange = e => { if (e.target.checked && !S.map) setMap(true); setHideRelief(e.target.checked); };
+function setMap(on) {
+  S.map = on; mapGroup.visible = on; $('mapOn').checked = on;
+  mapGroup.position.y = -MAP_GAP;
+  controls.maxDistance = on ? 55 : 40;
+  goView($('viewTop').getAttribute('aria-pressed') === 'true' ? 'top' : '3d');
+}
+$('mapOn').onchange = e => { setMap(e.target.checked); if (!e.target.checked) { S.drop = 0; syncDrop(); setHideRelief(false); } };
+let dropAnim = null;
+function syncDrop() { $('drop').value = Math.round(S.drop * 100); $('dropOut').textContent = Math.round(S.drop * 100) + ' %'; $('dropBtn').textContent = S.drop > 0.5 ? '▲ Anheben' : '▼ Absenken'; updateDrop(); }
+$('drop').oninput = e => { dropAnim = null; S.drop = +e.target.value / 100; if (S.drop > 0 && !S.map) setMap(true); syncDrop(); };
+$('dropBtn').onclick = () => { if (!S.map) setMap(true); dropAnim = S.drop > 0.5 ? 0 : 1; if (reduce) { S.drop = dropAnim; dropAnim = null; syncDrop(); } };
+$('exag').oninput = e => {
+  S.exag = +e.target.value; $('exagOut').textContent = S.exag.toLocaleString('de-DE', { minimumFractionDigits: 1 }) + '-fach';
+  applyHeights(); placeLabels(); updateCut(); updateDrop();
+};
+$('labelsOn').onchange = e => { S.labels = e.target.checked; landmarks.visible = S.labels; LM.forEach(l => l.visible = S.labels); };
+document.querySelectorAll('input[name=pex]').forEach(r => r.onchange = () => { S.profEx = r.value; drawProfile(); });
+$('constrOn').onchange = e => { S.constr = e.target.checked; drawProfile(); };
+
+// Hover-Höhe im 3D-Modell (Strahlverfolgung über dem Höhenfeld)
+const tip = $('tip');
+let lastMove = null;
+renderer.domElement.addEventListener('pointermove', e => {
+  if (dragHandle) {
+    setNdc(e); raycaster.setFromCamera(ndc, camera);
+    const pl = new THREE.Plane(new THREE.Vector3(0, 1, 0), -handleA.position.y), p = new THREE.Vector3();
+    if (raycaster.ray.intersectPlane(pl, p)) {
+      let b = Math.atan2(p.x, -p.z) * 180 / Math.PI; if (dragHandle.userData.end === 'A') b += 180; setAngle(b);
+    }
+    return;
+  }
+  lastMove = e;
+});
+renderer.domElement.addEventListener('pointerup', e => { if (dragHandle) { dragHandle = null; vp.style.cursor = ''; renderer.domElement.releasePointerCapture(e.pointerId); } });
+renderer.domElement.addEventListener('pointerleave', () => { lastMove = null; tip.hidden = true; });
+function hoverPick() {
+  if (!lastMove) return; const e = lastMove; lastMove = null;
+  if (e.pointerType === 'touch' || S.hideRelief) { tip.hidden = true; return; }
+  setNdc(e); raycaster.setFromCamera(ndc, camera);
+  const onHandle = S.cut && raycaster.intersectObjects([hitA, hitB]).length > 0;
+  vp.style.cursor = onHandle ? 'grab' : '';
+  const o = raycaster.ray.origin, d = raycaster.ray.direction, p = new THREE.Vector3();
+  let hit = null, prev = 0;
+  for (let t = 0.5; t < 70; t += 0.03) {
+    p.copy(o).addScaledVector(d, t);
+    if (Math.abs(p.x) > SIZE / 2 || Math.abs(p.z) > SIZE / 2) { prev = t; continue; }
+    const X = (p.x + SIZE / 2) / M2W, Z = (p.z + SIZE / 2) / M2W;
+    if (p.y <= yOf(hAt(X, Z))) {
+      let a = prev, b = t;
+      for (let k = 0; k < 12; k++) { const m = (a + b) / 2; p.copy(o).addScaledVector(d, m); const h = yOf(hAt((p.x + SIZE / 2) / M2W, (p.z + SIZE / 2) / M2W)); if (p.y <= h) b = m; else a = m; }
+      p.copy(o).addScaledVector(d, b); hit = p; break;
+    }
+    prev = t;
+  }
+  if (hit && S.open && clipPlane.distanceToPoint(hit) < 0) hit = null;
+  if (!hit || onHandle) { tip.hidden = true; return; }
+  const r = vp.getBoundingClientRect();
+  tip.hidden = false; tip.style.left = (e.clientX - r.left) + 'px'; tip.style.top = (e.clientY - r.top) + 'px';
+  tip.textContent = fmt(hAt((hit.x + SIZE / 2) / M2W, (hit.z + SIZE / 2) / M2W)) + ' m';
+}
+
+// ================= Größe, Thema, Schleife =================
+function resize() {
+  const w = vp.clientWidth, h = vp.clientHeight;
+  renderer.setSize(w, h); labelR.setSize(w, h); camera.aspect = w / h; camera.fov = camera.aspect < 1.1 ? Math.min(66, 38 * 1.1 / camera.aspect) : 38; camera.updateProjectionMatrix();
+  for (const m of [...lineMats, mapCut.material]) m.resolution.set(w, h);
+}
+new ResizeObserver(resize).observe(vp);
+new ResizeObserver(() => drawProfile()).observe(pwrap);
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { drawProfile(); });
+new MutationObserver(() => drawProfile()).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+applyHeights(); placeLabels(); updateCut(); drawLegend(); drawMap(); resize();
+document.fonts && document.fonts.ready.then(() => drawMap());
+const perp = new THREE.Vector3();
+let last = performance.now();
+renderer.setAnimationLoop(() => {
+  const now = performance.now(), dt = Math.min((now - last) / 1000, 0.1); last = now;
+  if (S.rotating) { S.angle = (S.angle + dt * 18) % 360; angleEl.value = Math.round(S.angle) % 360; updateCutSmooth(); }
+  if (dropAnim !== null) {
+    const dir = Math.sign(dropAnim - S.drop); S.drop = Math.min(1, Math.max(0, S.drop + dir * dt * 0.45));
+    if ((dir > 0 && S.drop >= dropAnim) || (dir < 0 && S.drop <= dropAnim) || dir === 0) { S.drop = dropAnim; dropAnim = null; }
+    syncDrop();
+  }
+  if (camTween) {
+    camTween.k = Math.min(1, camTween.k + dt / 0.7); const e = ease(camTween.k);
+    camera.position.lerpVectors(camTween.p0, camTween.p1, e); controls.target.lerpVectors(camTween.t0, camTween.t1, e);
+    if (camTween.k >= 1) camTween = null;
+  }
+  if (S.open) {
+    // die der Kamera zugewandte Hälfte wird weggeschnitten
+    perp.set(-prof.dz, 0, prof.dx);
+    const sgn = camera.position.dot(perp) > 0 ? -1 : 1;
+    clipPlane.normal.copy(perp).multiplyScalar(sgn); clipPlane.constant = 0;
+  }
+  for (const l of LM) l.visible = S.labels && !S.hideRelief && (!S.open || clipPlane.distanceToPoint(l.position) > -0.05);
+  controls.update();
+  hoverPick();
+  if (now - occT > 150) { occT = now; updateOcclusion(); }
+  renderer.render(scene, camera); labelR.render(scene, camera);
+});
+// Beschriftungen ausblenden, wenn ihr Ort hinter einem Berg liegt
+let occT = 0;
+const _v = new THREE.Vector3(), _q = new THREE.Vector3();
+function updateOcclusion() {
+  const cam = camera.position;
+  for (const l of LM) {
+    const el = l.element.firstChild;
+    if (!l.visible || l.userData.p[2] <= BASE || S.hideRelief) { el.classList.remove('occ'); continue; }
+    _v.copy(l.position).sub(cam); const d = _v.length(); _v.normalize(); let occ = false;
+    for (let t = 0.3; t < d - 0.3; t += 0.06) {
+      _q.copy(cam).addScaledVector(_v, t);
+      if (Math.abs(_q.x) > SIZE / 2 || Math.abs(_q.z) > SIZE / 2) continue;
+      if (yOf(hAt((_q.x + SIZE / 2) / M2W, (_q.z + SIZE / 2) / M2W)) > _q.y + 0.02) { occ = true; break; }
+    }
+    el.classList.toggle('occ', occ);
+  }
+}
+function updateCutSmooth() {
+  const shown = Math.round(S.angle) % 360;
+  const keep = S.angle; S.angle = shown; updateCut(); S.angle = keep;
+}
+</script>
