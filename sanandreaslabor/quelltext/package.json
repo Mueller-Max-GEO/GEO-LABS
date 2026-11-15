@@ -1,0 +1,1 @@
+{"name":"san-andreas-labor-v2","private":true,"version":"2.0.0","description":"Quelltext des San-Andreas-Labors V2 (GEO-LABS). Bauen: python3 build.py","scripts":{"build":"python3 build.py","test":"node tests/model_test.js"},"devDependencies":{"esbuild":"^0.24.0","playwright":"1.52","three":"0.170.0"}}

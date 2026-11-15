@@ -11,6 +11,7 @@ und läuft direkt im Browser.
 | Pyramiden-Labor | Bevölkerungsdiagramme in 3D: Luxemburg ab 1880 und 15 weitere Länder bis 2100, Grundformen, Jahrgänge, demografischer Übergang, Erklärfilm, Quiz, Vorführmodus fürs iPad (DE/FR) | [`pyramidenlabor/`](pyramidenlabor/) |
 | Föhn-Labor | Vereinfachtes thermodynamisches Föhnmodell in 3D: Aufstieg im Luv, Kondensationsniveau, Stauwolke (Föhnmauer), Regen und Schnee, Abstieg im Lee. Schritt für Schritt, Experimentieren, Rechenmodus, Vorführmodus und Vollbild fürs iPad | [`foehnlabor/`](foehnlabor/) |
 | Schalenbau-Labor | Reise zum Erdmittelpunkt in 3D: Erdkruste nach Messdaten (Schnitt durch Luxemburg), live gerechnete Mantelkonvektion, Tiefensonde (PREM), Erdbebenwellen mit Schattenzonen, Magnetfeld, Sonnenwind und Polarlicht | [`schalenbaulabor/`](schalenbaulabor/) |
+| San-Andreas-Labor | Transformstörung in 3D mit echtem Gelände und Luftbildern: Einordnung auf der Erdkugel, Plattengrenzen, Gleiten oder Verhaken, Spannungsaufbau und zwei Erdbeben, Wallace Creek mit 130 m Versatz. Für das iPad optimiert, auch offline (Web-App) | [`sanandreaslabor/`](sanandreaslabor/) |
 
 ## Online ansehen (GitHub Pages)
 
@@ -21,7 +22,8 @@ das Tsunami-Modell unter `https://mueller-max-geo.github.io/GEO-LABS/tsunamilabo
 das Erdumlauf-Labor unter `https://mueller-max-geo.github.io/GEO-LABS/erdumlauf/`,
 das Pyramiden-Labor unter `https://mueller-max-geo.github.io/GEO-LABS/pyramidenlabor/`,
 das Föhn-Labor unter `https://mueller-max-geo.github.io/GEO-LABS/foehnlabor/`,
-das Schalenbau-Labor unter `https://mueller-max-geo.github.io/GEO-LABS/schalenbaulabor/`.
+das Schalenbau-Labor unter `https://mueller-max-geo.github.io/GEO-LABS/schalenbaulabor/`,
+das San-Andreas-Labor unter `https://mueller-max-geo.github.io/GEO-LABS/sanandreaslabor/`.
 
 ## Neue Übung hinzufügen
 
