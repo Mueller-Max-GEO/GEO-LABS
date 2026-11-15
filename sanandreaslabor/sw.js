@@ -1,5 +1,5 @@
-/* San-Andreas-Labor – Offline-Speicher. Version: 7cd6818513 */
-const CACHE='sal-7cd6818513';
+/* San-Andreas-Labor – Offline-Speicher. Version: 97532ca4bb */
+const CACHE='sal-97532ca4bb';
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png',"./fotos/europa.webp","./fotos/ggb.jpg","./fotos/hollywood.jpg","./fotos/la.jpg","./fotos/saf.jpg","./fotos/sf.jpg","./fotos/sierra.jpg","./fotos/venice.jpg"];
 self.addEventListener('install',e=>{ e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>caches.open(CACHE)).then(c=>fetch("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;500&family=Atkinson+Hyperlegible+Next:wght@400;500;700&display=swap",{mode:'no-cors'}).then(r=>c.put("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;500&family=Atkinson+Hyperlegible+Next:wght@400;500;700&display=swap",r)).catch(()=>{})).then(()=>self.skipWaiting())); });
 self.addEventListener('activate',e=>{ e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith('sal-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())); });

@@ -289,7 +289,7 @@ document.addEventListener('keydown',e=>{ if(e.target.closest('select,textarea')|
   if(e.code==='Space'&&!e.target.closest('button,input')){ e.preventDefault(); $('bPlay').click(); }
   else if(e.key==='ArrowRight'){ $('bNext').click(); } else if(e.key==='ArrowLeft'){ $('bPrev').click(); }
   else if(e.key>='1'&&e.key<='5'&&!e.target.closest('input')){ gotoPhase(+e.key-1,true); }
-  else if(e.key==='f'||e.key==='F'){ toggleFull(); } else if(e.key==='b'||e.key==='B'){ togglePanel(); } else if(e.key==='e'||e.key==='E'){ filmStart(); } else if(e.key==='v'||e.key==='V'){ setMode(state.mode==='creep'?'lock':'creep'); } });
+  else if(e.key==='f'||e.key==='F'){ toggleFull(); } else if(e.key==='b'||e.key==='B'){ togglePanel(); }  else if(e.key==='v'||e.key==='V'){ setMode(state.mode==='creep'?'lock':'creep'); } });
 
 /* ===================== Erklärfilm ===================== */
 const film={ch:0,sh:0,el:0,dur:1,paused:false,wait:false,speaking:false,ended:false,cam:null};
@@ -315,7 +315,7 @@ function filmStep(dt){ if(film.paused||film.wait) return; film.el+=dt; const s=F
 function filmEnd(){ if(!state.film) return; state.film=false; film.cam=null; app.classList.remove('film'); $('bFilm').textContent='▶ Erklärfilm'; $('cap').hidden=true; $('cinenav').hidden=true; $('dock').hidden=false; resize();
   if(preFilm&&preFilm.mode!==state.mode) setMode(preFilm.mode,true);
   if('speechSynthesis' in window) speechSynthesis.cancel(); hudStamp=0; curPhaseShown=-1; state.dirty=true; if(shown&&state.autoCam) camTo(phaseCam(phaseAt(state.t))); syncButtons(); }
-$('bFilm').onclick=()=>{ if(state.film) filmEnd(); else filmStart(); }; $('fEnd').onclick=filmEnd;
+$('bFilm').onclick=()=>{ if($('bFilm').disabled) return; if(state.film) filmEnd(); else filmStart(); }; $('fEnd').onclick=filmEnd;
 $('fPlay').onclick=()=>{ if(film.ended){ filmShot(0,0); } else if(film.wait){ filmShot(film.ch+1,0); } else { film.paused=!film.paused; $('fPlay').textContent=film.paused?'Weiter ▶':'Pause'; if(film.paused&&'speechSynthesis' in window) speechSynthesis.cancel(); } };
 $('fNext').onclick=()=>{ if(film.ch+1<FILM.length) filmShot(film.ch+1,0); };
 $('fPrev').onclick=()=>{ filmShot(film.el>2.5||film.sh>0?film.ch:Math.max(0,film.ch-1),0); };
@@ -377,7 +377,7 @@ window.addEventListener('unhandledrejection',e=>diag('Fehler: '+(e.reason&&e.rea
   buildLabels();
   resize(); setMode(state.mode,true); update(); showPhase(0); syncButtons(); started=true;
   $('loading').classList.add('hide');
-  if(QS.has('film')) filmStart();
+  // Erklärfilm vorerst gesperrt
   if(QS.has('t')){ setTime(+QS.get('t')); }
 })().catch(e=>diag('Start fehlgeschlagen: '+(e&&e.message||e)));
 window.__sa={renderer,state,PH,TEND,setTime,setView,setMode,camTo,film,filmStart,filmShot,filmEnd,gotoPhase,scene,camera,controls,UNI,SCL,G,stateAt,ready:()=>started,creekXY:fr=>{ const r=renderer.domElement.getBoundingClientRect(), cp=SA_META.C.creekPts, q=cp[Math.floor(cp.length*fr)], v=projXY(WP("C",q[0],q[1],0.05),r.width,r.height); return [r.left+v[0],r.top+v[1],q[1]]; },cur:()=>({shown,st,dispSC})};

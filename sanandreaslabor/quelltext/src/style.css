@@ -369,3 +369,5 @@ button,[role=tab],.tick,label,.seg button{touch-action:manipulation;-webkit-tap-
 .lb-btn:hover,.lb-x:hover{background:rgba(40,52,64,.9)}
 
 .lab.country{background:none;border:0;box-shadow:none;color:#F4F6F8;font-size:13px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;text-shadow:0 1px 3px #000,0 0 8px #000}.lab.country::before{display:none}
+
+#bFilm:disabled{background:#3a4048!important;color:#8a939c!important;border-color:#4a525b!important;cursor:not-allowed;box-shadow:none!important;opacity:.75}
