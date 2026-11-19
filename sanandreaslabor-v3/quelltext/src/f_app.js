@@ -36,7 +36,8 @@ function buildLabels(){
   addLabel('Pazifischer Ozean','w',()=>Wp(200e3,-560e3),[1],{point:false,prio:3});
   /* --- Kalifornien --- */
   addLabel('San-Andreas-Verwerfung<small>Grenze der beiden Platten · rund 1.300 km lang</small>','k',()=>WP('A',...fp('Cholame'),0.1),[2],{prio:5,fp:8});
-  (addLabel('San Francisco','k cityl',()=>WP('A',...PL['San Francisco'],0.1),[2],{prio:7})).el.dataset.ph='sf';
+  (addLabel('San Francisco','k cityl',()=>WP('A',...PL['San Francisco'],0.1),[2],{prio:10,must:true})).el.dataset.ph='sf';
+  (addLabel('Zaun vom Erdbeben 1906','r cityl',()=>WP('A',405.9e3,26.6e3,0.1),[2],{prio:9,must:true})).el.dataset.ph='zaun';
   (addLabel('Los Angeles','k cityl',()=>WP('A',...PL['Los Angeles'],0.1),[2],{prio:7})).el.dataset.ph='la';
   col(addLabel('1906 gerissen<small>477 km · Magnitude 7,9</small>','',()=>WP('A',...fp('Fort Ross'),0.1),[2],{prio:5}),'#FF8A3C');
   col(addLabel('Kriechender Abschnitt<small>gleitet ständig · keine sehr starken Beben</small>','',()=>WP('A',...fp('Bitterwater'),0.1),[2],{prio:5}),'#6FD3F5');
@@ -46,7 +47,7 @@ function buildLabels(){
   addLabel('Hier endet die San-Andreas-Verwerfung<small>an der Salton Sea</small>','k',()=>WP('A',...PL['Bombay Beach'],0.1),[2],{prio:5,fp:7});
   addLabel('Die Plattengrenze geht weiter<small>Imperial-Verwerfung · dann Spreizung im Golf von Kalifornien</small>','y',()=>WP('A',-560e3,75e3,0.1),[2],{prio:5});
   addLabel('Mendocino-Tripelpunkt<small>weiter nördlich taucht die Juan-de-Fuca-Platte ab</small>','',()=>WP('A',...PL['Mendocino'],0.1),[2],{prio:5});
-  (addLabel('Sierra Nevada','cityl',()=>WP('A',150e3,225e3,0.5),[2],{prio:6})).el.dataset.ph='sierra';
+  addLabel('Sierra Nevada','',()=>WP('A',150e3,225e3,0.5),[2],{prio:6});
   addLabel('Längstal (Central Valley)','',()=>WP('A',230e3,125e3,0.1),[2],{point:false,prio:2});
   addLabel('San Diego','k',()=>WP('A',...PL['San Diego'],0.1),[2],{prio:2});
   col(addLabel('Südlicher Abschnitt<small>seit rund 300 Jahren kein großes Erdbeben</small>','',()=>WP('A',...fp('Indio Hills'),0.1),[2],{prio:3}),'#F2C14A');
@@ -271,7 +272,7 @@ $('bReset').onclick=()=>{ pause(); setTime(0); state.view='oblique'; document.qu
 $('speed').onchange=e=>state.speed=+e.target.value;
 $('stopEach').onchange=e=>state.stopEach=e.target.checked;
 $('time').addEventListener('input',e=>{ pause(); setTime(e.target.value/1000*TEND); });
-document.querySelectorAll('input[name=lvl]').forEach(r=>r.addEventListener('change',e=>{ state.lvl=e.target.value; state.labels=state.lvl==='imp'||state.lvl==='all'; app.classList.toggle('bare',state.lvl==='none'); $('bLvl').textContent=LVL_TXT[state.lvl]; hudStamp=0; state.dirty=true; }));
+document.querySelectorAll('input[name=lvl]').forEach(r=>r.addEventListener('change',e=>{ state.lvl=e.target.value; state.labels=state.lvl==='imp'||state.lvl==='impbare'||state.lvl==='all'; app.classList.toggle('bare',state.lvl==='none'); app.classList.toggle('notitle',state.lvl==='impbare'); $('bLvl').textContent=LVL_TXT[state.lvl]; hudStamp=0; state.dirty=true; }));
 for(const [id,key] of [['tArrows','arrows'],['tLines','lines'],['tFault','fault'],['tCreek','creek'],['tShake','shake']]) $(id).onchange=e=>{ state[key]=e.target.checked; state.dirty=true; };
 $('tCam').onchange=e=>{ state.autoCam=e.target.checked; if(state.autoCam&&state.view==='oblique') camTo(phaseCam(st.ph)); };
 function setMode(m,quiet){ state.mode=m; const inp=document.querySelector(`input[name=mode][value=${m}]`); if(inp) inp.checked=true; document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===m))); chartMode=null; state.dirty=true;
@@ -281,13 +282,18 @@ document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',(
 document.querySelectorAll('input[name=mode]').forEach(r=>r.addEventListener('change',e=>{ if(state.film) filmEnd(); setMode(e.target.value); }));
 function selectTab(k){ for(const b of document.querySelectorAll('.tabs button')){ const on=b.id==='tab-'+k; b.setAttribute('aria-selected',String(on)); $(b.getAttribute('aria-controls')).hidden=!on; } }
 document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>selectTab(b.id.slice(4))));
-const LVL_TXT={imp:'Beschriftung: wichtige',all:'Beschriftung: alle',off:'Beschriftung: nur Platten',none:'Ohne Text'};
-function cycleLvl(){ const o=['imp','all','off','none'], n=o[(o.indexOf(state.lvl)+1)%4]; const r=document.querySelector(`input[name=lvl][value=${n}]`); r.checked=true; r.dispatchEvent(new Event('change',{bubbles:true})); $('bLvl').textContent=LVL_TXT[n]; }
+const LVL_TXT={imp:'Beschriftung: wichtige',impbare:'Wichtige, ohne Titel',all:'Beschriftung: alle',off:'Beschriftung: nur Platten',none:'Ohne Text'};
+function cycleLvl(){ const o=['imp','impbare','all','off','none'], n=o[(o.indexOf(state.lvl)+1)%o.length]; const r=document.querySelector(`input[name=lvl][value=${n}]`); r.checked=true; r.dispatchEvent(new Event('change',{bubbles:true})); $('bLvl').textContent=LVL_TXT[n]; }
 $('bLvl').onclick=cycleLvl;
 function togglePanel(){ const off=app.classList.toggle('nopanel'); $('bPanel').setAttribute('aria-pressed',off?'false':'true'); resize(); }
 $('bPanel').onclick=togglePanel;
 function toggleFull(){ const d=document, el=app; if(d.fullscreenElement||d.webkitFullscreenElement){ (d.exitFullscreen||d.webkitExitFullscreen).call(d); } else { const f=el.requestFullscreen||el.webkitRequestFullscreen; if(f){ const r=f.call(el); if(r&&r.catch) r.catch(()=>toast('Vollbild ist hier nicht verfügbar.')); } else toast('Vollbild ist hier nicht verfügbar.'); } }
 $('bFull').onclick=toggleFull;
+/* V3: Leiste unten nach 5 s ohne Bedienung ausblenden; jede Berührung, Mausbewegung oder Taste holt sie zurück */
+{ let idleT=null; const IDLE_MS=5000;
+  const busy=()=>!app.classList.contains('nopanel')||!$('lbox').hidden||app.matches(':focus-within select');
+  const wake=()=>{ if(app.classList.contains('idle')){ app.classList.remove('idle'); hudStamp=0; } clearTimeout(idleT); idleT=setTimeout(()=>{ if(busy()) return wake(); app.classList.add('idle'); hudStamp=0; },IDLE_MS); };
+  if(!new URLSearchParams(location.search).has('noidle')){ for(const ev of ['pointerdown','pointermove','keydown','touchstart','wheel']) addEventListener(ev,wake,{passive:true,capture:true}); wake(); } }
 document.addEventListener('keydown',e=>{ if(e.target.closest('select,textarea')||(e.target.closest('input')&&e.target.type==='range'&&e.key.startsWith('Arrow'))) return; if(e.metaKey||e.ctrlKey||e.altKey) return;
   if(state.film){ if(e.key==='Escape'||e.key==='e'||e.key==='E'){ filmEnd(); } else if(e.code==='Space'){ e.preventDefault(); $('fPlay').click(); } else if(e.key==='ArrowRight'){ $('fNext').click(); } else if(e.key==='ArrowLeft'){ $('fPrev').click(); } return; }
   if(e.code==='Space'&&!e.target.closest('button,input')){ e.preventDefault(); $('bPlay').click(); }
@@ -413,6 +419,7 @@ const PHOTOS={
   la:[{src:'fotos/la.jpg',t:'Los Angeles: die Hochhäuser der Innenstadt, dahinter die verschneiten San Gabriel Mountains.',c:'Foto: Nserrano · CC BY-SA 3.0 · Wikimedia Commons'},
       {src:'fotos/hollywood.jpg',t:'Das Hollywood-Schild in den Hollywood Hills von Los Angeles.',c:'Foto: Thomas Wolf, www.foto-tw.de · CC BY-SA 3.0 · Wikimedia Commons'},
       {src:'fotos/venice.jpg',t:'Venice Beach in Los Angeles: breiter Sandstrand am Pazifik, Skatepark und Palmen.',c:'Foto: Carol M. Highsmith · gemeinfrei (Library of Congress) · Wikimedia Commons'}],
+  zaun:[{src:'fotos/zaun.jpg',t:'Point Reyes (nördlich von San Francisco): Dieser Zaun stand früher in einer Linie. Beim Erdbeben 1906 hat die San-Andreas-Verwerfung ihn um rund 5 m versetzt.',c:'Foto: Mike McBey · CC BY 2.0 · Wikimedia Commons · Beschriftung übersetzt'}],
   sierra:[{src:'fotos/sierra.jpg',t:'Sierra Nevada: das Yosemite-Tal mit seinen Granitwänden (links El Capitan, rechts der Bridalveil-Wasserfall).',c:'Foto: David Iliff · CC BY-SA 3.0 · Wikimedia Commons'}],
   saf:[{src:'fotos/saf.jpg',t:'Die San-Andreas-Verwerfung in der Carrizo-Ebene aus dem Flugzeug: Die Verwerfung zieht als gerade Linie durch die Landschaft. Bäche, die sie kreuzen, knicken an ihr ab – wie der Wallace Creek.',c:'Foto: Ian Kluft · CC BY-SA 4.0 · Wikimedia Commons'}]};
 const LBX={el:$('lbox'),img:$('lbImg'),t:$('lbT'),c:$('lbC'),dots:$('lbDots'),msg:$('lbMsg'),key:null,i:0,wasPlaying:false};
@@ -435,6 +442,8 @@ addEventListener('keydown',e=>{ if(LBX.el.hidden) return; if(e.key==='Escape'){ 
 for(const ev of ['gesturestart','gesturechange','gestureend']) document.addEventListener(ev,e=>e.preventDefault(),{passive:false});
 vp.addEventListener('touchmove',e=>{ e.preventDefault(); },{passive:false});
 vp.addEventListener('touchstart',e=>{ if(e.touches.length>1) e.preventDefault(); },{passive:false});
-document.addEventListener('touchmove',e=>{ if(e.touches.length>1) e.preventDefault(); },{passive:false});
+document.addEventListener('touchmove',e=>{ if(e.touches.length>1||!e.target.closest('.pane,.lb-cap')) e.preventDefault(); },{passive:false});
+/* keine Wisch-Geste darf beim Seitenrand ankommen: Berührungen, die unten oder oben am Rand beginnen, nicht an Safari weitergeben */
+document.addEventListener('touchstart',e=>{ const t=e.touches[0]; if(!t) return; const H=innerHeight; if((t.clientY>H-28||t.clientY<20)&&!e.target.closest('button,input,select,label,a')) e.preventDefault(); },{passive:false});
 /* Als App vom Home-Bildschirm gestartet: ist schon Vollbild – Knopf ausblenden */
 if(navigator.standalone||matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches) $('bFull').hidden=true;

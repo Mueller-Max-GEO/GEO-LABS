@@ -3,7 +3,7 @@ import { chromium } from 'playwright';
 const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist']});
 const p=await b.newPage({viewport:{width:1280,height:720}});
 const errs=[]; p.on('pageerror',e=>errs.push('PAGEERR '+e.message)); p.on('console',m=>{ if(m.type()==='error'&&!m.text().includes('ERR_TUNNEL')) errs.push(m.text().slice(0,300)); });
-await p.goto('file:///home/claude/sa3/build/san-andreas-labor-v3.html?low');
+await p.goto('file:///home/claude/sa3/build/san-andreas-labor-v3.html?low&noidle');
 await p.waitForFunction(()=>window.__sa&&window.__sa.ready(),null,{timeout:120000});
 const log=[]; const snap=tag=>p.evaluate(tag=>({tag,t:+window.__sa.state.t.toFixed(2),pl:window.__sa.state.playing,title:document.getElementById('clockTitle').textContent,time:document.getElementById('clockTime').textContent,m:document.getElementById('meterLab').textContent+' | '+document.getElementById('meterTxt').textContent,sh:window.__sa.cur().shown,h:document.getElementById('exTitle').textContent}),tag);
 const stopped=()=>p.waitForFunction(()=>!window.__sa.state.playing&&!document.getElementById('fade').classList.contains('on'),null,{timeout:240000});
@@ -14,7 +14,7 @@ await p.keyboard.press('2'); await p.waitForTimeout(1500); log.push(await snap('
 await p.keyboard.press('ArrowRight'); await p.waitForTimeout(1500); log.push(await snap('Pfeil rechts')); await p.click('#bPlay'); await p.waitForTimeout(200);
 await p.click('.gtick'); await p.waitForTimeout(1200); log.push(await snap('Erde-Knopf'));
 for(let i=0;i<5;i++){ await p.click(`.tick:not(.gtick):nth-child(${i+2})`); await p.waitForTimeout(1600); log.push(await snap('Phasenknopf '+(i+1))); }
-for(let i=0;i<3;i++){ await p.click('#bLvl'); await p.waitForTimeout(300); } log.push(await p.evaluate(()=>({tag:'Beschriftung',txt:document.getElementById('bLvl').textContent,lvl:window.__sa.state.lvl})));
+for(let i=0;i<4;i++){ await p.click('#bLvl'); await p.waitForTimeout(300); } log.push(await p.evaluate(()=>({tag:'Beschriftung',txt:document.getElementById('bLvl').textContent,lvl:window.__sa.state.lvl})));
 for(const m of ['lock','creep']){ await p.click(`[data-mode=${m}]`); await p.waitForTimeout(400); }
 // 3) Ansichten und Schalter in jedem Maßstab
 for(const t of [3,14,24,34,60,100]){ await p.evaluate(t=>window.__sa.setTime(t),t); await p.waitForTimeout(600);

@@ -361,7 +361,7 @@ function buildBounds(){
   { const tr=AX.trace.filter(q=>q[0]>-412e3).sort((a,b)=>b[0]-a[0]); let P=densify(tr.concat(south.filter(q=>q[0]<-412e3)),6e3);
     for(let it=0;it<4;it++) P=P.map((q,i)=>{ if(i===0||i===P.length-1) return q; const r=Math.min(5,i,P.length-1-i); let x=0,y=0,c=0; for(let j=-r;j<=r;j++){ const wg=1-Math.abs(j)/(r+1); x+=P[i+j][0]*wg; y+=P[i+j][1]*wg; c+=wg; } return [x/c,y/c]; });
     const ok=P.map(inA); let a=ok.indexOf(true), b=ok.lastIndexOf(true);
-    AX.simple=[chainRibbon('A',P,10500,0.075,0x05070A,3,a,b), chainRibbon('A',P,6400,0.08,0xFFD23F,4,a,b)]; AX.simple[0].material.opacity=0.85; }
+    AX.simpleP=P; AX.simple=[chainRibbon('A',P,10500,0.075,0x05070A,3,a,b), chainRibbon('A',P,6400,0.08,0xFFD23F,4,a,b)]; AX.simple[0].material.opacity=0.85; }
   drawChains('A',CH.filter(c=>c.pair!=='NA-PA'),inA,4400,0.08,20e3,44e3);
 }
 
@@ -496,6 +496,14 @@ function gridMesh(nu,nv,tex,ro){ const g=new THREE.BufferGeometry(), pos=new Flo
   g.setAttribute('position',new THREE.BufferAttribute(pos,3)); g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2)); g.setIndex(idx);
   const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false,side:THREE.DoubleSide,toneMapped:false,polygonOffset:true,polygonOffsetFactor:-8,polygonOffsetUnits:-8}));
   m.frustumCulled=false; m.renderOrder=ro; return m; }
+/* Lage der Grenze zwischen Pazifischer und Nordamerikanischer Platte (w an der Stelle s) je Maßstab; null = dort keine solche Grenze */
+function bndW(key,s){ const S=SCL[key];
+  if(key==='B'||key==='C') return S.wf(s);
+  const P=key==='A'?AX.simpleP:(BX.paNa||(BX.paNa=BX.chains.filter(c=>c.pair==='NA-PA').flatMap(c=>c.p).sort((a,b)=>a[0]-b[0])));
+  if(!P||!P.length) return null; const lo=P[0][0], hi=P[P.length-1][0], P0=P[0][0]<P[P.length-1][0]?P:P.slice().reverse();
+  if(s<Math.min(lo,hi)||s>Math.max(lo,hi)) return null;
+  let a=0,b=P0.length-1; while(b-a>1){ const m=(a+b)>>1; if(P0[m][0]<=s) a=m; else b=m; } const u=(s-P0[a][0])/Math.max(1,P0[b][0]-P0[a][0]); return lerp(P0[a][1],P0[b][1],u); }
+function plateSideFn(key){ return (s,w)=>{ const f=bndW(key,s); return f===null?0:(w<f?-1:1); }; }
 function buildPlateText(){
   const PA={one:['Pazifische Platte'],two:['Pazifische','Platte'],bar:'#2F7BFF'}, NA={one:['Nordamerikanische Platte'],two:['Nordamerikanische','Platte'],bar:'#E8452A'};
   /* je Maßstab: Mitte (s, w) und Schrifthöhe H (m) oben; Breite und Tiefe der Schrift auf der Schnittfläche */
@@ -511,7 +519,14 @@ function buildPlateText(){
         const m=new THREE.Mesh(new THREE.PlaneGeometry(H*T.aspect,H),new THREE.MeshBasicMaterial({map:T.tex,transparent:true,depthTest:false,depthWrite:false,side:THREE.DoubleSide,toneMapped:false}));
         m.renderOrder=12; m.frustumCulled=false; G[key].add(m);
         let h=-1e9; const R={W:60e3,A:25e3,B:2500,C:40}[key]; for(const a of [-1,-0.5,0,0.5,1]) for(const b of [-1,-0.5,0,0.5,1]) h=Math.max(h,S.Y(ctr[0]+a*R,ctr[1]+b*R));
-        const it={key,side,kind:'sign',m,ctr,H,y0:h,dir:1};
+        const it={key,side,kind:'sign',m,ctr,H,y0:h,dir:1,ci:null};
+        it.sideOf=plateSideFn(key);
+        /* Kandidaten: Raster auf der eigenen Platte, nach Abstand zum Wunschplatz sortiert; Höhe = obere Hülle des Geländes */
+        const cands=[]; for(let i=0;i<=10;i++) for(const f of [0.3,0.5,0.7,0.88]){ const s0=lerp(S.bs0+0.1*S.len,S.bs1-0.1*S.len,i/10);
+          let wF=bndW(key,s0); if(wF===null) continue; const edge=side<0?S.bw0:S.bw1, w0=lerp(wF,edge,f);
+          if(it.sideOf(s0,w0)*side<=0) continue; let hh=-1e9; for(const a of [-1,-0.5,0,0.5,1]) for(const b of [-1,-0.5,0,0.5,1]) hh=Math.max(hh,S.Y(s0+a*R,w0+b*R));
+          cands.push([s0,w0,hh,Math.hypot((s0-ctr[0])/S.len,(w0-ctr[1])/(S.bw1-S.bw0))]); }
+        cands.push([ctr[0],ctr[1],h,0]); cands.sort((a,b)=>a[3]-b[3]); it.cands=cands;
         if(c.face){ const F=plateTexture(P.two,P.bar), fw=c.face.width, fh=fw/F.aspect, fm=gridMesh(10,6,F.tex,9); fm.material.depthTest=false; G[key].add(fm);
           it.face={m:fm,w:side*c.face.w,width:fw,height:fh,d:c.face.d,nu:10,nv:6}; }
         PT.items.push(it); continue; }
@@ -525,7 +540,7 @@ function buildPlateText(){
         it.face={m:fm,w:side*c.face.w,width:fw,height:fh,d:c.face.d,nu:10,nv:6}; }
       PT.items.push(it); } }
   PT.built=true; }
-const _cr=new THREE.Vector3(), _cu=new THREE.Vector3();
+const _cr=new THREE.Vector3(), _cu=new THREE.Vector3(), _sp=new THREE.Vector3();
 function updatePlateText(view,on){ if(!PT.built) return; camera.updateMatrixWorld(); _cr.setFromMatrixColumn(camera.matrixWorld,0); _cu.setFromMatrixColumn(camera.matrixWorld,1);
   for(const it of PT.items){ const vis=on&&G[it.key].visible, S=SCL[it.key];
     it.m.visible=vis&&!(view==='section'&&it.face); if(it.face) it.face.m.visible=vis&&view==='section';
@@ -537,13 +552,32 @@ function updatePlateText(view,on){ if(!PT.built) return; camera.updateMatrixWorl
       const ax=(cs.x-c0.x)*asp, by=(cw.y-c0.y), bx=(cw.x-c0.x)*asp, ay=(cs.y-c0.y);
       /* Option +1: lesen entlang +s, oben = −w;  Option −1: lesen entlang −s, oben = +w */
       const score=(ax-by)/Math.max(1e-6,Math.hypot(ax,ay)+Math.hypot(bx,by)); if(Math.abs(score)>0.08) it.dir=score>0?1:-1; }
-    if(it.m.visible&&it.kind==='sign'){ const p=WP(it.key,it.ctr[0],it.ctr[1],0);
+    if(it.m.visible&&it.kind==='sign'){
       /* halb liegend, halb zur Kamera gedreht: bleibt auf der Platte, ist aber von schräg vorne gut lesbar */
       const r=new THREE.Vector3(_cr.x,0,_cr.z).normalize(), gu=new THREE.Vector3().crossVectors(r,new THREE.Vector3(0,-1,0)).normalize();
       if(gu.dot(_cu)<0) gu.negate();
       const up=gu.clone().multiplyScalar(0.45).add(_cu.clone().multiplyScalar(0.55)); up.sub(r.clone().multiplyScalar(up.dot(r))).normalize();
       const n=new THREE.Vector3().crossVectors(r,up).normalize(), M=new THREE.Matrix4().makeBasis(r,up,n);
-      it.m.quaternion.setFromRotationMatrix(M); it.m.position.set(p[0],it.y0+0.04,p[2]).add(up.multiplyScalar(it.H*0.5)); }
+      it.m.quaternion.setFromRotationMatrix(M);
+      /* Platz suchen, an dem das Schild – von der Kamera aus gesehen – nur über der eigenen Platte steht (oder über dem leeren Hintergrund) */
+      /* immer etwa gleich groß auf dem Bildschirm (rund 11 % der Bildhöhe für zwei Zeilen) */
+      const Wv=vp.clientWidth||1, Hv=vp.clientHeight||1, fovK=2*Math.tan(camera.fov*Math.PI/360);
+      const place=c=>{ const p=WP(it.key,c[0],c[1],0); _sp.set(p[0],c[2],p[2]); const sc=clamp(camera.position.distanceTo(_sp)*fovK*0.115/it.H,0.15,2.5); it.m.scale.setScalar(sc);
+        it.m.position.set(p[0],c[2]+0.04,p[2]).add(up.clone().multiplyScalar(it.H*sc*0.5)); it.m.updateMatrixWorld(true); };
+      const hud=(typeof hudRects!=='undefined'?hudRects:[]), dockTop=Hv-(document.getElementById('dock')?.offsetHeight||0);
+      const bad=c=>{ place(c); let nb=0; const hw=it.m.geometry.parameters.width/2, hh=it.H/2;
+        /* ganz im Bild, nicht unter Anzeigern und Leisten */
+        for(const [u,v] of [[-1,-1],[1,-1],[-1,1],[1,1]]){ _sp.set(u*hw,v*hh,0).applyMatrix4(it.m.matrixWorld).project(camera); const x=(_sp.x*0.5+0.5)*Wv, y=(-_sp.y*0.5+0.5)*Hv;
+          if(_sp.z>1||x<8||x>Wv-8||y<8||y>dockTop-4) nb+=6; else for(const q of hud) if(x>q[0]&&x<q[2]&&y>q[1]&&y<q[3]){ nb+=3; break; } }
+        for(const [u,v] of [[-1,-1],[0,-1],[1,-1],[-1,0],[0,0],[1,0],[-1,1],[0,1],[1,1],[-0.5,1],[0.5,1]]){
+          _sp.set(u*hw*0.97,v*hh*0.97,0).applyMatrix4(it.m.matrixWorld); const dir=_sp.sub(camera.position); if(dir.y>-1e-6) continue;
+          const t=(c[2]-camera.position.y)/dir.y; if(t<0) continue; const x=camera.position.x+dir.x*t, z=camera.position.z+dir.z*t;
+          const s0=x/S.k+S.sc, w0=z/S.k+S.wc; if(s0<S.bs0||s0>S.bs1||w0<S.bw0||w0>S.bw1) continue;
+          if(it.sideOf(s0,w0)*it.side<0) nb++; }
+        return nb; };
+      let ok=it.ci!=null&&bad(it.cands[it.ci])===0;
+      if(!ok){ let best=null,bn=1e9; for(let i=0;i<it.cands.length;i++){ const nb=bad(it.cands[i]); if(nb<bn){ bn=nb; best=i; if(nb===0) break; } } it.ci=best; }
+      place(it.cands[it.ci]); }
     else if(it.m.visible){ const A=it.m.geometry.attributes.position.array, k=S.k; let q=0;
       for(let j=0;j<=it.nv;j++) for(let i=0;i<=it.nu;i++){ const iu=it.dir>0?i:it.nu-i, jv=it.dir>0?it.nv-j:j;
         const s0=it.ctr[0]+(iu/it.nu-0.5)*it.L, w0=it.ctr[1]+(jv/it.nv-0.5)*it.H, p=WP(it.key,s0,w0,0);

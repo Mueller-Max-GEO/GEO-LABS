@@ -19,7 +19,9 @@ Adresse: `https://mueller-max-geo.github.io/GEO-LABS/sanandreaslabor-v3/`
 - **Phase 4:** drei Erdbeben hintereinander (Versatz 5 → 10 → 16 m); beim Gleiten bewegen sich die Platten in Phase 3 und 4 entsprechend weiter.
   Die Messlinien haben drei Farben, damit man sie über die Verwerfung hinweg zuordnen kann.
 - **Eigene Perspektive** bleibt beim Wechsel von Phase 3 zu Phase 4 erhalten (gleicher Ausschnitt).
-- **Beschriftung:** wichtige – alle – nur Platten – ohne Text (auch ohne Überschrift).
+- **Beschriftung:** wichtige – wichtige ohne Titel – alle – nur Platten – ohne Text (auch ohne Überschrift).
+- Die Leiste unten blendet sich nach 5 s ohne Bedienung aus; jede Berührung holt sie zurück.
+- Phase 2: „Zaun vom Erdbeben 1906“ (Point Reyes) mit Foto; San Francisco wird immer angezeigt.
 - Der Erklärfilm ist in dieser Fassung ausgeblendet.
 
 ## Offline auf dem iPad
@@ -31,4 +33,5 @@ In Safari öffnen, laden lassen, dann Teilen → „Zum Home-Bildschirm“. Die 
 Offline-Fassung: `python3 tools/pwa.py`). Die Anpassungen der V3 stehen am Ende von `src/style.css` (Block „V3 · Tafelfassung“)
 sowie in `src/d_scene.js` (Pfeile, Linienbreiten) und `src/f_app.js` (Pfeilgrößen, Phasen-Knöpfe).
 
-Bildnachweise und Datenquellen wie in der V2 (siehe `../sanandreaslabor/README.md` und im Labor unter Einstellungen → Hintergrund).
+Zusätzliches Foto: Zaun bei Point Reyes – Mike McBey, „The San Andreas Fault“, CC BY 2.0 (Beschriftung übersetzt, Jahreszahl berichtigt).
+Bildnachweise und Datenquellen sonst wie in der V2 (siehe `../sanandreaslabor/README.md` und im Labor unter Einstellungen → Hintergrund).

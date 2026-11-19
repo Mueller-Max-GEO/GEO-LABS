@@ -5,7 +5,7 @@
 const labelLayer=$('labels'), leaderCv=$('leaders'), lctx=leaderCv.getContext('2d'); let hudRects=[], hudStamp=0, labelsMoving=false;
 const labels=[];
 function addLabel(html,cls,anchor,phases,opt={}){ /* phases: Liste der Phasen (1–5), in denen die Beschriftung erscheinen darf */ const el=document.createElement('div'); el.className='lab '+cls; el.innerHTML=html; labelLayer.appendChild(el);
-  const L={el,anchor:typeof anchor==='function'?anchor:()=>anchor,phases,cond:opt.cond,prio:opt.prio??5,point:opt.point!==false,icon:opt.icon,w:0,h:0,last:null,vis:false,_html:html};
+  const L={el,anchor:typeof anchor==='function'?anchor:()=>anchor,phases,cond:opt.cond,must:!!opt.must,prio:opt.prio??5,point:opt.point!==false,icon:opt.icon,w:0,h:0,last:null,vis:false,_html:html};
   labels.push(L); return L; }
 function setLabelHTML(L,html){ if(L._html!==html){ L.el.innerHTML=html; L._html=html; L.w=0; } }
 const _pp=new THREE.Vector3();
@@ -55,6 +55,8 @@ function placeLabels(){
       if(r[0]<6||r[1]<6||r[2]>W-6||r[3]>H-6) continue;
       let hit=false; for(const q of placed){ if(hits(r,q)){hit=true;break;} } if(hit) continue;
       rect=r; L.last=ci; break; }
+    if(!rect&&L.must){ /* muss immer sichtbar sein: notfalls auf dem ersten Platz im Bild, auch wenn er etwas überdeckt */
+      for(const ci of order){ const cx=L.ax+cands[ci][0], cy=L.ay+cands[ci][1], r=[cx-w/2,cy-h/2,cx+w/2,cy+h/2]; if(r[0]<6||r[1]<6||r[2]>W-6||r[3]>H-6) continue; rect=r; L.last=ci; break; } }
     if(rect){ placed.push(rect); L.tr=rect; L.show=true; L.ext=false; }
     else if(L.point){ L.last=null; ext[L.ax<W/2?'l':'r'].push(L); }
   }
