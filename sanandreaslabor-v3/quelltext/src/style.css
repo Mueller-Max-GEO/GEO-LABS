@@ -457,3 +457,23 @@ button,[role=tab],.tick,label,.seg button{touch-action:manipulation;-webkit-tap-
 .v3 .viewrail{top:auto;bottom:calc(var(--dock-h) + .5em);transform:none}
 .v3 .title{pointer-events:none}
 @media (max-height:660px){ .v3 .compass,.v3 .vr-zoom,.v3 .vr-sep,.v3 .vr-h{display:none} }
+
+/* V3 · Anzeiger: Spannung, Bewegung der Platten, Versatz an der Verwerfung – groß, gleiche Skala für Bewegung und Versatz */
+.v3 .meter{display:none!important}
+.v3 .gauges{margin-top:.6em;display:grid;grid-template-columns:auto minmax(9em,22em) auto;gap:.32em .6em;align-items:center;width:max-content;max-width:min(46em,92vw);
+  padding:.5em .75em .55em;border-radius:.6em;background:rgba(5,8,13,.72);border:2px solid rgba(234,240,247,.18);text-shadow:none}
+.v3 .g{display:contents}
+.v3 .gl{font-size:.92em;font-weight:700;color:#E6EDF5;white-space:nowrap}
+.v3 .gb{position:relative;height:1.05em;border-radius:.55em;background:rgba(234,240,247,.12);border:2px solid rgba(234,240,247,.3);overflow:hidden}
+.v3 .gb i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:.4em}
+.v3 .gv{font-family:var(--f-num);font-weight:500;font-size:.9em;color:#fff;white-space:nowrap;min-width:5.6em}
+.v3 .g-ten .gb i{background:linear-gradient(90deg,#FFD23F,#FF7A2F 55%,#FF3B1F)}
+.v3 .g-ten .gv{font-family:var(--f-ui);font-weight:700;color:#FFB08A}
+.v3 .g-move .gb i{background:linear-gradient(90deg,#7DB7FF,#2F7BFF)}
+.v3 .g-slip .gb i{background:linear-gradient(90deg,#FFE27A,#FFC21A)}
+.v3 .g-ten.glow .gb{animation:mglow .7s ease-in-out infinite}
+.v3 .g-ten.glow .gv{animation:mtxt .7s ease-in-out infinite}
+/* „Ohne Text“: keine Beschriftung, keine Überschrift – nur Bild, Anzeiger und Bedienung */
+.v3.bare .eyebrow,.v3.bare #clockTitle,.v3.bare .sub,.v3.bare .exnote,.v3.bare .scalebar{display:none!important}
+.v3.bare .gauges{margin-top:0}
+@media (prefers-reduced-motion:reduce){ .v3 .g-ten.glow .gb,.v3 .g-ten.glow .gv{animation:none} }

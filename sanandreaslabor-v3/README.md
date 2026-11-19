@@ -14,6 +14,12 @@ Adresse: `https://mueller-max-geo.github.io/GEO-LABS/sanandreaslabor-v3/`
 - **Pfeile:** größer, mit weißem Rand – blau für die Pazifische Platte, rot für die Nordamerikanische Platte.
 - **Grenzen:** Plattengrenzen in Phase 1 und 2 breiter. In den Phasen 3 bis 5 ist die Verwerfung eine breite gelbe Linie mit
   dunklem Rand (wie die Plattengrenze in Phase 1 und 2); unter Spannung färbt sie sich rot-orange. Messlinien und Fluss kräftiger.
+- **Plattennamen** stehen als Schilder direkt auf den Platten (blauer bzw. roter Strich darunter); im Querschnitt auf der Schnittfläche.
+- **Anzeiger** oben links (Phasen 3–5): Spannung, „Platten bewegt“ und „Versatz an der Verwerfung“ (bzw. des Flusses) als große Balken.
+- **Phase 4:** drei Erdbeben hintereinander (Versatz 5 → 10 → 16 m); beim Gleiten bewegen sich die Platten in Phase 3 und 4 entsprechend weiter.
+  Die Messlinien haben drei Farben, damit man sie über die Verwerfung hinweg zuordnen kann.
+- **Eigene Perspektive** bleibt beim Wechsel von Phase 3 zu Phase 4 erhalten (gleicher Ausschnitt).
+- **Beschriftung:** wichtige – alle – nur Platten – ohne Text (auch ohne Überschrift).
 - Der Erklärfilm ist in dieser Fassung ausgeblendet.
 
 ## Offline auf dem iPad

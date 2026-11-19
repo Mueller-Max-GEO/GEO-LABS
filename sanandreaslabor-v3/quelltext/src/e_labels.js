@@ -29,6 +29,10 @@ function placeLabels(){
   /* Pfeile freihalten */
   for(const a of arrows){ if(!a.mesh.visible||!G[a.key].visible) continue; const c=Math.cos(a.mesh.rotation.y), s2=-Math.sin(a.mesh.rotation.y), P=a.mesh.position;
     for(const u of [-0.45,-0.15,0.15,0.45]){ const q=projXY([P.x+c*a.len*u,P.y,P.z+s2*a.len*u],W,H); if(q) obst.push([q[0]-20,q[1]-20,q[0]+20,q[1]+20]); } }
+  /* V3: Plattennamen-Schilder freihalten */
+  if(typeof PT!=='undefined') for(const it of PT.items){ if(!it.m.visible||it.kind!=='sign') continue; const g=it.m.geometry; if(!g.boundingBox) g.computeBoundingBox(); const bb=g.boundingBox; let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+    for(const [x,y] of [[bb.min.x,bb.min.y],[bb.max.x,bb.min.y],[bb.min.x,bb.max.y],[bb.max.x,bb.max.y]]){ _pp.set(x,y,0).applyMatrix4(it.m.matrixWorld).project(camera); const sx=(_pp.x*0.5+0.5)*W, sy=(-_pp.y*0.5+0.5)*H; x0=Math.min(x0,sx); x1=Math.max(x1,sx); y0=Math.min(y0,sy); y1=Math.max(y1,sy); }
+    obst.push([x0,y0,x1,y1]); }
   /* Querschnitt: die Schnittfläche des Blocks freihalten */
   let faceR=null;
   if(state.view==='section'&&(shown==='B'||shown==='C')){ const S=SCL[shown]; let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;

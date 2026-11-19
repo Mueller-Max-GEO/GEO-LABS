@@ -396,7 +396,8 @@ function buildLines(){ const S=SCL.B, k=S.k, grp=G.B, step=150, sp=25000;
       /* Höhe glätten: erst obere Hülle (±3), dann weiches Mittel (±10, dreimal) – ruhige, gleichmäßige Linie */
       let hsm=hs.map((_,i)=>{ let h=-1e9; for(let j=-3;j<=3;j++) h=Math.max(h,hs[clamp(i+j,0,n)]); return h; });
       for(let it=0;it<3;it++) hsm=hsm.map((_,i)=>{ let a=0,c=0; for(let j=-10;j<=10;j++){ const wg=1-Math.abs(j)/11; a+=hsm[clamp(i+j,0,n)]*wg; c+=wg; } return Math.max(a/c,hs[i]-0.002); });
-      for(const [hw,color,op,ro,lift] of [[940,0x14100A,0.6,7,0.02],[500,0xFFF1C4,1.0,8,0.026]]){
+      const li=((Math.round((sL-S.sc)/sp)%3)+3)%3, lcol=[0xFFF1C4,0x8FE3FF,0xFFB27A][li];  /* V3: drei Farben, damit man die Linien über die Verwerfung hinweg zuordnen kann */
+      for(const [hw,color,op,ro,lift] of [[940,0x14100A,0.6,7,0.02],[500,lcol,1.0,8,0.026]]){
         const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array((n+1)*6),3));
         const idx=[]; for(let i=0;i<n;i++){ const a=i*2; idx.push(a,a+1,a+2,a+1,a+3,a+2); } g.setIndex(idx);
         const m=new THREE.Mesh(g,mk(color,op)); m.renderOrder=ro; m.frustumCulled=false; grp.add(m);
@@ -473,3 +474,82 @@ void main(){ vec3 N=normalize(vN),V=normalize(cameraPosition-vP),L=normalize(uSu
 }
 function globeCam(lon,lat,dist,tilt=0){ const d=gdir(lon,lat), up=new THREE.Vector3(0,1,0), e=new THREE.Vector3().crossVectors(up,d).normalize(), n=new THREE.Vector3().crossVectors(d,e);
   const p=d.clone().multiplyScalar(RG*dist).add(n.clone().multiplyScalar(-RG*tilt)); const t=d.clone().multiplyScalar(RG*Math.max(0,1-(dist-1)*0.0)*(dist<1.6?1:0)); return {p:p.toArray(),t:t.toArray()}; }
+
+
+/* ---------- V3: Plattennamen direkt auf die Platten geschrieben ----------
+   Oben: als Schriftzug, der sich ans Gelände legt und mit der Platte mitwandert; er dreht sich so, dass er von der Kamera
+   aus lesbar bleibt. Vorne (Querschnitt der Phasen 3–5): auf der Schnittfläche des Blocks. */
+const PT={items:[],built:false};
+function plateTexture(lines,bar){
+  const fs=150, pad=36, lh=fs*1.08, cv=document.createElement('canvas'), cx=cv.getContext('2d');
+  const font=`700 ${fs}px "Atkinson Hyperlegible Next","Atkinson Hyperlegible",system-ui,sans-serif`; cx.font=font;
+  const tw=Math.max(...lines.map(l=>cx.measureText(l).width));
+  cv.width=Math.ceil(tw+pad*2); cv.height=Math.ceil(lh*lines.length+pad*2+fs*0.18);
+  cx.font=font; cx.textAlign='left'; cx.textBaseline='alphabetic'; cx.lineJoin='round';
+  lines.forEach((l,i)=>{ const y=pad+fs*0.86+i*lh; cx.lineWidth=fs*0.2; cx.strokeStyle='rgba(3,5,9,0.9)'; cx.strokeText(l,pad,y); cx.fillStyle='#FFFFFF'; cx.fillText(l,pad,y); });
+  const by=pad+lh*lines.length+fs*0.02; cx.fillStyle='rgba(3,5,9,0.9)'; cx.fillRect(pad-8,by-8,tw+16,fs*0.16+16); cx.fillStyle=bar; cx.fillRect(pad,by,tw,fs*0.16);
+  const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=renderer.capabilities.getMaxAnisotropy(); t.generateMipmaps=true; t.minFilter=THREE.LinearMipmapLinearFilter;
+  return {tex:t,aspect:cv.width/cv.height};
+}
+function gridMesh(nu,nv,tex,ro){ const g=new THREE.BufferGeometry(), pos=new Float32Array((nu+1)*(nv+1)*3), uv=[], idx=[];
+  for(let j=0;j<=nv;j++) for(let i=0;i<=nu;i++){ uv.push(i/nu,j/nv); if(i<nu&&j<nv){ const a=j*(nu+1)+i, b=a+1, c=a+nu+1, d=c+1; idx.push(a,b,d,a,d,c); } }
+  g.setAttribute('position',new THREE.BufferAttribute(pos,3)); g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2)); g.setIndex(idx);
+  const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false,side:THREE.DoubleSide,toneMapped:false,polygonOffset:true,polygonOffsetFactor:-8,polygonOffsetUnits:-8}));
+  m.frustumCulled=false; m.renderOrder=ro; return m; }
+function buildPlateText(){
+  const PA={one:['Pazifische Platte'],two:['Pazifische','Platte'],bar:'#2F7BFF'}, NA={one:['Nordamerikanische Platte'],two:['Nordamerikanische','Platte'],bar:'#E8452A'};
+  /* je Maßstab: Mitte (s, w) und Schrifthöhe H (m) oben; Breite und Tiefe der Schrift auf der Schnittfläche */
+  /* je Maßstab: Fußpunkt (s, w) des Schilds und Schrifthöhe (Szeneneinheiten; jeder Block ist 24 Einheiten lang);
+     Schrift auf der Schnittfläche (Querschnitt, Phasen 3–5): Mitte w, Breite und Tiefe in Metern */
+  const CFG={W:{lines:'two',screen:true,H:{pa:2.4,na:2.4},pa:[700e3,-470e3],na:[520e3,470e3]},
+             A:{lines:'two',screen:true,H:{pa:2.4,na:2.4},pa:[-400e3,-210e3],na:[430e3,255e3]},
+             B:{lines:'two',screen:true,H:{pa:2.2,na:2.2},pa:[-22e3,-27e3],na:[12e3,29e3],face:{w:16e3,width:30e3,d:7e3}},
+             C:{lines:'two',screen:true,H:{pa:2.2,na:2.2},pa:[280,-430],na:[-690,400],face:{w:285,width:440,d:70}}};
+  for(const key in CFG){ const c=CFG[key], S=SCL[key];
+    for(const [P,side] of [[PA,-1],[NA,1]]){ const T=plateTexture(P[c.lines],P.bar), H=c.H[side<0?'pa':'na'], L=H*T.aspect, ctr=side<0?c.pa:c.na, nu=56, nv=8;
+      if(c.screen){ /* Schild, das auf der Platte steht und zur Kamera geneigt ist (H in Szeneneinheiten) */
+        const m=new THREE.Mesh(new THREE.PlaneGeometry(H*T.aspect,H),new THREE.MeshBasicMaterial({map:T.tex,transparent:true,depthTest:false,depthWrite:false,side:THREE.DoubleSide,toneMapped:false}));
+        m.renderOrder=12; m.frustumCulled=false; G[key].add(m);
+        let h=-1e9; const R={W:60e3,A:25e3,B:2500,C:40}[key]; for(const a of [-1,-0.5,0,0.5,1]) for(const b of [-1,-0.5,0,0.5,1]) h=Math.max(h,S.Y(ctr[0]+a*R,ctr[1]+b*R));
+        const it={key,side,kind:'sign',m,ctr,H,y0:h,dir:1};
+        if(c.face){ const F=plateTexture(P.two,P.bar), fw=c.face.width, fh=fw/F.aspect, fm=gridMesh(10,6,F.tex,9); fm.material.depthTest=false; G[key].add(fm);
+          it.face={m:fm,w:side*c.face.w,width:fw,height:fh,d:c.face.d,nu:10,nv:6}; }
+        PT.items.push(it); continue; }
+      const m=gridMesh(nu,nv,T.tex,9); G[key].add(m);
+      /* Höhe: obere Hülle des Geländes unter der Schrift, geglättet – die Schrift liegt wie ein Tuch über dem Gelände */
+      const hs=[]; for(let j=0;j<=nv;j++){ const row=[]; for(let i=0;i<=nu;i++){ const s0=ctr[0]+(i/nu-0.5)*L, w0=ctr[1]+(j/nv-0.5)*H; let h=-1e9;
+        for(const a of [-1,-0.5,0,0.5,1]) for(const b of [-1,-0.5,0,0.5,1]) h=Math.max(h,S.Y(s0+a*H*0.7,w0+b*H*0.7)); row.push(h); } hs.push(row); }
+      for(let it=0;it<3;it++) for(let j=0;j<=nv;j++){ const r=hs[j].slice(); for(let i=0;i<=nu;i++){ let a=0,n=0; for(let q=-2;q<=2;q++){ const v=r[clamp(i+q,0,nu)]; a+=v; n++; } hs[j][i]=Math.max(a/n,r[i]); } }
+      const it={key,side,kind:'top',m,ctr,L,H,nu,nv,hs,dir:1,screen:!!c.screen,th:null};
+      if(c.face){ const F=plateTexture(P.two,P.bar), fw=c.face.width, fh=fw/F.aspect, fm=gridMesh(10,6,F.tex,9); fm.material.depthTest=false; G[key].add(fm);
+        it.face={m:fm,w:side*c.face.w,width:fw,height:fh,d:c.face.d,nu:10,nv:6}; }
+      PT.items.push(it); } }
+  PT.built=true; }
+const _cr=new THREE.Vector3(), _cu=new THREE.Vector3();
+function updatePlateText(view,on){ if(!PT.built) return; camera.updateMatrixWorld(); _cr.setFromMatrixColumn(camera.matrixWorld,0); _cu.setFromMatrixColumn(camera.matrixWorld,1);
+  for(const it of PT.items){ const vis=on&&G[it.key].visible, S=SCL[it.key];
+    it.m.visible=vis&&!(view==='section'&&it.face); if(it.face) it.face.m.visible=vis&&view==='section';
+    if(!vis) continue;
+    /* Lesrichtung: entlang +s mit „oben“ nach −w oder entlang −s mit „oben“ nach +w (nie gespiegelt) */
+    { const c0=new THREE.Vector3(...WP(it.key,it.ctr[0],it.ctr[1],0)), cs=new THREE.Vector3(...WP(it.key,it.ctr[0]+it.L*0.3,it.ctr[1],0)), cw=new THREE.Vector3(...WP(it.key,it.ctr[0],it.ctr[1]+it.L*0.3,0));
+      const mw=G[it.key].matrixWorld; for(const v of [c0,cs,cw]) v.applyMatrix4(mw).project(camera);
+      const asp=(renderer.domElement.width/Math.max(1,renderer.domElement.height));
+      const ax=(cs.x-c0.x)*asp, by=(cw.y-c0.y), bx=(cw.x-c0.x)*asp, ay=(cs.y-c0.y);
+      /* Option +1: lesen entlang +s, oben = −w;  Option −1: lesen entlang −s, oben = +w */
+      const score=(ax-by)/Math.max(1e-6,Math.hypot(ax,ay)+Math.hypot(bx,by)); if(Math.abs(score)>0.08) it.dir=score>0?1:-1; }
+    if(it.m.visible&&it.kind==='sign'){ const p=WP(it.key,it.ctr[0],it.ctr[1],0);
+      /* halb liegend, halb zur Kamera gedreht: bleibt auf der Platte, ist aber von schräg vorne gut lesbar */
+      const r=new THREE.Vector3(_cr.x,0,_cr.z).normalize(), gu=new THREE.Vector3().crossVectors(r,new THREE.Vector3(0,-1,0)).normalize();
+      if(gu.dot(_cu)<0) gu.negate();
+      const up=gu.clone().multiplyScalar(0.45).add(_cu.clone().multiplyScalar(0.55)); up.sub(r.clone().multiplyScalar(up.dot(r))).normalize();
+      const n=new THREE.Vector3().crossVectors(r,up).normalize(), M=new THREE.Matrix4().makeBasis(r,up,n);
+      it.m.quaternion.setFromRotationMatrix(M); it.m.position.set(p[0],it.y0+0.04,p[2]).add(up.multiplyScalar(it.H*0.5)); }
+    else if(it.m.visible){ const A=it.m.geometry.attributes.position.array, k=S.k; let q=0;
+      for(let j=0;j<=it.nv;j++) for(let i=0;i<=it.nu;i++){ const iu=it.dir>0?i:it.nu-i, jv=it.dir>0?it.nv-j:j;
+        const s0=it.ctr[0]+(iu/it.nu-0.5)*it.L, w0=it.ctr[1]+(jv/it.nv-0.5)*it.H, p=WP(it.key,s0,w0,0);
+        A[q++]=p[0]; A[q++]=it.hs[jv][iu]+(it.key==='C'?0.012:0.03); A[q++]=p[2]; }
+      it.m.geometry.attributes.position.needsUpdate=true; }
+    if(it.face&&it.face.m.visible){ const f=it.face, A=f.m.geometry.attributes.position.array; let q=0;
+      for(let j=0;j<=f.nv;j++) for(let i=0;i<=f.nu;i++){ const w0=f.w+(i/f.nu-0.5)*f.width, d0=Math.max(1,f.d+(0.5-j/f.nv)*f.height*0.95), p=WP(it.key,S.bs0,w0,0,d0);
+        A[q++]=p[0]-0.02; A[q++]=p[1]; A[q++]=p[2]; }
+      f.m.geometry.attributes.position.needsUpdate=true; } } }

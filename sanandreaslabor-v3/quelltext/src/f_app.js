@@ -9,7 +9,7 @@ const PHN=()=>st.ph+1;
 /* ===================== Beschriftungen ===================== */
 function buildLabels(){
   { const face=(lo,la)=>()=>{ if(shown!=='G') return false; const v=gdir(lo,la), c=camera.position.clone().normalize(); return v.dot(c)>0.25; };
-    addLabel('USA','country',()=>WP('W',-800e3,700e3,0.1),[1],{prio:6,point:false}); addLabel('Mexiko','country',()=>WP('W',-1500e3,450e3,0.1),[1],{prio:6,point:false});
+    addLabel('USA','country',()=>WP('W',-900e3,620e3,0.1),[1],{prio:6,point:false}); addLabel('Mexiko','country',()=>WP('W',-1500e3,450e3,0.1),[1],{prio:6,point:false});
   addLabel('Luxemburg<small>hier sind wir</small>','k',()=>GP(6.13,49.61,0.01),[0],{prio:9,cond:face(6.13,49.61)});
     addLabel('Kalifornien (USA)','k',()=>GP(-119.2,36.6,0.01),[0],{prio:9,cond:()=>face(-119.2,36.6)()&&state.t>TG*0.45});
     addLabel('Nordamerika','plate',()=>GP(-100,45,0.01),[0],{point:false,prio:()=>state.film?7:5,cond:face(-100,45)});
@@ -21,8 +21,6 @@ function buildLabels(){
   const col=(L,c)=>{ L.el.style.setProperty('--c',c); return L; };
   /* --- Westen Nordamerikas --- */
   const Wp=(s,w,l=0.06)=>WP('W',s,w,l);
-  addLabel('Pazifische Platte','plate pa',()=>Wp(-150e3,-420e3),[1],{point:false,prio:9});
-  addLabel('Nordamerikanische Platte','plate na',()=>Wp(-150e3,600e3,0.2),[1],{point:false,prio:9});
   addLabel('Juan-de-Fuca-Platte<small>klein, taucht ab</small>','plate jf',()=>Wp(1250e3,330e3),[1],{point:false,prio:()=>state.film?9:5});
   addLabel('Rivera-Platte','',()=>Wp(-1900e3,-250e3),[1],{prio:()=>state.film?3:5});
   addLabel('San-Andreas-Verwerfung<small>Transformstörung: Die Platten gleiten aneinander vorbei</small>','k',()=>Wp(120e3,8e3),[1],{prio:()=>state.film?8:5});
@@ -37,8 +35,6 @@ function buildLabels(){
   addLabel('Kalifornien<small>Ausschnitt von Phase 2</small>','',()=>Wp(A.bs1,A.bw1,0.08),[1],{prio:()=>state.film?6:5});
   addLabel('Pazifischer Ozean','w',()=>Wp(200e3,-560e3),[1],{point:false,prio:3});
   /* --- Kalifornien --- */
-  addLabel('Pazifische Platte','plate pa',()=>WP('A',170e3,-200e3,0.1),[2],{point:false,prio:9});
-  addLabel('Nordamerikanische Platte','plate na',()=>WP('A',150e3,255e3,0.1),[2],{point:false,prio:9});
   addLabel('San-Andreas-Verwerfung<small>Grenze der beiden Platten · rund 1.300 km lang</small>','k',()=>WP('A',...fp('Cholame'),0.1),[2],{prio:5,fp:8});
   (addLabel('San Francisco','k cityl',()=>WP('A',...PL['San Francisco'],0.1),[2],{prio:7})).el.dataset.ph='sf';
   (addLabel('Los Angeles','k cityl',()=>WP('A',...PL['Los Angeles'],0.1),[2],{prio:7})).el.dataset.ph='la';
@@ -56,8 +52,6 @@ function buildLabels(){
   col(addLabel('Südlicher Abschnitt<small>seit rund 300 Jahren kein großes Erdbeben</small>','',()=>WP('A',...fp('Indio Hills'),0.1),[2],{prio:3}),'#F2C14A');
   /* --- Regionalmodell --- */
   const wfB=s=>B.wf(s), creep=()=>st.creep;
-  addLabel('Pazifische Platte','plate pa',()=>state.view==='section'?WP('B',SCL.B.bs0,-24e3,1.5):WP('B',2e3,-27e3,0.25),[3,4],{point:false,prio:9});
-  addLabel('Nordamerikanische Platte','plate na',()=>state.view==='section'?WP('B',SCL.B.bs0,24e3,1.5):WP('B',-22e3,24e3,0.25),[3,4],{point:false,prio:9});
   addLabel('San-Andreas-Verwerfung','k',()=>WP('B',47e3,wfB(47e3),0.15),[3,4],{prio:7});
   addLabel('Messlinie<small>am Anfang gerade</small>','y',()=>WP('B',-8e3,-23e3,0.15),[3,4],{prio:()=>state.film&&st.ph===3?8:5,cond:()=>state.lines});
   addLabel('Verhakter Bereich<small>bis etwa 15 km Tiefe</small>','a',()=>WP('B',B.bs0,wfB(B.bs0),0,7200),[3,4],{prio:()=>st.ph===2?5:9,cond:()=>!creep()&&!(st.ph===3&&st.sec>=0)});
@@ -77,8 +71,6 @@ function buildLabels(){
   /* --- Wallace Creek --- */
   const cp=SA_META.C.creekPts, near=(w0)=>cp.reduce((a,b)=>Math.abs(b[1]-w0)<Math.abs(a[1]-w0)?b:a);
   const up=near(240), dn=near(-250);
-  addLabel('Pazifische Platte','plate pa',()=>state.view==='section'?WP('C',SCL.C.bs0,-330,2.4):WP('C',430,-330,0.2),[5],{point:false,prio:8});
-  addLabel('Nordamerikanische Platte','plate na',()=>state.view==='section'?WP('C',SCL.C.bs0,330,2.4):WP('C',120,360,0.5),[5],{point:false,prio:8});
   (addLabel('San-Andreas-Verwerfung','k cityl',()=>WP('C',600,C.wf(600),0.1),[5],{prio:7})).el.dataset.ph='saf';
   addLabel('Fluss','w',()=>WP('C',up[0],up[1],0.08),[5],{prio:7,cond:()=>state.creek});
   LB.off=addLabel('Versatz','y',()=>{ const a=SA_META.C.creekUp-dispSC/2, b=SA_META.C.creekDn+dispSC/2; const p=WP('C',0,C.wf(0),0.08); p[0]=C.X((a+b)/2); return p; },[5],{prio:10});
@@ -102,7 +94,7 @@ function update(){
   /* --- Regionalmodell --- */
   { const U=UNI.B, S=SCL.B, kx=S.k*XB; let F=0,S0=0,S1=0,front=1e9,tense=0,glow=0,waveR=-10,waveA=0,waveT=0;
     if(ph===2){ F=st.F; S0=S1=st.S1; tense=st.creep?0:clamp(st.F/F_CYCLE,0,1); front=st.creep?1e9:-1e9; }
-    else if(ph===3){ F=st.F; S0=st.S0; S1=st.S1; front=st.front; tense=st.creep?0:clamp(st.deficit/F_CYCLE,0,1); if(!st.creep&&st.sec>=0){ const u0=(t-T2)/(T3-T2), u=st.stage===3?(u0-0.62)/0.38:u0/0.36, fade=1-sstep(0.7,0.96,u); glow=st.front<S.bs1+RISE_B?1:0; waveR=WAVE_V*st.wsec*S.k; waveA=0.3*fade; waveT=2.4*fade; } }
+    else if(ph===3){ F=st.F; S0=st.S0; S1=st.S1; front=st.front; tense=st.creep?0:clamp(st.deficit/F_CYCLE,0,1); if(!st.creep&&st.sec>=0){ const u=st.qv, fade=1-sstep(0.7,0.96,u); glow=st.front<S.bs1+RISE_B?1:0; waveR=WAVE_V*st.wsec*S.k; waveA=0.3*fade; waveT=2.4*fade; } }
     else if(ph===4){ F=F_CYCLE; S0=S1=F_CYCLE; }
     U.uF.value=F*kx; U.uS0.value=S0*kx; U.uS1.value=S1*kx; U.uFront.value=front>1e8?1e6:(front<-1e8?-1e6:S.X(front));
     U.uTense.value=tense; U.uGlow.value=glow; U.uWaveR.value=waveR; U.uWaveAmp.value=REDUCED?0:waveA; U.uWaveTint.value=waveT; U.uEpi.value.set(S.X(B_HYP_S),S.Z(S.wf(B_HYP_S)));
@@ -134,7 +126,7 @@ function update(){
 let curPhaseShown=-1, curCreepShown=null;
 function updateHUD(t,ph){
   if(st.scale==='G'){ $('clockTitle').innerHTML='<i>🌍</i>Wo liegt Kalifornien?'; $('clockTime').textContent=t<0.4?'Start: Luxemburg':'Blick nach Kalifornien'; const pl=$('clockPill'); pl.className='pill mid'; pl.textContent='Die Erde';
-    $('meter').hidden=true; $('exnote').hidden=true; const sl=$('time'); if(document.activeElement!==sl) sl.value=Math.round(t/TEND*1000); sl.setAttribute('aria-valuetext','Einordnung: die Erde');
+    $('meter').hidden=true; $('gauges').hidden=true; $('exnote').hidden=true; const sl=$('time'); if(document.activeElement!==sl) sl.value=Math.round(t/TEND*1000); sl.setAttribute('aria-valuetext','Einordnung: die Erde');
     document.querySelectorAll('.tick').forEach(b=>b.classList.toggle('cur',b.classList.contains('gtick'))); bandEls.forEach(b=>b.classList.remove('cur','done')); gBand.classList.add('cur');
     document.querySelectorAll('.tick').forEach(b=>b.style.setProperty('--p',b.classList.contains('gtick')?clamp(t/TG,0,1):0));
     if(curPhaseShown!==-1) showPhase(-1); return; }
@@ -147,12 +139,20 @@ function updateHUD(t,ph){
   else if(ph===1){ txt='Kalifornien heute'; }
   else if(ph===2){ txt=`Jahr ${Math.round(st.year/5)*5} – ${st.creep?'die Platten gleiten':'die Spannung wächst'}`; const S=st.creep?st.F:0; mK=(st.F-S)/F_CYCLE; mLab=st.creep?'Keine Spannung':'Spannung wächst'; mTxt=line(st.F-S,st.F,S); }
   else if(ph===3){ if(st.creep){ txt=`Jahr ${Math.round(st.year/5)*5} – nichts Besonderes geschieht`; mLab='Keine Spannung'; mTxt=line(0,st.F,st.F); }
-    else if(st.stage===2){ const y=Math.round((st.year-CYCLE_Y)/5)*5; txt=`Jahr ${y} nach dem 1. Erdbeben – die Spannung wächst wieder`; const S=st.S1; mK=(st.F-S)/F_CYCLE; mLab='Spannung wächst wieder'; mTxt=line(st.F-S,st.F,S); }
-    else { const n=st.stage===3?2:1, S=st.S0+F_CYCLE*prog; txt=st.sec<0?(n===2?'Jahr 150 nach dem 1. Erdbeben – kurz vor dem 2. Erdbeben':'Jahr 150 – kurz vor dem 1. Erdbeben'):(prog<1?`${n}. Erdbeben · ${Math.round(st.sec)} Sekunden nach Bruchbeginn`:`nach dem ${n}. Erdbeben`); mK=1-prog; mLab=st.sec<0?'Spannung maximal':(prog<1?'Spannung wird abgebaut':'Spannung abgebaut'); mTxt=line(st.F-S,st.F,S); } }
+    else if(st.stage===2){ const y=Math.round((st.year-st.rn*CYCLE_Y)/5)*5; txt=`Jahr ${y} nach dem ${st.rn}. Erdbeben – die Spannung wächst wieder`; const S=st.S1; mK=(st.F-S)/F_CYCLE; mLab='Spannung wächst wieder'; mTxt=line(st.F-S,st.F,S); }
+    else { const n=st.qn||1, S=st.S0+F_CYCLE*prog; txt=st.sec<0?(n>1?`Jahr 150 nach dem ${n-1}. Erdbeben – kurz vor dem ${n}. Erdbeben`:'Jahr 150 – kurz vor dem 1. Erdbeben'):(prog<1?`${n}. Erdbeben · ${Math.round(st.sec)} Sekunden nach Bruchbeginn`:`nach dem ${n}. Erdbeben`); mK=1-prog; mLab=st.sec<0?'Spannung maximal':(prog<1?'Spannung wird abgebaut':'Spannung abgebaut'); mTxt=line(st.F-S,st.F,S); } }
   else { const yrs=Math.round(-st.T/10)*10; txt=(yrs<=0?'heute':`vor ${de(yrs)} Jahren`); const d=st.creep?0:Math.max(0,st.F-st.S1); mK=d/8; mLab=st.creep?'Keine Spannung':'Spannung';
     mTxt=`Rückstand ${de(d,1)} m · Versatz des Flusses ${de(st.S1,0)} m · ${st.creep?'keine starken Erdbeben':(st.nQ===1?'1 starkes Erdbeben':st.nQ+' starke Erdbeben')}`; }
   $('clockTime').textContent=txt; const pl=$('clockPill'); const pp=(ph===3&&!st.creep&&st.stage===2)?['mid','Zeitraffer: 150 Jahre']:P.pill; pl.className='pill '+pp[0]; pl.textContent=pp[1];
   $('meter').hidden=ph<=1; $('meter').classList.toggle('big',ph===2||ph===3); $('meter').classList.toggle('glow',!st.creep&&((ph===3&&st.hold)||(ph===2&&st.year>CYCLE_Y*0.93))); $('meterBar').style.width=(clamp(mK,0,1)*100)+'%'; $('meterLab').textContent=mLab; $('meterTxt').textContent=mTxt;
+  { const show=ph>=2, GMAX=ph===4?140:3*F_CYCLE*1.04; $('gauges').hidden=!show;
+    if(show){ let mv=st.F, sl;
+      if(ph===2) sl=st.creep?st.F:0; else if(ph===3) sl=st.creep?st.F:(st.stage===2?st.S1:st.S0+F_CYCLE*prog); else sl=st.S1;
+      $('gTen').style.width=(clamp(mK,0,1)*100)+'%'; $('gTenV').textContent=mLab;
+      $('gMove').style.width=(clamp(mv/GMAX,0,1)*100)+'%'; $('gMoveV').textContent=de(mv,mv<20?1:0)+' m';
+      $('gSlip').style.width=(clamp(sl/GMAX,0,1)*100)+'%'; $('gSlipV').textContent=de(sl,sl<20?1:0)+' m';
+      $('gSlipL').textContent=ph===4?'Versatz des Flusses':'Versatz an der Verwerfung';
+      $('gTenRow').classList.toggle('glow',!st.creep&&((ph===3&&st.hold)||(ph===2&&st.year>CYCLE_Y*0.93))); } }
   const ex=$('exnote'); ex.hidden=ph===1; ex.textContent=ph===0?'Berge 20-fach, Meerestiefen 7-fach überhöht':ph===4?'Echtes Gelände und Luftbild · Versatz in echter Größe':'Verformung 3000-fach überhöht';
   const sl=$('time'); if(document.activeElement!==sl) sl.value=Math.round(t/TEND*1000);
   sl.setAttribute('aria-valuetext',`Phase ${P.n}: ${P.name}`);
@@ -169,14 +169,14 @@ function showPhase(ph){
   $('keyV').textContent=X.kv; $('keyL').textContent=X.kl; $('taskQ').textContent=P.q; $('taskA').textContent=P.a; if(first) $('taskD').open=false;
   document.querySelectorAll('.phase').forEach((b,i)=>b.setAttribute('aria-current',i===ph?'step':'false'));
   buildChart(ph);
-  if(ph>=0&&first&&state.autoCam&&state.view==='oblique'&&!state.film&&shown===scaleOfPhase(ph)&&!pendingScale) camTo(phaseCam(ph));
+  if(ph>=0&&first&&state.autoCam&&state.view==='oblique'&&!state.film&&shown===scaleOfPhase(ph)&&!pendingScale&&!userCam) camTo(phaseCam(ph));
 }
 
 /* ===================== Diagramm: Weg der Platten und Versatz an der Verwerfung ===================== */
 const CW=320, CH=132, CX0=34, CX1=312, CY0=14, CY1=104; let chartMode=null;
 function chartDef(ph){ if(ph===4) return {mode:'long'+(st.creep?'c':''),x0:Y0,x1:0,ymax:145,
     far:T=>st.creep?S_TOT*(T-Y0)/(0-Y0):farC(T),slip:T=>st.creep?S_TOT*(T-Y0)/(0-Y0):slipC(T),steps:st.creep?[]:QUAKES.map(q=>q.T),xt:[[Y0,'vor 3.700 J.','start'],[-1850,'vor 1.850 J.','middle'],[0,'heute','end']],yt:[[0,'0 m'],[65,'65 m'],[130,'130 m']]};
-  return {mode:'cyc'+(st.creep?'c':''),x0:0,x1:330,ymax:12,far:y=>RATE*y,slip:y=>st.creep?RATE*y:(y>=2*CYCLE_Y?2*F_CYCLE:(y>=CYCLE_Y?F_CYCLE:0)),steps:st.creep?[]:[CYCLE_Y,2*CYCLE_Y],xt:[[0,'Jahr 0','start'],[150,'150','middle'],[300,'300','middle']],yt:[[0,'0 m'],[5,'5 m'],[10,'10 m']]}; }
+  return {mode:'cyc'+(st.creep?'c':''),x0:0,x1:480,ymax:17,far:y=>RATE*y,slip:y=>st.creep?RATE*y:Math.min(3,Math.floor(y/CYCLE_Y+1e-9))*F_CYCLE,steps:st.creep?[]:[CYCLE_Y,2*CYCLE_Y,3*CYCLE_Y],xt:[[0,'Jahr 0','start'],[150,'150','middle'],[300,'300','middle'],[450,'450','middle']],yt:[[0,'0 m'],[5,'5 m'],[10,'10 m'],[15,'15 m']]}; }
 let CD=null;
 function buildChart(ph){ const d=chartDef(ph); if(d.mode===chartMode) return; chartMode=d.mode; CD=d;
   const X=x=>CX0+(CX1-CX0)*(x-d.x0)/(d.x1-d.x0), Y=y=>CY1-(CY1-CY0)*y/d.ymax; d.X=X; d.Y=Y;
@@ -210,7 +210,7 @@ const CAMS={
 };
 const VIEWS={oblique:{G:'g_t',W:'w_obl',A:'a_obl',B:'b_obl',C:'c_obl'},top:{G:'g_top',W:'w_top',A:'a_top',B:'b_top',C:'c_top'},section:{G:'g_ca',W:'w_low',A:'a_low',B:'b_sec',C:'c_sec'},near:{G:'g_top',W:'w_zoom',A:'a_zoom',B:'b_near',C:'c_creek'}};
 const phaseCam=ph=>['w_obl','a_obl','b_obl','b_quake','c_obl'][ph];
-let tween=null, freeAspect=1.6, xfadeAt=null, bRefD=0;
+let userCam=false, tween=null, freeAspect=1.6, xfadeAt=null, bRefD=0;
 function camPose(key,far=1){ const c=CAMS[key], t1=new THREE.Vector3(...c.t), p1=new THREE.Vector3(...c.p);
   const kA=Math.pow(clamp(1.55/freeAspect,1.0,2.6),0.92)*far*(state.film?1.16:1)*(key[0]==='b'||key[0]==='c'?1.1:1.04); p1.sub(t1).multiplyScalar(kA).add(t1); return {p1,t1}; }
 function camTo(key,dur=1.3){ if(!CAMS[key]) return; const {p1,t1}=camPose(key); tween={p0:camera.position.clone(),t0:controls.target.clone(),p1,t1,s:performance.now(),d:(REDUCED?0.01:dur)*1000}; }
@@ -228,17 +228,17 @@ function zoomInto(from,to){
   tween={p0:camera.position.clone(),t0:controls.target.clone(),p1:pF,t1:tF,s:performance.now(),d:dur*1000,zoom:true};
   xfadeAt={to,at:performance.now()+dur*1000};
 }
-function showScale(key){ shown=key; for(const k in G) G[k].visible=k===key;
+function showScale(key){ shown=key; userCam=false; for(const k in G) G[k].visible=k===key;
   controls.minDistance=key==='C'?1.3:(key==='G'?RG*1.08:2.2); lastGT=null; hudStamp=0;
   let ck=desiredCam(); if(!CAMS[ck]||ck[0].toUpperCase()!==key) ck=VIEWS.oblique[key];
   const a=camPose(ck,REDUCED?1:1.32); camera.position.copy(a.p1); controls.target.copy(a.t1); camTo(ck,1.7); needsRender=true; }
-function setView(v){ state.view=v; state.dirty=true; document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===v)));
+function setView(v){ state.view=v; userCam=false; state.dirty=true; document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===v)));
   camTo(v==='oblique'&&state.autoCam?phaseCam(st.ph):VIEWS[v][shown],1.1);
   if(v==='section') note(shown==='A'||shown==='W'?'Flacher Blick entlang der Verwerfung nach Nordwesten.':'Schnittfläche quer zur Verwerfung: links die Pazifische, rechts die Nordamerikanische Platte.',3800); else $('viewnote').hidden=true; }
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view===state.view&&b.dataset.view!=='oblique'?'oblique':b.dataset.view)));
 function zoom(f){ const d=camera.position.clone().sub(controls.target); d.multiplyScalar(f); d.setLength(clamp(d.length(),controls.minDistance,controls.maxDistance)); camera.position.copy(controls.target).add(d); needsRender=true; }
-$('zin').onclick=()=>zoom(0.8); $('zout').onclick=()=>zoom(1.25);
-controls.addEventListener('start',()=>{ tween=null; });
+$('zin').onclick=()=>{ userCam=true; zoom(0.8); }; $('zout').onclick=()=>{ userCam=true; zoom(1.25); };
+controls.addEventListener('start',()=>{ tween=null; userCam=true; });
 let toastTimer=null;
 function toast(msg,ms=2800){ const el=$('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'),ms); }
 let noteTimer=null;
@@ -271,7 +271,7 @@ $('bReset').onclick=()=>{ pause(); setTime(0); state.view='oblique'; document.qu
 $('speed').onchange=e=>state.speed=+e.target.value;
 $('stopEach').onchange=e=>state.stopEach=e.target.checked;
 $('time').addEventListener('input',e=>{ pause(); setTime(e.target.value/1000*TEND); });
-document.querySelectorAll('input[name=lvl]').forEach(r=>r.addEventListener('change',e=>{ state.lvl=e.target.value; state.labels=state.lvl!=='off'; state.dirty=true; }));
+document.querySelectorAll('input[name=lvl]').forEach(r=>r.addEventListener('change',e=>{ state.lvl=e.target.value; state.labels=state.lvl==='imp'||state.lvl==='all'; app.classList.toggle('bare',state.lvl==='none'); $('bLvl').textContent=LVL_TXT[state.lvl]; hudStamp=0; state.dirty=true; }));
 for(const [id,key] of [['tArrows','arrows'],['tLines','lines'],['tFault','fault'],['tCreek','creek'],['tShake','shake']]) $(id).onchange=e=>{ state[key]=e.target.checked; state.dirty=true; };
 $('tCam').onchange=e=>{ state.autoCam=e.target.checked; if(state.autoCam&&state.view==='oblique') camTo(phaseCam(st.ph)); };
 function setMode(m,quiet){ state.mode=m; const inp=document.querySelector(`input[name=mode][value=${m}]`); if(inp) inp.checked=true; document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===m))); chartMode=null; state.dirty=true;
@@ -281,8 +281,8 @@ document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',(
 document.querySelectorAll('input[name=mode]').forEach(r=>r.addEventListener('change',e=>{ if(state.film) filmEnd(); setMode(e.target.value); }));
 function selectTab(k){ for(const b of document.querySelectorAll('.tabs button')){ const on=b.id==='tab-'+k; b.setAttribute('aria-selected',String(on)); $(b.getAttribute('aria-controls')).hidden=!on; } }
 document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>selectTab(b.id.slice(4))));
-const LVL_TXT={imp:'Beschriftung: wichtige',all:'Beschriftung: alle',off:'Beschriftung: aus'};
-function cycleLvl(){ const o=['imp','all','off'], n=o[(o.indexOf(state.lvl)+1)%3]; const r=document.querySelector(`input[name=lvl][value=${n}]`); r.checked=true; r.dispatchEvent(new Event('change',{bubbles:true})); $('bLvl').textContent=LVL_TXT[n]; }
+const LVL_TXT={imp:'Beschriftung: wichtige',all:'Beschriftung: alle',off:'Beschriftung: nur Platten',none:'Ohne Text'};
+function cycleLvl(){ const o=['imp','all','off','none'], n=o[(o.indexOf(state.lvl)+1)%4]; const r=document.querySelector(`input[name=lvl][value=${n}]`); r.checked=true; r.dispatchEvent(new Event('change',{bubbles:true})); $('bLvl').textContent=LVL_TXT[n]; }
 $('bLvl').onclick=cycleLvl;
 function togglePanel(){ const off=app.classList.toggle('nopanel'); $('bPanel').setAttribute('aria-pressed',off?'false':'true'); resize(); }
 $('bPanel').onclick=togglePanel;
@@ -355,6 +355,7 @@ function loop(now){
   const active=needsRender||state.playing||state.film||labelsMoving;
   if(active){ if(prevActive) adaptQuality(now,raw);
     let saved=null; if(shakeAmp>0){ saved=_sv.copy(camera.position); const a=shakeAmp*0.012*camera.position.distanceTo(controls.target); camera.position.x+=(Math.random()-0.5)*a; camera.position.y+=(Math.random()-0.5)*a; camera.position.z+=(Math.random()-0.5)*a; camera.updateMatrixWorld(); }
+    updatePlateText(state.view,state.lvl!=='none'&&!pendingScale);
     renderer.render(scene,camera);
     if(xfadeAt&&now>=xfadeAt.at){ const xc=$('xfade'), src=renderer.domElement; xc.width=src.width; xc.height=src.height; xc.getContext('2d').drawImage(src,0,0);
       xc.classList.remove('go'); xc.classList.add('on'); const to=xfadeAt.to; xfadeAt=null; tween=null; showScale(to); pendingScale=null; state.dirty=true;
@@ -373,7 +374,7 @@ window.addEventListener('unhandledrejection',e=>diag('Fehler: '+(e.reason&&e.rea
   requestAnimationFrame(loop);
   await loadAssets(p=>{ $('loadBar').style.width=(p*82).toFixed(0)+'%'; });
   for(const k of ['W','A','B','C']){ buildScale(k); $('loadBar').style.width=(82+4.5*('WABC'.indexOf(k)+1))+'%'; await new Promise(r=>setTimeout(r,0)); }
-  buildCalifornia(); buildBounds(); buildLines(); buildCreek(); buildGlobe();
+  buildCalifornia(); buildBounds(); buildLines(); buildCreek(); buildGlobe(); buildPlateText();
   { const w1=makeFlatArrow('W',5.6,0.66,0x1F6BFF), w2=makeFlatArrow('W',5.6,0.66,0xE23A22), w3=makeFlatArrow('W',2.6,0.38,0xB06CF0); placeArrow(w1,-250e3,-300e3,1,0.3); placeArrow(w2,-450e3,420e3,-1,0.4); placeArrow(w3,1350e3,240e3,1,0.25,[-0.21,0.98]);
     const a1=makeFlatArrow('A',7.0,0.82,0x1F6BFF), a2=makeFlatArrow('A',7.0,0.82,0xE23A22); placeArrow(a1,150e3,-150e3,1,0.45); placeArrow(a2,40e3,190e3,-1,0.6);
     const b1=makeFlatArrow('B',9.2,1.12,0x1F6BFF), b2=makeFlatArrow('B',9.2,1.12,0xE23A22); placeArrow(b1,24e3,-14e3,1,0.55); placeArrow(b2,-2e3,15e3,-1,0.75);
@@ -384,7 +385,7 @@ window.addEventListener('unhandledrejection',e=>diag('Fehler: '+(e.reason&&e.rea
   // Erklärfilm vorerst gesperrt
   if(QS.has('t')){ setTime(+QS.get('t')); }
 })().catch(e=>diag('Start fehlgeschlagen: '+(e&&e.message||e)));
-window.__sa={renderer,state,PH,TEND,setTime,setView,setMode,camTo,film,filmStart,filmShot,filmEnd,gotoPhase,scene,camera,controls,UNI,SCL,G,stateAt,ready:()=>started,creekXY:fr=>{ const r=renderer.domElement.getBoundingClientRect(), cp=SA_META.C.creekPts, q=cp[Math.floor(cp.length*fr)], v=projXY(WP("C",q[0],q[1],0.05),r.width,r.height); return [r.left+v[0],r.top+v[1],q[1]]; },cur:()=>({shown,st,dispSC})};
+window.__sa={PT,labels,placeLabels,renderer,state,PH,TEND,setTime,setView,setMode,camTo,film,filmStart,filmShot,filmEnd,gotoPhase,scene,camera,controls,UNI,SCL,G,stateAt,ready:()=>started,creekXY:fr=>{ const r=renderer.domElement.getBoundingClientRect(), cp=SA_META.C.creekPts, q=cp[Math.floor(cp.length*fr)], v=projXY(WP("C",q[0],q[1],0.05),r.width,r.height); return [r.left+v[0],r.top+v[1],q[1]]; },cur:()=>({shown,st,dispSC})};
 
 /* ===================== Fluss antippen (Wallace Creek): Ober- oder Unterlauf ===================== */
 (()=>{ const cv=renderer.domElement, tip=document.createElement('div'); tip.className='rtip'; tip.hidden=true; $('labels').appendChild(tip);

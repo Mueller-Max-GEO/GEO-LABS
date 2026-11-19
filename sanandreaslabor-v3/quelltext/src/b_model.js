@@ -8,7 +8,7 @@ const lerp=(a,b,u)=>a+(b-a)*u;
 const sstep=(a,b,x)=>{ const u=clamp((x-a)/(b-a),0,1); return u*u*(3-2*u); };
 
 /* Zeitleiste (Sekunden der Animation bei Tempo 1×) */
-const TG=10, T0=TG+8, T1=T0+10, T2=T1+16, T3=T2+26, T4=T3+28, TEND=T4;
+const TG=10, T0=TG+8, T1=T0+10, T2=T1+16, T3=T2+42, T4=T3+28, TEND=T4;
 const PH_T=[[TG,T0],[T0,T1],[T1,T2],[T2,T3],[T3,T4]];
 const phaseAt=t=>t<T0?0:(t<T1?1:(t<T2?2:(t<T3?3:4)));
 const scaleOfPhase=p=>p===0?'W':(p===1?'A':(p===4?'C':'B'));
@@ -55,14 +55,17 @@ const yearC=t=>lerp(Y0,0,clamp((t-T3)/(T4-T3-C_HOLD),0,1));
 function stateAt(t,mode){
   const ph=phaseAt(t), creep=mode==='creep';
   const o={ph,scale:t<TG?'G':scaleOfPhase(ph),creep,year:0,sec:-1,F:0,S0:0,S1:0,front:-1e9,T:0,nQ:0,quakeNow:false};
-  if(ph===2){ o.year=(t-T1)/(T2-T1)*CYCLE_Y; o.F=RATE*o.year; o.S0=o.S1=creep?o.F:0; o.front=1e9; }
+  if(ph===2){ o.year=(t-T1)/(T2-T1)*CYCLE_Y*(creep?1.5:1); o.F=RATE*o.year; o.S0=o.S1=creep?o.F:0; o.front=1e9; }
   else if(ph===3){ const u=(t-T2)/(T3-T2);
-    /* zwei Erdbeben: Beben 1 · Spannung baut sich wieder auf (150 Jahre) · Beben 2 */
-    const Q1=0.36, R2=0.62, QW=0.24, QD=0.2, quake=(v,base)=>{ o.sec=v<QW?-1:Math.min(1,(v-QW)/QD)*RUP_SEC*1.25; o.wsec=v<QW?-1:(v-QW)/QD*RUP_SEC*1.25; o.S0=base; o.S1=base+F_CYCLE; o.front=v<QW?-1e9:B_HYP_S+RUP_V*o.sec; o.quakeNow=v>=QW&&v<0.62; o.after=v>=0.62; o.hold=v<QW; };
-    if(creep){ const y=u*1.2*CYCLE_Y; o.year=CYCLE_Y+y; o.F=RATE*o.year; o.S0=o.S1=o.F; o.front=1e9; o.stage=u<Q1?1:(u<R2?2:3); }
-    else if(u<Q1){ o.stage=1; o.year=CYCLE_Y; o.F=F_CYCLE; quake(u/Q1,0); }
-    else if(u<R2){ o.stage=2; const v=(u-Q1)/(R2-Q1); o.year=CYCLE_Y+v*CYCLE_Y; o.F=F_CYCLE+RATE*v*CYCLE_Y; o.S0=o.S1=F_CYCLE; o.front=-1e9; o.n2=true; }
-    else { o.stage=3; o.year=2*CYCLE_Y; o.F=2*F_CYCLE; quake((u-R2)/(1-R2),F_CYCLE); o.n2=true; } }
+    /* V3: drei Erdbeben – Beben 1 · 150 Jahre Spannungsaufbau · Beben 2 · 150 Jahre · Beben 3 */
+    const NQ=3, QWT=0.37, RWT=0.26, TOT=NQ*QWT+(NQ-1)*RWT, QW=0.24, QD=0.2;
+    const quake=(v,base)=>{ o.qv=v; o.sec=v<QW?-1:Math.min(1,(v-QW)/QD)*RUP_SEC*1.25; o.wsec=v<QW?-1:(v-QW)/QD*RUP_SEC*1.25; o.S0=base; o.S1=base+F_CYCLE; o.front=v<QW?-1e9:B_HYP_S+RUP_V*o.sec; o.quakeNow=v>=QW&&v<0.62; o.after=v>=0.62; o.hold=v<QW; };
+    if(creep){ o.year=1.5*CYCLE_Y+u*1.5*CYCLE_Y; o.F=RATE*o.year; o.S0=o.S1=o.F; o.front=1e9; o.stage=1; }
+    else { let x=u*TOT, n=0; o.stage=1;
+      for(;;){ if(x<QWT||n===NQ-1){ o.qn=n+1; o.stage=n===0?1:3; o.year=(n+1)*CYCLE_Y; o.F=(n+1)*F_CYCLE; quake(clamp(x/QWT,0,1),n*F_CYCLE); break; }
+        x-=QWT; if(x<RWT){ const v=x/RWT; o.stage=2; o.rn=n+1; o.year=(n+1)*CYCLE_Y+v*CYCLE_Y; o.F=(n+1)*F_CYCLE+RATE*v*CYCLE_Y; o.S0=o.S1=(n+1)*F_CYCLE; o.front=-1e9; break; }
+        x-=RWT; n++; }
+      o.n2=o.qn>1||o.stage===2; } }
   else if(ph===4){ o.T=yearC(t); o.F=creep?S_TOT*(o.T-Y0)/(0-Y0):farC(o.T); o.S0=o.S1=creep?o.F:slipC(o.T); o.nQ=creep?0:quakeCountC(o.T); o.front=1e9; }
   o.S=o.S1; o.deficit=Math.max(0,o.F-(ph===3&&!creep?(o.front>-1e8?lerp(o.S0,o.S1,clamp((o.front-B_HYP_S)/SCL.B.len,0,1)):o.S0):o.S1));
   return o;
