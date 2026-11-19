@@ -490,3 +490,5 @@ html,body{overscroll-behavior:none;position:fixed;inset:0;width:100%;height:100%
 .v3 .dock,.v3 .hud,.v3 .viewrail{touch-action:none}
 .v3 .dock button,.v3 .hud button,.v3 .viewrail button{touch-action:manipulation}
 .lab.r.cityl{--c:#FF7A5C}
+
+.v3 .lab.mini{font-size:.68em;padding:.22em .55em .26em;border-width:1.5px}

@@ -37,7 +37,7 @@ function buildLabels(){
   /* --- Kalifornien --- */
   addLabel('San-Andreas-Verwerfung<small>Grenze der beiden Platten · rund 1.300 km lang</small>','k',()=>WP('A',...fp('Cholame'),0.1),[2],{prio:5,fp:8});
   (addLabel('San Francisco','k cityl',()=>WP('A',...PL['San Francisco'],0.1),[2],{prio:10,must:true})).el.dataset.ph='sf';
-  (addLabel('Zaun vom Erdbeben 1906','r cityl',()=>WP('A',405.9e3,26.6e3,0.1),[2],{prio:9,must:true})).el.dataset.ph='zaun';
+  (addLabel('Zaun vom Erdbeben 1906','r cityl mini',()=>WP('A',405.9e3,26.6e3,0.1),[2],{prio:8,must:true})).el.dataset.ph='zaun';
   (addLabel('Los Angeles','k cityl',()=>WP('A',...PL['Los Angeles'],0.1),[2],{prio:7})).el.dataset.ph='la';
   col(addLabel('1906 gerissen<small>477 km · Magnitude 7,9</small>','',()=>WP('A',...fp('Fort Ross'),0.1),[2],{prio:5}),'#FF8A3C');
   col(addLabel('Kriechender Abschnitt<small>gleitet ständig · keine sehr starken Beben</small>','',()=>WP('A',...fp('Bitterwater'),0.1),[2],{prio:5}),'#6FD3F5');
@@ -47,7 +47,7 @@ function buildLabels(){
   addLabel('Hier endet die San-Andreas-Verwerfung<small>an der Salton Sea</small>','k',()=>WP('A',...PL['Bombay Beach'],0.1),[2],{prio:5,fp:7});
   addLabel('Die Plattengrenze geht weiter<small>Imperial-Verwerfung · dann Spreizung im Golf von Kalifornien</small>','y',()=>WP('A',-560e3,75e3,0.1),[2],{prio:5});
   addLabel('Mendocino-Tripelpunkt<small>weiter nördlich taucht die Juan-de-Fuca-Platte ab</small>','',()=>WP('A',...PL['Mendocino'],0.1),[2],{prio:5});
-  addLabel('Sierra Nevada','',()=>WP('A',150e3,225e3,0.5),[2],{prio:6});
+  addLabel('Sierra Nevada','',()=>WP('A',150e3,225e3,0.5),[2],{prio:5});
   addLabel('Längstal (Central Valley)','',()=>WP('A',230e3,125e3,0.1),[2],{point:false,prio:2});
   addLabel('San Diego','k',()=>WP('A',...PL['San Diego'],0.1),[2],{prio:2});
   col(addLabel('Südlicher Abschnitt<small>seit rund 300 Jahren kein großes Erdbeben</small>','',()=>WP('A',...fp('Indio Hills'),0.1),[2],{prio:3}),'#F2C14A');
@@ -261,10 +261,13 @@ PH.forEach((P,i)=>{ const sp=document.createElement('span'); sp.style.flex=`${P.
   const li=document.createElement('li'), pb=document.createElement('button'); pb.className='phase'; pb.type='button'; pb.textContent=P.n; pb.title=`Phase ${P.n}: ${P.name}`; pb.setAttribute('aria-label',`Phase ${P.n}: ${P.name}`); pb.onclick=()=>gotoPhase(i,true); li.appendChild(pb); $('phases').appendChild(li); });
 function setTime(t){ state.t=clamp(t,0,TEND); state.dirty=true; }
 function play(){ if(state.t>=TEND-1e-3) setTime(0); state.playing=true; syncButtons(); }
-function pause(){ state.playing=false; state.stopAt=null; syncButtons(); }
+function pause(){ state.fly=null; state.playing=false; state.stopAt=null; syncButtons(); }
 function syncButtons(){ $('playIcon').setAttribute('d',state.playing?'M7 5h4v14H7zM13 5h4v14h-4z':'M8 5v14l11-7z'); $('bPlay').setAttribute('aria-label',state.playing?'Pause':'Start'); }
 const endOf=i=>i<4?PH[i].t1-0.02:PH[i].t1;      /* Halt kurz vor dem Phasenende: Bild und Text der Phase bleiben stehen */
-function gotoPhase(i,andPlay){ i=clamp(i,0,4); setTime(PH[i].t0+(i===0?0:0.001)); state.stopAt=i===2?T1+0.05:(i===4?T3+0.05:endOf(i)); if(andPlay) state.playing=true; syncButtons(); }
+function gotoPhase(i,andPlay){ i=clamp(i,0,4);
+  /* von der Erdkugel aus: nicht direkt (über den Pol) springen, sondern den Flug rasch abspielen – raus, über den Atlantik, rein auf Kalifornien */
+  if(state.t<TG-0.05&&!state.film&&!state.fly){ state.fly={i,andPlay}; state.stopAt=TG-0.02; state.playing=true; syncButtons(); return; }
+  state.fly=null; setTime(PH[i].t0+(i===0?0:0.001)); state.stopAt=i===2?T1+0.05:(i===4?T3+0.05:endOf(i)); if(andPlay) state.playing=true; syncButtons(); }
 $('bPlay').onclick=()=>{ if(state.playing) pause(); else { state.stopAt=null; play(); } };
 $('bNext').onclick=()=>{ const ph=phaseAt(state.t); if(state.t>=TEND-0.01) return; const nx=(state.t<PH[ph].t0+0.05&&!state.playing)?ph:ph+1; if(nx>4){ setTime(TEND); pause(); return; } gotoPhase(nx,true); };
 $('bPrev').onclick=()=>{ const ph=phaseAt(state.t); const pv=(state.t>PH[ph].t0+0.6)?ph:ph-1; gotoPhase(Math.max(0,pv),true); };
@@ -347,11 +350,12 @@ function loop(now){
   const raw=now-last, dt=Math.min(0.1,raw/1000); last=now; frameDt=dt;
   if(!started){ requestAnimationFrame(loop); return; }
   if(state.film) filmStep(dt);
-  else if(state.playing&&!pendingScale){ const prev=state.t; let nt=prev+dt*state.speed;
+  else if(state.playing&&!pendingScale){ const prev=state.t; let nt=prev+dt*state.speed*(state.fly?Math.max(1,(TG-0.02-(state.fly.t0??=prev))/2.6):1);
     let stop=state.stopAt; if(state.stopEach&&stop===null){ for(const H of [TG-0.02,T1+0.05,T3+0.05]) if(stop===null&&prev<H-1e-6&&nt>=H-1e-6) stop=H; for(let i=0;i<5;i++){ const e=endOf(i); if(prev<e-1e-6&&nt>=e-1e-6&&!(stop!==null&&stop<e)){ stop=e; break; } } }
     if(stop!==null&&nt>=stop) nt=stop; if(nt>=TEND) nt=TEND;
     state.t=nt; state.dirty=true;
-    if((stop!==null&&nt>=stop-1e-6)||nt>=TEND){ state.playing=false; state.stopAt=null; syncButtons(); } }
+    if((stop!==null&&nt>=stop-1e-6)||nt>=TEND){ state.playing=false; state.stopAt=null; syncButtons(); }
+    if(state.fly&&nt>=TG-0.03){ const f=state.fly; state.fly=null; gotoPhase(f.i,f.andPlay); } }
   if(tween){ const u=clamp((now-tween.s)/tween.d,0,1), e=u<0.5?2*u*u:1-Math.pow(-2*u+2,2)/2; camera.position.lerpVectors(tween.p0,tween.p1,e); controls.target.lerpVectors(tween.t0,tween.t1,e); if(u>=1) tween=null; needsRender=true; }
   if(shown==='B'&&LINES.built){ if(!bRefD){ const r=camPose('b_obl'); bRefD=r.p1.distanceTo(r.t1); } const wk=clamp(camera.position.distanceTo(controls.target)/bRefD,0.05,1.4);
     if(Math.abs(wk-LINES.wk)>LINES.wk*0.02){ LINES.wk=wk; UNI.B.uFaultW.value=600*SCL.B.k*Math.max(wk,0.15); updateLines(); needsRender=true; } }
