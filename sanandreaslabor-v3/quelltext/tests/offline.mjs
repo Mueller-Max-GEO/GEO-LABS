@@ -1,0 +1,12 @@
+import { chromium } from 'playwright';
+const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist']});
+const ctx=await b.newContext({viewport:{width:1194,height:834}}); const p=await ctx.newPage();
+const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+await p.goto('http://localhost:8765/sanandreaslabor/');
+await p.waitForFunction(()=>window.__sa&&window.__sa.ready(),null,{timeout:180000});
+await p.evaluate(()=>navigator.serviceWorker.ready); await p.waitForTimeout(4000);
+console.log('caches',await p.evaluate(async()=>{ const ks=await caches.keys(); const c=await caches.open(ks[0]); return ks.concat((await c.keys()).map(r=>r.url)); }));
+await ctx.setOffline(true);
+await p.reload(); await p.waitForFunction(()=>window.__sa&&window.__sa.ready(),null,{timeout:180000}).then(()=>console.log('OFFLINE OK')).catch(e=>console.log('OFFLINE FAIL',e.message));
+await p.screenshot({path:'/tmp/claude-0/off.png'});
+console.log(errs.join('\n')||'no errors'); await b.close();

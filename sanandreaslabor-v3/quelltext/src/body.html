@@ -1,0 +1,223 @@
+<div class="app nopanel v3" id="app">
+<main class="stage" id="stage">
+  <div id="viewport" aria-label="3D-Modell der San-Andreas-Verwerfung mit echtem Gelände. Mit Maus oder Finger drehen, mit Mausrad oder zwei Fingern vergrößern.">
+    <canvas id="leaders" aria-hidden="true"></canvas>
+    <div id="labels" aria-hidden="true"></div>
+  </div>
+  <div class="fade" id="fade"></div>
+  <div class="lbox" id="lbox" role="dialog" aria-modal="true" aria-label="Foto" hidden>
+    <div class="lb-stage"><img id="lbImg" alt=""><p class="lb-msg" id="lbMsg"></p></div>
+    <button class="lb-btn lb-prev" id="lbPrev" type="button" aria-label="Vorheriges Foto">‹</button>
+    <button class="lb-btn lb-next" id="lbNext" type="button" aria-label="Nächstes Foto">›</button>
+    <button class="lb-x" id="lbClose" type="button" aria-label="Foto schließen">✕</button>
+    <div class="lb-cap"><div class="lb-dots" id="lbDots"></div><p id="lbT"></p><small id="lbC"></small></div>
+  </div>
+  <canvas class="xfade" id="xfade" aria-hidden="true"></canvas>
+
+  <header class="hud">
+    <div class="title" data-avoid>
+      <p class="eyebrow">GEO-LABS · <b>San-Andreas-Labor</b> · V3 Tafelfassung</p>
+      <h1 class="date" id="clockTitle">Phase 1 · Zwei Platten</h1>
+      <p class="sub"><b id="clockTime">Kalifornien heute</b><span class="pill mid" id="clockPill">Übersicht</span></p>
+      <div class="meter" id="meter" hidden>
+        <div class="mbar"><i id="meterBar"></i></div>
+        <p class="mrow"><span id="meterLab">Spannung im Gestein</span> · <span id="meterTxt"></span></p>
+      </div>
+    </div>
+    <div class="tools" data-avoid>
+      <button class="tbtn" id="bFilm" type="button" aria-pressed="false" disabled aria-disabled="true" hidden>▶ Erklärfilm</button>
+      <button class="tbtn" id="bLvl" type="button" title="Beschriftung umschalten: wichtige – alle – aus">Beschriftung: wichtige</button>
+      <button class="tbtn" id="bPanel" type="button" aria-pressed="false" title="Einstellungen, Erklärtext und Quellen ein- oder ausblenden (B)">Einstellungen</button>
+      <button class="tbtn" id="bFull" type="button" title="Vollbild (F)">Vollbild</button>
+    </div>
+  </header>
+
+  <nav class="viewrail" aria-label="Ansicht" data-avoid>
+    <div class="vr-h">Ansicht</div>
+    <div class="vr-in">
+      <button type="button" data-view="oblique" aria-pressed="true" title="Schrägansicht – frei drehbar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>Schräg</button>
+      <button type="button" data-view="top" aria-pressed="false" title="Ansicht von oben, Norden oben"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM4 14L20 9"/></svg>Von oben</button>
+      <button type="button" data-view="section" aria-pressed="false" title="Blick auf die Schnittfläche: links die Pazifische, rechts die Nordamerikanische Platte"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v12H3zM12 6v12"/></svg>Querschnitt</button>
+      <button type="button" data-view="near" aria-pressed="false" title="Nahansicht"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M15.5 15.5L21 21"/></svg>Nah</button>
+    </div>
+    <div class="vr-sep"></div>
+    <div class="vr-in vr-zoom">
+      <button type="button" id="zin" title="Vergrößern" aria-label="Vergrößern"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button type="button" id="zout" title="Verkleinern" aria-label="Verkleinern"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+    </div>
+    <div class="vr-sep"></div>
+    <div class="compass" id="compass" title="Nordpfeil"><svg viewBox="-24 -24 48 48" aria-label="Nordpfeil" role="img"><circle class="ring" r="21"/><g id="needle"><path class="n" d="M0,-17 L5,0 L-5,0Z"/><path class="s" d="M0,17 L5,0 L-5,0Z"/></g></svg></div>
+  </nav>
+
+  <div class="scalebar" id="scalebar" aria-hidden="true" data-avoid><span id="sbTxt">100 km</span><i id="sbBar" style="width:110px"></i><small id="sbNote">Maßstab am Blickpunkt</small></div>
+  <div class="exnote" id="exnote" hidden data-avoid></div>
+
+  <div class="viewnote" id="viewnote" hidden data-avoid role="status"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <div class="cap" id="cap" hidden data-avoid aria-live="polite">
+    <p class="cap-k" id="capCh"></p>
+    <p class="cap-s" id="capTx"></p>
+  </div>
+  <div class="cinenav" id="cinenav" hidden data-avoid>
+    <div class="cn-prog"><i id="fProg"></i></div>
+    <button id="fPrev" type="button" class="cn-arrow" title="Voriges Kapitel" aria-label="Voriges Kapitel">‹</button>
+    <div class="chapters" id="chapters"></div>
+    <button id="fNext" type="button" class="cn-arrow" title="Nächstes Kapitel" aria-label="Nächstes Kapitel">›</button>
+    <button id="fPlay" type="button" class="cn-play">Pause</button>
+    <label class="cn-tg" title="Nach jedem Kapitel anhalten"><input type="checkbox" id="fStop" checked><span>Halt je Kapitel</span></label>
+    <label class="cn-tg" title="Untertitel vorlesen (Stimme des Browsers)"><input type="checkbox" id="fVoice"><span>Vorlesen</span></label>
+    <button id="fEnd" type="button" class="cn-exit" title="Film beenden (Esc)">Beenden ✕</button>
+  </div>
+
+  <footer class="dock" id="dock" data-avoid>
+    <div class="transport">
+      <button class="play" id="bPlay" type="button" title="Start / Pause (Leertaste)" aria-label="Start"><svg viewBox="0 0 24 24" aria-hidden="true"><path id="playIcon" fill="currentColor" d="M8 5v14l11-7z"/></svg></button>
+      <div class="seg">
+        <button id="bPrev" type="button" title="Zurück: an den Anfang der Phase (←)">◀ Zurück</button>
+        <button id="bNext" type="button" title="Weiter: nächste Phase (→)">Weiter ▶</button>
+        <button id="bReset" type="button" title="Zurücksetzen">Zurücksetzen</button>
+      </div>
+      <div class="seg modesw" role="group" aria-label="Was wäre, wenn …?" title="Was wäre, wenn …? (Taste V)"><button type="button" data-mode="creep" aria-pressed="true">Gleiten</button><button type="button" data-mode="lock" aria-pressed="false">Verhaken</button></div>
+      <label class="spd">Tempo <select class="sel" id="speed"><option value="0.5">½×</option><option value="1" selected>1×</option><option value="2">2×</option></select></label>
+      <span class="scale-note" id="simp">Echtes Gelände und Luftbilder · Zeit stark gerafft</span>
+    </div>
+    <div class="track">
+      <div class="bands" id="bands"></div>
+      <input type="range" id="time" min="0" max="1000" value="0" step="1" aria-label="Zeit im Ablauf">
+      <div class="ticks" id="ticks"></div>
+    </div>
+  </footer>
+
+  <div class="veil" id="loading"><div class="veilbox"><i class="ring"></i><p id="loadTxt">Gelände wird geladen</p><div class="lbar"><i id="loadBar"></i></div></div></div>
+</main>
+
+<aside class="panel" id="panel" aria-label="Bedienfeld" data-avoid>
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tab-ex" aria-controls="pane-ex" aria-selected="true" type="button">Erklärung</button>
+    <button role="tab" id="tab-view" aria-controls="pane-view" aria-selected="false" type="button">Anzeige</button>
+    <button role="tab" id="tab-info" aria-controls="pane-info" aria-selected="false" type="button">Hintergrund</button>
+  </div>
+
+  <div class="pane" id="pane-ex" role="tabpanel" aria-labelledby="tab-ex">
+    <ol class="topics" id="phases" aria-label="Phasen"></ol>
+    <section class="lesson" aria-live="polite">
+      <p class="step" id="exStep"></p>
+      <h1 id="exTitle"></h1>
+      <p class="lead" id="exText"></p>
+      <div class="key"><span class="k-v" id="keyV"></span><span class="k-l" id="keyL"></span></div>
+      <p class="look"><b>Achte auf</b><span id="exLook"></span></p>
+    </section>
+    <section class="task">
+      <h2>Aufgabe</h2>
+      <p id="taskQ"></p>
+      <details id="taskD"><summary>Lösung zeigen</summary><p id="taskA"></p></details>
+    </section>
+    <section class="chart" id="chartBox">
+      <h2 id="chartH">Weg der Platten und Versatz an der Verwerfung</h2>
+      <svg id="chartSvg" viewBox="0 0 320 132" role="img" aria-label="Diagramm: Weg der Platten und Versatz an der Verwerfung über die Zeit"></svg>
+      <p class="note" id="chartNote">Blau: So weit sind die Platten gewandert. Gelb: So groß ist der Versatz an der Verwerfung. Der Abstand zwischen beiden Linien ist der Rückstand – die aufgestaute Spannung.</p>
+    </section>
+    <section>
+      <h2>Was wäre, wenn …?</h2>
+      <div class="scen">
+        <label class="radio"><input type="radio" name="mode" value="creep" checked><span><b>Die Platten gleiten gleichmäßig</b><small>wie am kriechenden Abschnitt: keine Spannung, keine großen Erdbeben</small></span></label>
+        <label class="radio"><input type="radio" name="mode" value="lock"><span><b>Die Platten verhaken sich</b><small>wie am Wallace Creek: Spannung baut sich auf und entlädt sich in Erdbeben</small></span></label>
+      </div>
+      <p class="note">Starte mit dem gleichmäßigen Gleiten. Wähle dann „Die Platten verhaken sich“ und vergleiche. Nicht überall verhakt sich die San-Andreas-Verwerfung. Zwischen San Juan Bautista und Parkfield kriecht sie ständig ein wenig – dort gibt es viele kleine, aber keine sehr starken Erdbeben.</p>
+    </section>
+  </div>
+
+  <div class="pane" id="pane-view" role="tabpanel" aria-labelledby="tab-view" hidden>
+    <fieldset><legend>Beschriftungen</legend>
+      <div class="seg3" role="radiogroup" aria-label="Beschriftungen">
+        <label><input type="radio" name="lvl" value="off"><span>Aus</span></label>
+        <label><input type="radio" name="lvl" value="imp" checked><span>Wichtige</span></label>
+        <label><input type="radio" name="lvl" value="all"><span>Alle</span></label>
+      </div>
+    </fieldset>
+    <fieldset><legend>Einblenden</legend>
+      <label class="tg"><input type="checkbox" id="tArrows" checked><span>Bewegungspfeile</span></label>
+      <label class="tg"><input type="checkbox" id="tLines" checked><span>Messlinien</span></label>
+      <label class="tg"><input type="checkbox" id="tFault" checked><span>Verwerfung hervorheben</span></label>
+      <label class="tg"><input type="checkbox" id="tCreek" checked><span>Flusslauf hervorheben (Wallace Creek)</span></label>
+    </fieldset>
+    <fieldset><legend>Ablauf</legend>
+      <label class="tg"><input type="checkbox" id="stopEach" checked><span>nach jeder Phase anhalten</span></label>
+      <label class="tg"><input type="checkbox" id="tCam" checked><span>Kamera folgt der Phase</span></label>
+      <label class="tg"><input type="checkbox" id="tShake" checked><span>Erschütterung beim Erdbeben</span></label>
+    </fieldset>
+    <fieldset><legend>Farben</legend>
+      <ul class="legend">
+        <li><i style="background:#D2432F"></i>Bewegung der Platten</li>
+        <li><i style="background:#FFE08A"></i>Messlinien (am Anfang gerade)</li>
+        <li><i style="background:#F2A32C"></i>Verwerfung verhakt – Spannung</li>
+        <li><i style="background:#FF5A3C"></i>Bruchfront beim Erdbeben</li>
+        <li><i style="background:#3F9BFF"></i>Fluss (Wallace Creek)</li>
+        <li><i style="background:#FFD23F"></i>Plattengrenze: Platten gleiten aneinander vorbei (Transformstörung)</li>
+        <li><i style="background:#4ADE80"></i>Plattengrenze: Platten weichen auseinander (Spreizung)</li>
+        <li><i style="background:#C084FC"></i>Plattengrenze: Platte taucht ab (Subduktion, Zacken auf der oberen Platte)</li>
+      </ul>
+    </fieldset>
+    <fieldset><legend>Tasten</legend>
+      <p class="hint"><kbd>Leertaste</kbd> Start / Pause · <kbd>←</kbd> <kbd>→</kbd> Phase zurück / weiter · <kbd>1</kbd>–<kbd>5</kbd> Phase wählen · <kbd>V</kbd> Gleiten/Verhaken · <kbd>F</kbd> Vollbild · <kbd>B</kbd> Bedienfeld · <kbd>E</kbd> Erklärfilm</p>
+    </fieldset>
+  </div>
+
+  <div class="pane" id="pane-info" role="tabpanel" aria-labelledby="tab-info" hidden>
+    <article class="info">
+      <h2>Was das Modell zeigt</h2>
+      <p>Vier Maßstäbe derselben Plattengrenze: der Westen Nordamerikas (3.900 km), Kalifornien (1.430 km), die Carrizo-Ebene (116 km) und der Wallace Creek (1,9 km). Das Gelände stammt aus Höhenmessungen des US Geological Survey (USGS) und – mit dem Meeresboden – der NOAA (ETOPO). Die Oberfläche zeigt Luft- und Satellitenbilder: in Kalifornien 360 m, in der Carrizo-Ebene 30 m und am Wallace Creek 0,5 m pro Bildpunkt. In der Übersicht (Phase 1) und für Mexiko stammt das Satellitenbild aus „Blue Marble“ der NASA; die Plattengrenzen stammen aus dem Modell PB2002 (Bird 2003).</p>
+      <h2>Ist die Pazifische Platte gleich dick?</h2>
+      <p>Nein. Ozeanische Kruste ist nur rund 7 km dick, kontinentale Kruste in Kalifornien rund 25 bis 30 km. Westlich der Verwerfung trägt die Pazifische Platte ein Stück Festland mit: den Salinischen Block mit Granit, auf dem zum Beispiel Los Angeles und Monterey liegen. Hier ist die Kruste auf beiden Seiten etwa gleich dick. Draußen im Pazifik ist die Platte dagegen ozeanisch – dünne, schwere Basaltkruste. Die ganze Platte (Lithosphäre, mit dem starren oberen Mantel) ist je nach Alter rund 50 bis 100 km dick.</p>
+      <h2>Warum endet die San-Andreas-Verwerfung an der Salton Sea?</h2>
+      <p>Die Verwerfung endet dort, die Plattengrenze nicht. Südlich der Salton Sea übernehmen andere Verwerfungen die Bewegung: die Brawley-Zone und die Imperial-Verwerfung. Im Golf von Kalifornien wechseln sich dann kurze Spreizungszonen und Transformstörungen ab. Dort reißt die Kruste auf – Niederkalifornien (Baja California) wird langsam vom Festland abgetrennt. Am Nordende, am Kap Mendocino, trifft die Verwerfung auf die Juan-de-Fuca-Platte (Mendocino-Tripelpunkt).</p>
+      <p>Die Bewegung wird berechnet: Solange die Verwerfung bis in 15 km Tiefe verhakt ist, verteilt sich die Plattenbewegung über viele Kilometer (Phase 2). Beim Erdbeben holt die Umgebung der Verwerfung den Rückstand nach (Phase 3). Geologen nennen das den elastischen Rückprall.</p>
+      <h2>Didaktische Vereinfachungen</h2>
+      <ul>
+        <li><b>Überhöhung in Phase 2 und 3:</b> In 150 Jahren entsteht ein Rückstand von rund 5 m. Auf einem 116 km langen Block wäre das unsichtbar. Die Verformung ist deshalb 3000-fach überhöht. Die Breite der verbogenen Zone ist echt.</li>
+        <li><b>Phase 4 in echter Größe:</b> Gelände, Luftbild und Versatz (130 m) des Wallace Creek sind echt.</li>
+        <li><b>Geländehöhen:</b> Berge und Täler sind überhöht, damit man sie erkennt – im Westen Nordamerikas 20-fach, in Kalifornien 10-fach, in der Carrizo-Ebene 4-fach, am Wallace Creek nur 1,3-fach. Meerestiefen sind schwächer überhöht (ein Drittel davon).</li>
+        <li><b>Lücken im Luftbild:</b> Für Mexiko und ein gesperrtes Gebiet in Nevada hat die USGS keine Luftbilder. Dort und in der ganzen Übersicht (Phase 1) zeigt die Karte das Satellitenbild „Blue Marble“ der NASA (500 m pro Bildpunkt), farblich an die USGS-Bilder angepasst. Das Meer ist aus den Tiefendaten eingefärbt: je tiefer, desto dunkler.</li>
+        <li><b>Zeitpunkte der Erdbeben:</b> Nur das Beben von 1857 ist genau bekannt. Die früheren Beben sind im Modell unregelmäßig verteilt, sodass die mittlere Wiederkehrzeit (rund 150 Jahre) und der Gesamtversatz stimmen. In Wirklichkeit waren manche Beben kleiner und folgten dichter aufeinander.</li>
+        <li><b>Eine einzige Bruchlinie:</b> Die Plattengrenze ist eine breite Zone mit mehreren Verwerfungen. Auf die San-Andreas-Verwerfung entfallen hier rund 3,5 der insgesamt 5 cm pro Jahr.</li>
+        <li><b>Blockdicke:</b> Die Platten sind rund 100 km dick. Der Block zeigt nur die oberen 25 km (Erdkruste). Darunter ist das Gestein heiß und verformbar – dort gleiten die Platten gleichmäßig.</li>
+        <li><b>Beide Platten bewegt:</b> Die Pfeile zeigen, wie sich die Platten zueinander bewegen. Das Modell verteilt die Bewegung je zur Hälfte auf beide Seiten.</li>
+        <li><b>Bruchrichtung und Erdbebenwellen:</b> Der Bruch beginnt im Modell am vorderen Rand. Die Erdbebenwellen sind als einfache Ringe dargestellt.</li>
+      </ul>
+      <h2>Berichtigt gegenüber vielen Schulbuch-Grafiken</h2>
+      <ul>
+        <li>Die Verwerfung ist keine offene Spalte. Die Gesteine pressen aneinander.</li>
+        <li>An einer Transformstörung steigt kein Magma auf, und keine Platte taucht ab. Die Bruchfläche steht fast senkrecht.</li>
+        <li>Die Plattengrenze ist nicht die Küste: Los Angeles liegt auf der Pazifischen, San Francisco auf der Nordamerikanischen Platte.</li>
+        <li>Zwischen den Erdbeben „rutschen“ die Platten an verhakten Abschnitten nicht langsam weiter – dort bewegt sich an der Verwerfung nichts.</li>
+      </ul>
+      <h2>Zahlen</h2>
+      <ul>
+        <li>Plattenbewegung insgesamt: rund 5 cm pro Jahr. San-Andreas-Verwerfung am Wallace Creek: rund 3,4 bis 3,5 cm pro Jahr.</li>
+        <li>Wallace Creek: rund 130 m Versatz seit etwa 3.700 Jahren.</li>
+        <li>Fort-Tejon-Erdbeben, 9. Januar 1857: Magnitude 7,9; Bruchlänge 300 bis 360 km; Versatz in der Carrizo-Ebene im Mittel rund 5 m, stellenweise bis 9 m; starke Erschütterungen 1 bis 3 Minuten lang.</li>
+        <li>Erdbeben von San Francisco, 18. April 1906: Magnitude 7,9; Bruchlänge 477 km.</li>
+      </ul>
+      <h2>Quellen</h2>
+      <ul class="src">
+        <li><a href="https://pubs.usgs.gov/gip/earthq3/safaultgip.html" target="_blank" rel="noopener">USGS: The San Andreas Fault</a> (Schulz &amp; Wallace)</li>
+        <li><a href="https://www.usgs.gov/media/images/a-photo-wallace-creek" target="_blank" rel="noopener">USGS: Wallace Creek</a> – Versatz und Versatzrate</li>
+        <li><a href="https://www.usgs.gov/programs/earthquake-hazards/science/m79-1857-fort-tejon-earthquake" target="_blank" rel="noopener">USGS: M 7.9 1857 Fort Tejon Earthquake</a></li>
+        <li><a href="https://earthquake.usgs.gov/earthquakes/events/1906calif/18april" target="_blank" rel="noopener">USGS: Das Erdbeben vom 18. April 1906</a></li>
+        <li>Sieh &amp; Jahns (1984): Holocene activity of the San Andreas fault at Wallace Creek, California. Geological Society of America Bulletin 95.</li>
+        <li><a href="https://central.scec.org/node/4080" target="_blank" rel="noopener">Zielke u. a. (2010)</a>: Slip in the 1857 and earlier large earthquakes along the Carrizo Plain. Science 327.</li>
+        <li>Rechenmodell: Reid (1910), elastischer Rückprall; Savage &amp; Burford (1973), Verformung an einer verhakten Verwerfung.</li>
+        <li>Höhendaten: USGS 3D Elevation Program (3DEP); NOAA NCEI, ETOPO / DEM Global Mosaic (mit Meeresboden). Luft- und Satellitenbilder: USGS The National Map („USGS Imagery Only“, „NAIP Plus“).</li>
+        <li>Fotos (Wikimedia Commons, bearbeitet: verkleinert, zugeschnitten): San Francisco – Peter Kaminski, „Downtown San Francisco - March 2013“, CC BY 2.0; Golden Gate Bridge – Rich Niewiroski Jr., „GoldenGateBridge-001“, CC BY 2.5; Los Angeles – Nserrano, „LA Skyline Mountains2“, CC BY-SA 3.0; Hollywood-Schild – Thomas Wolf (www.foto-tw.de), „Hollywood Sign (Zuschnitt)“, CC BY-SA 3.0; Venice Beach – Carol M. Highsmith, „Aerial view of Venice Beach, California“, Library of Congress, gemeinfrei; Sierra Nevada – David Iliff, „Tunnel View, Yosemite Valley, Yosemite NP“, CC BY-SA 3.0; San-Andreas-Verwerfung – Ian Kluft, „Kluft-photo-Carrizo-Plain-Nov-2007“, CC BY-SA 4.0.</li>
+        <li>Erdkugel: Bilder aus dem Erdumlauf-Labor (NASA Blue Marble). Europa in hoher Auflösung: Sentinel-2 cloudless – s2maps.eu, EOX IT Services GmbH (enthält veränderte Copernicus-Sentinel-Daten 2016), CC BY 4.0.</li>
+        <li>Satellitenbild Blue Marble Next Generation: NASA Earth Observatory, über NASA GIBS (gemeinfrei).</li>
+        <li>Plattengrenzen: Bird, P. (2003): An updated digital model of plate boundaries. Geochemistry, Geophysics, Geosystems 4 (PB2002).</li>
+        <li><a href="https://pubs.usgs.gov/publication/fs20253013" target="_blank" rel="noopener">USGS Fact Sheet 2025-3013</a>: Mendocino-Tripelpunkt und Cascadia.</li>
+        <li><a href="https://geo.libretexts.org/Bookshelves/Geology/Geology_of_California_(Schwartz)" target="_blank" rel="noopener">Geology of California (LibreTexts)</a>: Salinischer Block, Ende der Verwerfung an der Salton Sea.</li>
+      </ul>
+      <p class="hint">San-Andreas-Labor, Version 2 · GEO-LABS · für den Unterricht frei nutzbar. Version 1 (Begriffe zuordnen) bleibt als eigenes Labor erhalten.</p>
+    </article>
+  </div>
+</aside>
+</div>

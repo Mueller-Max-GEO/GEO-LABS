@@ -1,0 +1,25 @@
+{
+ "name": "San-Andreas-Labor V3",
+ "short_name": "San Andreas V3",
+ "description": "Tafelfassung für den Unterricht: San-Andreas-Verwerfung mit großer Schrift, kräftigen Linien und Pfeilen.",
+ "lang": "de",
+ "start_url": "./",
+ "scope": "./",
+ "display": "fullscreen",
+ "orientation": "any",
+ "background_color": "#04060A",
+ "theme_color": "#04060A",
+ "icons": [
+  {
+   "src": "icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  },
+  {
+   "src": "icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any maskable"
+  }
+ ]
+}

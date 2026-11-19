@@ -12,6 +12,7 @@ und läuft direkt im Browser.
 | Föhn-Labor | Vereinfachtes thermodynamisches Föhnmodell in 3D: Aufstieg im Luv, Kondensationsniveau, Stauwolke (Föhnmauer), Regen und Schnee, Abstieg im Lee. Schritt für Schritt, Experimentieren, Rechenmodus, Vorführmodus und Vollbild fürs iPad | [`foehnlabor/`](foehnlabor/) |
 | Schalenbau-Labor | Reise zum Erdmittelpunkt in 3D: Erdkruste nach Messdaten (Schnitt durch Luxemburg), live gerechnete Mantelkonvektion, Tiefensonde (PREM), Erdbebenwellen mit Schattenzonen, Magnetfeld, Sonnenwind und Polarlicht | [`schalenbaulabor/`](schalenbaulabor/) |
 | San-Andreas-Labor | Transformstörung in 3D mit echtem Gelände und Luftbildern: Einordnung auf der Erdkugel, Plattengrenzen, Gleiten oder Verhaken, Spannungsaufbau und zwei Erdbeben, Wallace Creek mit 130 m Versatz. Für das iPad optimiert, auch offline (Web-App) | [`sanandreaslabor/`](sanandreaslabor/) |
+| San-Andreas-Labor V3 (Tafelfassung) | Dieselbe Animation als Illustration für die Tafel: große Schrift, kräftige Plattengrenzen, großer blauer und roter Pfeil, große Phasen-Knöpfe | [`sanandreaslabor-v3/`](sanandreaslabor-v3/) |
 | Isolinien-Labor | Matterhorn in 3D mit echten Höhendaten (SRTM) und Luftbild (swisstopo): Isolinien, Höhenschichten, Hangneigung, drehbare Schnittachse mit Profil, vom Relief zur Karte | [`isolinienlabor/`](isolinienlabor/) |
 
 ## Online ansehen (GitHub Pages)
