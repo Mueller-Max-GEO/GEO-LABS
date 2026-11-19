@@ -1,5 +1,5 @@
-/* San-Andreas-Labor V3 (Tafelfassung) – Offline-Speicher. Version: e5a228ff54 */
-const CACHE='sal3-e5a228ff54';
+/* San-Andreas-Labor V3 (Tafelfassung) – Offline-Speicher. Version: 085f0b1020 */
+const CACHE='sal3-085f0b1020';
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png',"./fotos/europa.webp","./fotos/ggb.jpg","./fotos/hollywood.jpg","./fotos/la.jpg","./fotos/saf.jpg","./fotos/sf.jpg","./fotos/sierra.jpg","./fotos/venice.jpg","./fotos/zaun.jpg"];
 self.addEventListener('install',e=>{ e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>caches.open(CACHE)).then(c=>fetch("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;500&family=Atkinson+Hyperlegible+Next:wght@400;500;700&display=swap",{mode:'no-cors'}).then(r=>c.put("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;500&family=Atkinson+Hyperlegible+Next:wght@400;500;700&display=swap",r)).catch(()=>{})).then(()=>self.skipWaiting())); });
 self.addEventListener('activate',e=>{ e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith('sal3-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())); });
